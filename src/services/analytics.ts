@@ -79,11 +79,15 @@ export async function getCategorySummary(filters: TransactionFilters): Promise<C
     return [];
   }
 
-  // Group by category and calculate totals
+  // Group by category and calculate totals (expenses only)
   const categoryMap = new Map<string, { amount: number; count: number }>();
-  let grandTotal = 0;
 
   for (const transaction of transactions) {
+    // Only process expense transactions (debits)
+    if (transaction.type !== 'debit') {
+      continue;
+    }
+
     const category = transaction.category || 'Uncategorized';
     const amount = Math.abs(transaction.amount);
     
@@ -94,17 +98,22 @@ export async function getCategorySummary(filters: TransactionFilters): Promise<C
     const summary = categoryMap.get(category)!;
     summary.amount += amount;
     summary.count += 1;
-    grandTotal += amount;
   }
 
-  // Convert to array and calculate percentages
+  // Calculate total expenses for percentage calculation
+  let totalExpenses = 0;
+  for (const data of categoryMap.values()) {
+    totalExpenses += data.amount;
+  }
+
+  // Convert to array and calculate percentages (as percentage of total expenses)
   const categorySummaries: CategorySummary[] = [];
   for (const [category, data] of categoryMap.entries()) {
     categorySummaries.push({
       category,
       amount: data.amount,
       count: data.count,
-      percentage: grandTotal > 0 ? (data.amount / grandTotal) * 100 : 0
+      percentage: totalExpenses > 0 ? (data.amount / totalExpenses) * 100 : 0
     });
   }
 
@@ -131,10 +140,15 @@ export async function getMonthlySummary(filters: TransactionFilters): Promise<Mo
     return [];
   }
 
-  // Group by month (YYYY-MM format)
+  // Group by month (YYYY-MM format) - expenses only
   const monthlyMap = new Map<string, Record<string, number>>();
 
   for (const transaction of transactions) {
+    // Only process expense transactions (debits)
+    if (transaction.type !== 'debit') {
+      continue;
+    }
+
     const monthKey = format(transaction.date, 'yyyy-MM');
     const category = transaction.category || 'Uncategorized';
     const amount = Math.abs(transaction.amount);

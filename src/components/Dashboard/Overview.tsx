@@ -30,7 +30,10 @@ function Overview() {
 
   // Update filters when date range changes
   useEffect(() => {
-    const newFilters: TransactionFilters = {};
+    const newFilters: TransactionFilters = {
+      // Always filter to EUR currency to avoid mixing currencies
+      currencies: ['EUR'],
+    };
 
     switch (dateRangePreset) {
       case 'thisMonth':
