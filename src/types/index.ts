@@ -14,11 +14,15 @@ export interface Transaction {
   transactionType: string; // "Tehingu tüüp"
   archiveId: string; // "Arhiveerimistunnus" - for deduplication
   imported: Date; // When imported
+  ignored?: boolean; // Exclude from calculations
 }
 
 // Category Rule Types
 // Constants
 export const MAX_CATEGORY_GROUPS = 10;
+
+// Special group ID for uncategorized expenses
+export const UNCATEGORIZED_GROUP_ID = '__uncategorized__';
 
 // Category Group Types
 export interface CategoryGroup {
@@ -99,6 +103,7 @@ export interface TransactionFilters {
   dateFrom?: Date;
   dateTo?: Date;
   categories?: string[];
+  groups?: string[]; // Filter by category groups (including UNCATEGORIZED_GROUP_ID)
   currencies?: string[];
   minAmount?: number;
   maxAmount?: number;

@@ -5,6 +5,7 @@ import { db } from '../../services/db';
 import TransactionRow from './TransactionRow';
 import TransactionEditor from './TransactionEditor';
 import Filters from './Filters';
+import { UNCATEGORIZED_GROUP_ID } from '../../types';
 
 interface TransactionListProps {
   initialFilters?: TransactionFilters;
@@ -38,6 +39,12 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
     []
   );
 
+  // Fetch all category rules to map categories to groups
+  const allCategoryRules = useLiveQuery(
+    () => db.categoryRules.toArray(),
+    []
+  );
+
   // Apply filters to transactions
   const filteredTransactions = useMemo(() => {
     if (!allTransactions) return [];
@@ -61,6 +68,40 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
       if (filters.categories && filters.categories.length > 0) {
         const txCategory = transaction.category || 'Uncategorized';
         if (!filters.categories.includes(txCategory)) return false;
+      }
+
+      // Group filter
+      if (filters.groups && filters.groups.length > 0 && allCategoryRules) {
+        // Check if UNCATEGORIZED_GROUP_ID is selected
+        if (filters.groups.includes(UNCATEGORIZED_GROUP_ID)) {
+          // If transaction has no category or is 'Uncategorized', it matches
+          const isUncategorized = !transaction.category || transaction.category === 'Uncategorized';
+          if (isUncategorized) {
+            // This transaction matches the uncategorized group filter
+          } else {
+            // Check if transaction's category is in one of the other selected groups
+            const txCategoryRule = allCategoryRules.find(rule => rule.name === transaction.category);
+            const txGroupId = txCategoryRule?.groupId;
+            
+            // If no other groups selected besides uncategorized, filter out this transaction
+            const otherGroups = filters.groups.filter(g => g !== UNCATEGORIZED_GROUP_ID);
+            if (otherGroups.length === 0 || !txGroupId || !otherGroups.includes(txGroupId)) {
+              return false;
+            }
+          }
+        } else {
+          // Normal group filtering (no UNCATEGORIZED_GROUP_ID)
+          if (!transaction.category || transaction.category === 'Uncategorized') {
+            return false; // Uncategorized transactions don't match any normal group
+          }
+          
+          const txCategoryRule = allCategoryRules.find(rule => rule.name === transaction.category);
+          const txGroupId = txCategoryRule?.groupId;
+          
+          if (!txGroupId || !filters.groups.includes(txGroupId)) {
+            return false;
+          }
+        }
       }
 
       // Amount range filter
@@ -118,7 +159,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
     });
 
     return sorted;
-  }, [allTransactions, filters]);
+  }, [allTransactions, filters, allCategoryRules]);
 
   // Paginate filtered transactions
   const paginatedTransactions = useMemo(() => {
@@ -138,12 +179,13 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
   }, [filters]);
 
   // Handle category save
-  const handleSaveCategory = async (transactionId: string, categoryName: string) => {
+  const handleSaveCategory = async (transactionId: string, categoryName: string, ignored?: boolean) => {
     await db.transactions.update(transactionId, {
       category: categoryName || undefined,
       manuallyEdited: true,
+      ignored: ignored || false,
     });
-  };
+  };;
 
   const handleSort = (field: 'date' | 'payee' | 'amount' | 'category' | 'description') => {
     setFilters(prev => ({

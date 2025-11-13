@@ -34,7 +34,8 @@ interface BalanceLineProps {
 
 function BalanceLine({ transactions, filters }: BalanceLineProps) {
   const [isLoading, setIsLoading] = useState(true);
-  const [chartData, setChartData] = useState<{
+
+    const [chartData, setChartData] = useState<{
     labels: string[];
     datasets: {
       label: string;

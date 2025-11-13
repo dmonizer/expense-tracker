@@ -8,6 +8,8 @@ import { getCategoryColor } from '../../../utils/colorUtils';
 import { db } from '../../../services/db';
 import { useEffect, useState, useRef } from 'react';
 import GroupContextMenu from '../../Categories/GroupContextMenu';
+import { UNCATEGORIZED_GROUP_ID } from '../../../types';
+import { DEFAULT_GROUP_COLORS } from '../../../utils/colorUtils';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -76,15 +78,22 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
           let categorySummary = await getCategorySummary(filters);
           
           if (selectedGroupId) {
-            // Filter categories by selected group
-            const categoryRules = await db.categoryRules.toArray();
-            const groupCategories = categoryRules
-              .filter(rule => rule.groupId === selectedGroupId)
-              .map(rule => rule.name);
-            
-            categorySummary = categorySummary.filter(item => 
-              groupCategories.includes(item.category)
-            );
+            if (selectedGroupId === UNCATEGORIZED_GROUP_ID) {
+              // Special handling for uncategorized group - show only "Uncategorized"
+              categorySummary = categorySummary.filter(item => 
+                item.category === 'Uncategorized'
+              );
+            } else {
+              // Filter categories by selected group
+              const categoryRules = await db.categoryRules.toArray();
+              const groupCategories = categoryRules
+                .filter(rule => rule.groupId === selectedGroupId)
+                .map(rule => rule.name);
+              
+              categorySummary = categorySummary.filter(item => 
+                groupCategories.includes(item.category)
+              );
+            }
           }
           
           if (categorySummary.length === 0) {
@@ -102,11 +111,11 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
           const colors = categorySummary.map(item => {
             const rule = ruleMap.get(item.category);
             if (!rule || !rule.groupId) {
-              return 'hsl(0, 0%, 60%)'; // Gray for uncategorized
+              return DEFAULT_GROUP_COLORS.uncategorized; // Gray for uncategorized
             }
             const group = groupMap.get(rule.groupId);
             if (!group) {
-              return 'hsl(0, 0%, 60%)';
+              return DEFAULT_GROUP_COLORS.uncategorized;
             }
             // Use color utility to get the correct variant
             return getCategoryColor(group.baseColor, rule.colorVariant || 0);

@@ -17,6 +17,7 @@ function RuleEditor({ rule: initialRule, onSave, onCancel }: RuleEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [selectedFields, setSelectedFields] = useState<Set<'payee' | 'description'>>(new Set(['payee']));
 
   useEffect(() => {
     setRule(initialRule);
@@ -61,17 +62,35 @@ function RuleEditor({ rule: initialRule, onSave, onCancel }: RuleEditorProps) {
     setRule({ ...rule, groupId, colorVariant: nextVariant });
   };
 
+  const handleToggleField = (field: 'payee' | 'description') => {
+    const newFields = new Set(selectedFields);
+    if (newFields.has(field)) {
+      if (newFields.size > 1) { // Keep at least one field selected
+        newFields.delete(field);
+      }
+    } else {
+      newFields.add(field);
+    }
+    setSelectedFields(newFields);
+  };
+
   const handleAddPattern = () => {
-    const newPattern: Pattern = {
-      field: 'payee',
-      matchType: 'wordlist',
-      words: [],
-      caseSensitive: false,
-      weight: 10,
-    };
+    // Create a pattern for each selected field
+    const newPatterns: Pattern[] = [];
+    
+    selectedFields.forEach(field => {
+      newPatterns.push({
+        field,
+        matchType: 'wordlist',
+        words: [],
+        caseSensitive: false,
+        weight: 10,
+      });
+    });
+    
     setRule({
       ...rule,
-      patterns: [...rule.patterns, newPattern],
+      patterns: [...rule.patterns, ...newPatterns],
     });
   };
 
@@ -301,6 +320,38 @@ function RuleEditor({ rule: initialRule, onSave, onCancel }: RuleEditorProps) {
                 >
                   + Add Pattern
                 </button>
+              </div>
+
+              {/* Field Selection for new patterns */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  New patterns will match against:
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedFields.has('payee')}
+                      onChange={() => handleToggleField('payee')}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-900">Payee</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedFields.has('description')}
+                      onChange={() => handleToggleField('description')}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-900">Description</span>
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-gray-600">
+                  {selectedFields.size === 2 
+                    ? 'Clicking "+ Add Pattern" will create 2 patterns (one for each field)'
+                    : `Clicking "+ Add Pattern" will create 1 pattern for ${selectedFields.has('payee') ? 'Payee' : 'Description'}`}
+                </p>
               </div>
 
               {rule.patterns.length === 0 ? (

@@ -233,7 +233,7 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
           },
           boxWidth: 12,
         },
-        onClick: async (_event: unknown, legendItem: { text?: string }, legend: unknown) => {
+        onClick: async (_event: unknown, legendItem: { text?: string }, _legend: unknown) => {
           const itemLabel = legendItem.text;
           if (!itemLabel) return;
 

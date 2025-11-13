@@ -23,6 +23,12 @@ function Filters({ filters, onFiltersChange }: FiltersProps) {
     []
   );
 
+  // Fetch all groups from database
+  const categoryGroups = useLiveQuery(
+    () => db.categoryGroups.orderBy('sortOrder').toArray(),
+    []
+  );
+
   // Update local filters when prop changes
   useEffect(() => {
     setLocalFilters(filters);
@@ -43,6 +49,15 @@ function Filters({ filters, onFiltersChange }: FiltersProps) {
     handleFilterChange('categories', newCategories.length > 0 ? newCategories : undefined);
   };
 
+  const handleGroupToggle = (groupId: string) => {
+    const currentGroups = localFilters.groups || [];
+    const newGroups = currentGroups.includes(groupId)
+      ? currentGroups.filter((g) => g !== groupId)
+      : [...currentGroups, groupId];
+    
+    handleFilterChange('groups', newGroups.length > 0 ? newGroups : undefined);
+  };
+
   const handleClearFilters = () => {
     const emptyFilters: TransactionFilters = {
       transactionType: 'both',
@@ -56,6 +71,7 @@ function Filters({ filters, onFiltersChange }: FiltersProps) {
     localFilters.dateFrom,
     localFilters.dateTo,
     localFilters.categories?.length,
+    localFilters.groups?.length,
     localFilters.minAmount !== undefined,
     localFilters.maxAmount !== undefined,
     localFilters.transactionType && localFilters.transactionType !== 'both',
@@ -236,6 +252,42 @@ function Filters({ filters, onFiltersChange }: FiltersProps) {
                   {type.charAt(0).toUpperCase() + type.slice(1)}
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Groups */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-2">
+              Groups
+            </label>
+            <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md p-2 space-y-1">
+              {categoryGroups && categoryGroups.length > 0 ? (
+                categoryGroups.map((group) => {
+                  const isSelected = localFilters.groups?.includes(group.id) || false;
+                  return (
+                    <label
+                      key={group.id}
+                      className="flex items-center px-2 py-1.5 hover:bg-gray-50 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleGroupToggle(group.id)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <div
+                        className="ml-2 w-4 h-4 rounded border border-gray-300 flex-shrink-0"
+                        style={{ backgroundColor: group.baseColor }}
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{group.name}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-2">
+                  No groups available
+                </p>
+              )}
             </div>
           </div>
 

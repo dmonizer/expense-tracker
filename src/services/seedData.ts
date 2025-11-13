@@ -1,6 +1,7 @@
 import type { CategoryRule, CategoryGroup } from '../types';
 import { db } from './db';
 import { DEFAULT_GROUP_COLORS } from '../utils/colorUtils';
+import { UNCATEGORIZED_GROUP_ID } from '../types';
 
 /**
  * Predefined group IDs for default category groups
@@ -71,6 +72,17 @@ export const defaultGroups: CategoryGroup[] = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+  {
+    id: UNCATEGORIZED_GROUP_ID,
+    name: 'Unknown expenses',
+    description: 'Transactions that have not been categorized yet',
+    baseColor: DEFAULT_GROUP_COLORS.uncategorized,
+    priority: 999, // Lowest priority (should appear last)
+    isDefault: true,
+    sortOrder: 999,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ];
 
 /**
@@ -85,7 +97,7 @@ export const defaultRules: CategoryRule[] = [
       {
         field: 'payee',
         matchType: 'wordlist',
-        words: ['NOVUS', 'SILPO', 'SELVER', 'RIMI', 'PRISMA', 'NETOMARKET', 'METSA POOD'].map(text => ({text, negated: false})),
+        words: ['NOVUS', 'SILPO', 'SELVER', 'KONSUM',  'GROSSI TOIDUKAUBAD', 'RIMI', 'PRISMA', 'NETOMARKET', 'METSA POOD', 'MAKSIMARKET', 'KONSUM'].map(text => ({text, negated: false})),
         caseSensitive: false,
         weight: 10,
       },
@@ -134,7 +146,7 @@ export const defaultRules: CategoryRule[] = [
       {
         field: 'payee',
         matchType: 'wordlist',
-        words: ['RESTAURANT', 'CAFE', 'KOHVIK', 'RESTORAN', 'KAFEANOR', 'KAVA'].map(text => ({text, negated: false})),
+        words: ['RESTAURANT', 'CAFE', 'KOHVIK', 'RESTORAN', 'KAFEANOR', 'LAKOMKA', 'KAVA'].map(text => ({text, negated: false})),
         caseSensitive: false,
         weight: 8,
       },
@@ -162,7 +174,7 @@ export const defaultRules: CategoryRule[] = [
       {
         field: 'payee',
         matchType: 'wordlist',
-        words: ['AZS', 'WOG', 'ALEXELA', 'CIRCLE K', 'NESTE', 'OLEREX'].map(text => ({text, negated: false})),
+        words: ['AZS', 'WOG', 'ALEXELA', 'HEPA', 'CIRCLE K', 'NESTE', 'OLEREX'].map(text => ({text, negated: false})),
         caseSensitive: false,
         weight: 10,
       }
@@ -204,7 +216,27 @@ export const defaultRules: CategoryRule[] = [
       {
         field: 'payee',
         matchType: 'wordlist',
-        words: ['SHOPPING', 'MALL', 'STORE'].map(text => ({text, negated: false})),
+        words: ['SHOPPING', 'MALL', 'STORE', "MAGAZIIN"].map(text => ({text, negated: false})),
+        caseSensitive: false,
+        weight: 5,
+      },
+    ],
+    patternLogic: 'OR',
+    priority: 1,
+    type: 'expense',
+    groupId: GROUP_ID_OPTIONAL,
+    colorVariant: 2,
+    isDefault: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },  {
+    id: 'rule-default-shopping-hobbies',
+    name: 'Shopping - Hobbies',
+    patterns: [
+      {
+        field: 'payee',
+        matchType: 'wordlist',
+        words: ['BOBO', ].map(text => ({text, negated: false})),
         caseSensitive: false,
         weight: 5,
       },
@@ -603,7 +635,7 @@ export const defaultRules: CategoryRule[] = [
       {
         field: 'payee',
         matchType: 'wordlist',
-        words: ['RAHANDUSMINISTEERIUM', 'GOVERNMENT', 'TAX OFFICE'].map(text => ({text, negated: false})),
+        words: ['RAHANDUSMINISTEERIUM', 'GOVERNMENT', 'TAX OFFICE', 'MAKSU- JA TOLLIAMET'].map(text => ({text, negated: false})),
         caseSensitive: false,
         weight: 10,
       },
@@ -624,7 +656,7 @@ export const defaultRules: CategoryRule[] = [
       {
         field: 'payee',
         matchType: 'wordlist',
-        words: ['SPORDIKULTUUR', 'SPORTS CLUB'].map(text => ({text, negated: false})),
+        words: ['SPORDIKULTUUR', 'SPORTS CLUB', 'LOGOSERV'].map(text => ({text, negated: false})),
         caseSensitive: false,
         weight: 10,
       },

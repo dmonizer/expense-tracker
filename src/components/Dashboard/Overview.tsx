@@ -22,8 +22,10 @@ function Overview() {
   const [customDateTo, setCustomDateTo] = useState<string>('');
   const [filters, setFilters] = useState<TransactionFilters>({});
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Summary stats
+
+    // Summary stats
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [netBalance, setNetBalance] = useState(0);
@@ -72,6 +74,9 @@ function Overview() {
 
     // Apply filters to transactions
     let filteredTransactions = [...transactions];
+    
+    // Always exclude ignored transactions from calculations
+    filteredTransactions = filteredTransactions.filter(t => !t.ignored);
     
     if (filters.dateFrom) {
       filteredTransactions = filteredTransactions.filter(t => t.date >= filters.dateFrom!);
@@ -333,10 +338,33 @@ function Overview() {
         <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Balance Over Time
+            <button
+                type="button"
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-gray-500 hover:text-gray-700"
+            >
+                <svg
+                    className={`w-5 h-5 transform transition-transform ${
+                        isExpanded ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                    />
+                </svg>
+            </button>
           </h2>
-          <div className="h-80">
+            {isExpanded && (
+                <div className="h-80">
             <BalanceLine transactions={transactions} filters={filters} />
           </div>
+                )}
         </div>
       </div>
 

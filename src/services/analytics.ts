@@ -1,6 +1,8 @@
 import type { Transaction, CategorySummary, GroupSummary, MonthlySummary, BalancePoint, TransactionFilters } from '../types';
 import { db } from './db';
 import { format } from 'date-fns';
+import { UNCATEGORIZED_GROUP_ID } from '../types';
+import { DEFAULT_GROUP_COLORS } from '../utils/colorUtils';
 
 /**
  * Applies filters to an array of transactions.
@@ -12,6 +14,9 @@ import { format } from 'date-fns';
  */
 export function applyFilters(transactions: Transaction[], filters: TransactionFilters): Transaction[] {
   let filtered = [...transactions];
+
+  // Always exclude ignored transactions from calculations
+  filtered = filtered.filter(t => !t.ignored);
 
   // Filter by date range
   if (filters.dateFrom) {
@@ -164,29 +169,51 @@ export async function getGroupSummary(filters: TransactionFilters): Promise<Grou
   for (const catSummary of categorySummary) {
     const rule = ruleMap.get(catSummary.category);
     
+    let targetGroupId: string;
+    let targetGroup;
+    
     if (!rule || !rule.groupId) {
       // Handle uncategorized or categories without groups
-      continue;
+      // Add them to the special uncategorized group
+      targetGroupId = UNCATEGORIZED_GROUP_ID;
+      targetGroup = groupMap.get(UNCATEGORIZED_GROUP_ID);
+      
+      // If uncategorized group doesn't exist in DB yet, create a virtual one
+      if (!targetGroup) {
+        targetGroup = {
+          id: UNCATEGORIZED_GROUP_ID,
+          name: 'Unknown expenses',
+          description: 'Transactions that have not been categorized yet',
+          baseColor: DEFAULT_GROUP_COLORS.uncategorized,
+          priority: 999,
+          isDefault: true,
+          sortOrder: 999,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+    } else {
+      targetGroupId = rule.groupId;
+      targetGroup = groupMap.get(rule.groupId);
+      
+      if (!targetGroup) {
+        continue;
+      }
     }
 
-    const group = groupMap.get(rule.groupId);
-    if (!group) {
-      continue;
-    }
-
-    if (!groupDataMap.has(group.id)) {
-      groupDataMap.set(group.id, {
-        groupId: group.id,
-        groupName: group.name,
-        baseColor: group.baseColor,
-        priority: group.priority,
+    if (!groupDataMap.has(targetGroupId)) {
+      groupDataMap.set(targetGroupId, {
+        groupId: targetGroup.id,
+        groupName: targetGroup.name,
+        baseColor: targetGroup.baseColor,
+        priority: targetGroup.priority,
         amount: 0,
         count: 0,
         categories: [],
       });
     }
 
-    const groupData = groupDataMap.get(group.id)!;
+    const groupData = groupDataMap.get(targetGroupId)!;
     groupData.amount += catSummary.amount;
     groupData.count += catSummary.count;
     groupData.categories.push(catSummary);
@@ -300,21 +327,25 @@ export async function getMonthlyGroupSummary(filters: TransactionFilters): Promi
     for (const [categoryName, amount] of Object.entries(monthData.categories)) {
       const rule = ruleMap.get(categoryName);
       
+      let groupName: string;
+      
       if (!rule || !rule.groupId) {
-        // Skip uncategorized or categories without groups
-        continue;
+        // Add uncategorized transactions to the special uncategorized group
+        const uncategorizedGroup = groupMap.get(UNCATEGORIZED_GROUP_ID);
+        groupName = uncategorizedGroup ? uncategorizedGroup.name : 'Unknown expenses';
+      } else {
+        const group = groupMap.get(rule.groupId);
+        if (!group) {
+          continue;
+        }
+        groupName = group.name;
       }
 
-      const group = groupMap.get(rule.groupId);
-      if (!group) {
-        continue;
+      if (!groups[groupName]) {
+        groups[groupName] = 0;
       }
 
-      if (!groups[group.name]) {
-        groups[group.name] = 0;
-      }
-
-      groups[group.name] += amount;
+      groups[groupName] += amount;
       total += amount;
     }
 

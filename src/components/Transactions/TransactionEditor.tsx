@@ -10,7 +10,7 @@ import type { Pattern, CategoryRule } from '../../types';
 interface TransactionEditorProps {
   transaction: Transaction;
   onClose: () => void;
-  onSave: (transactionId: string, categoryName: string) => Promise<void>;
+  onSave: (transactionId: string, categoryName: string, ignored?: boolean) => Promise<void>;
 }
 
 /**
@@ -19,6 +19,7 @@ interface TransactionEditorProps {
  */
 function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorProps) {
   const [selectedCategory, setSelectedCategory] = useState(transaction.category || '');
+  const [isIgnored, setIsIgnored] = useState(transaction.ignored || false);
   const [isSaving, setIsSaving] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -39,10 +40,11 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
     []
   );
 
-  // Update selected category when transaction changes
+  // Update selected category and ignored state when transaction changes
   useEffect(() => {
     setSelectedCategory(transaction.category || '');
-  }, [transaction.category]);
+    setIsIgnored(transaction.ignored || false);
+  }, [transaction.category, transaction.ignored]);
 
   // Generate pattern suggestions from transaction
   const payeeSuggestions = extractPatternSuggestions(transaction.payee);
@@ -132,7 +134,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
   };
 
   const handleSave = async () => {
-    if (selectedCategory === transaction.category && !addPatternEnabled) {
+    if (selectedCategory === transaction.category && !addPatternEnabled && isIgnored === (transaction.ignored || false)) {
       onClose();
       return;
     }
@@ -173,13 +175,14 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
         await db.transactions.update(transaction.id, {
           category: selectedCategory,
           manuallyEdited: false,
+          ignored: isIgnored,
         });
 
         // Recategorize all transactions that aren't manually edited
         await recategorizeAll();
       } else {
         // Original behavior: manual edit without patterns
-        await onSave(transaction.id, selectedCategory);
+        await onSave(transaction.id, selectedCategory, isIgnored);
       }
       
       onClose();
@@ -413,6 +416,25 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
           )}
         </div>
 
+        {/* Ignore Transaction */}
+        <div className="px-6 py-4 border-t border-gray-200">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isIgnored}
+              onChange={(e) => setIsIgnored(e.target.checked)}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              disabled={isSaving}
+            />
+            <span className="text-sm font-medium text-gray-900">
+              Ignore this transaction in calculations
+            </span>
+          </label>
+          <p className="mt-1 ml-6 text-xs text-gray-500">
+            When checked, this transaction will be excluded from all percentage and summary calculations
+          </p>
+        </div>
+
         {/* Pattern Configuration */}
         {!isCreatingNew && selectedCategory && (
           <div className="px-6 py-4 border-t border-gray-200">
@@ -622,7 +644,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
           <button
             type="button"
             onClick={handleSave}
-            disabled={isSaving || (selectedCategory === transaction.category && !(addPatternEnabled && selectedPatterns.length > 0))}
+            disabled={isSaving || (selectedCategory === transaction.category && !(addPatternEnabled && selectedPatterns.length > 0) && isIgnored === (transaction.ignored || false))}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving...' : 'Save'}
