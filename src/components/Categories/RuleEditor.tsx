@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { isValidPattern } from '../../utils';
-import type { CategoryRule, Pattern } from '../../types';
+import type { CategoryRule, Pattern, CategoryGroup } from '../../types';
+import { db } from '../../services/db';
+import { getCategoryColor } from '../../utils/colorUtils';
 import PatternEditor from './PatternEditor';
 import RulePreview from './RulePreview';
 
@@ -13,10 +15,27 @@ interface RuleEditorProps {
 function RuleEditor({ rule: initialRule, onSave, onCancel }: RuleEditorProps) {
   const [rule, setRule] = useState<CategoryRule>(initialRule);
   const [showPreview, setShowPreview] = useState(false);
+  const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
 
   useEffect(() => {
     setRule(initialRule);
   }, [initialRule]);
+
+  useEffect(() => {
+    async function loadGroups() {
+      setLoadingGroups(true);
+      try {
+        const groups = await db.categoryGroups.orderBy('sortOrder').toArray();
+        setCategoryGroups(groups);
+      } catch (error) {
+        console.error('Failed to load category groups:', error);
+      } finally {
+        setLoadingGroups(false);
+      }
+    }
+    loadGroups();
+  }, []);
 
   const handleNameChange = (name: string) => {
     setRule({ ...rule, name });
@@ -28,6 +47,18 @@ function RuleEditor({ rule: initialRule, onSave, onCancel }: RuleEditorProps) {
 
   const handlePriorityChange = (priority: number) => {
     setRule({ ...rule, priority: Math.max(1, Math.min(10, priority)) });
+  };
+
+  const handleGroupChange = async (groupId: string) => {
+    // Auto-assign the next available color variant for this group
+    const categoriesInGroup = await db.categoryRules
+      .filter(r => r.groupId === groupId && r.id !== rule.id)
+      .toArray();
+    
+    const usedVariants = categoriesInGroup.map(r => r.colorVariant || 0);
+    const nextVariant = usedVariants.length > 0 ? Math.max(...usedVariants) + 1 : 0;
+
+    setRule({ ...rule, groupId, colorVariant: nextVariant });
   };
 
   const handleAddPattern = () => {
@@ -209,6 +240,52 @@ function RuleEditor({ rule: initialRule, onSave, onCancel }: RuleEditorProps) {
                   <span>5 (Normal)</span>
                   <span>10 (Very Specific)</span>
                 </div>
+              </div>
+
+              {/* Category Group */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category Group
+                  <span className="text-gray-500 font-normal ml-2">
+                    (Determines color and spending priority)
+                  </span>
+                </label>
+                {loadingGroups ? (
+                  <div className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                    Loading groups...
+                  </div>
+                ) : (
+                  <select
+                    value={rule.groupId || ''}
+                    onChange={e => handleGroupChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">None (Uncategorized)</option>
+                    {categoryGroups.map(group => (
+                      <option key={group.id} value={group.id}>
+                        {group.name} - {group.description}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {rule.groupId && !loadingGroups && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-xs text-gray-600">Color preview:</span>
+                    <div
+                      className="w-6 h-6 rounded border border-gray-300"
+                      style={{
+                        backgroundColor: (() => {
+                          const group = categoryGroups.find(g => g.id === rule.groupId);
+                          return group ? getCategoryColor(group.baseColor, rule.colorVariant || 0) : '#ccc';
+                        })(),
+                      }}
+                      title={`Variant ${rule.colorVariant || 0}`}
+                    />
+                    <span className="text-xs text-gray-500">
+                      Variant {rule.colorVariant || 0}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

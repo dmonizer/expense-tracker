@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   Transaction,
   CategoryRule,
+  CategoryGroup,
   ImportRecord,
   UserSettings,
   Pattern,
@@ -15,6 +16,7 @@ class ExpenseTrackerDatabase extends Dexie {
   // Define tables with their TypeScript types
   transactions!: Table<Transaction>;
   categoryRules!: Table<CategoryRule>;
+  categoryGroups!: Table<CategoryGroup>;
   importHistory!: Table<ImportRecord>;
   settings!: Table<UserSettings>;
 
@@ -77,6 +79,26 @@ class ExpenseTrackerDatabase extends Dexie {
             }
             return pattern;
           });
+        }
+      });
+    });
+
+    // Version 5: Add categoryGroups table and groupId/colorVariant to categoryRules
+    this.version(5).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+    }).upgrade(tx => {
+      // Migration: Add groupId and colorVariant to existing rules
+      // They will remain undefined until user assigns groups
+      return tx.table('categoryRules').toCollection().modify(rule => {
+        if (!rule.groupId) {
+          rule.groupId = undefined;
+        }
+        if (rule.colorVariant === undefined) {
+          rule.colorVariant = 0;
         }
       });
     });

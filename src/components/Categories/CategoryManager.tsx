@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
 import { recategorizeAll } from '../../services/categorizer';
-import type { CategoryRule } from '../../types';
+import type { CategoryRule, CategoryGroup } from '../../types';
+import { getCategoryColor } from '../../utils/colorUtils';
 import RuleEditor from './RuleEditor';
 
 type SortField = 'name' | 'type' | 'priority' | 'patternCount';
@@ -13,13 +14,15 @@ function CategoryManager() {
   const [sortField, setSortField] = useState<SortField>('priority');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [filterType, setFilterType] = useState<FilterType>('all');
+  const [filterGroupId, setFilterGroupId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingRule, setEditingRule] = useState<CategoryRule | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isRecategorizing, setIsRecategorizing] = useState(false);
 
-  // Fetch all rules with live updates
+  // Fetch all rules and groups with live updates
   const allRules = useLiveQuery(() => db.categoryRules.toArray(), []);
+  const allGroups = useLiveQuery(() => db.categoryGroups.orderBy('sortOrder').toArray(), []);
 
   // Apply filters and sorting
   const filteredRules = allRules
@@ -28,6 +31,15 @@ function CategoryManager() {
           // Filter by type
           if (filterType !== 'all' && rule.type !== filterType) {
             return false;
+          }
+          // Filter by group
+          if (filterGroupId !== 'all') {
+            if (filterGroupId === 'none' && rule.groupId) {
+              return false;
+            }
+            if (filterGroupId !== 'none' && rule.groupId !== filterGroupId) {
+              return false;
+            }
           }
           // Filter by search query
           if (searchQuery && !rule.name.toLowerCase().includes(searchQuery.toLowerCase())) {
@@ -296,6 +308,23 @@ function CategoryManager() {
           </button>
         </div>
 
+        {/* Filter by group */}
+        <div className="min-w-48">
+          <select
+            value={filterGroupId}
+            onChange={e => setFilterGroupId(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">All Groups</option>
+            <option value="none">No Group</option>
+            {allGroups?.map(group => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Actions */}
         <div className="flex gap-2">
           <button
@@ -365,6 +394,9 @@ function CategoryManager() {
                 >
                   Type {getSortIcon('type')}
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Group
+                </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('priority')}
@@ -410,6 +442,29 @@ function CategoryManager() {
                     >
                       {rule.type}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {rule.groupId && allGroups ? (
+                      (() => {
+                        const group = allGroups.find(g => g.id === rule.groupId);
+                        if (group) {
+                          const color = getCategoryColor(group.baseColor, rule.colorVariant || 0);
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-4 h-4 rounded border border-gray-300 flex-shrink-0"
+                                style={{ backgroundColor: color }}
+                                title={`${group.name} (Variant ${rule.colorVariant || 0})`}
+                              />
+                              <span className="text-sm text-gray-700">{group.name}</span>
+                            </div>
+                          );
+                        }
+                        return <span className="text-xs text-gray-400">Unknown</span>;
+                      })()
+                    ) : (
+                      <span className="text-xs text-gray-400">None</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{rule.priority}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">

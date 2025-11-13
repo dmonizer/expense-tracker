@@ -1,4 +1,4 @@
-import type { Transaction, CategorySummary, MonthlySummary, BalancePoint, TransactionFilters } from '../types';
+import type { Transaction, CategorySummary, GroupSummary, MonthlySummary, BalancePoint, TransactionFilters } from '../types';
 import { db } from './db';
 import { format } from 'date-fns';
 
@@ -122,6 +122,99 @@ export async function getCategorySummary(filters: TransactionFilters): Promise<C
 }
 
 /**
+ * Get group summary with drill-down data
+ * Aggregates transactions by category group and includes category-level details
+ * 
+ * @param filters - Transaction filters to apply
+ * @returns Array of group summaries sorted by priority
+ */
+export async function getGroupSummary(filters: TransactionFilters): Promise<GroupSummary[]> {
+  // Get all transactions and rules
+  const allTransactions = await db.transactions.toArray();
+  const categoryRules = await db.categoryRules.toArray();
+  const categoryGroups = await db.categoryGroups.toArray();
+  
+  // Apply filters
+  const transactions = applyFilters(allTransactions, filters);
+
+  // Handle empty data
+  if (transactions.length === 0) {
+    return [];
+  }
+
+  // Create maps for quick lookups
+  const ruleMap = new Map(categoryRules.map(rule => [rule.name, rule]));
+  const groupMap = new Map(categoryGroups.map(group => [group.id, group]));
+
+  // First, get category summaries
+  const categorySummary = await getCategorySummary(filters);
+
+  // Group categories by their group
+  const groupDataMap = new Map<string, {
+    groupId: string;
+    groupName: string;
+    baseColor: string;
+    priority: number;
+    amount: number;
+    count: number;
+    categories: CategorySummary[];
+  }>();
+
+  // Process each category and aggregate by group
+  for (const catSummary of categorySummary) {
+    const rule = ruleMap.get(catSummary.category);
+    
+    if (!rule || !rule.groupId) {
+      // Handle uncategorized or categories without groups
+      continue;
+    }
+
+    const group = groupMap.get(rule.groupId);
+    if (!group) {
+      continue;
+    }
+
+    if (!groupDataMap.has(group.id)) {
+      groupDataMap.set(group.id, {
+        groupId: group.id,
+        groupName: group.name,
+        baseColor: group.baseColor,
+        priority: group.priority,
+        amount: 0,
+        count: 0,
+        categories: [],
+      });
+    }
+
+    const groupData = groupDataMap.get(group.id)!;
+    groupData.amount += catSummary.amount;
+    groupData.count += catSummary.count;
+    groupData.categories.push(catSummary);
+  }
+
+  // Calculate total for percentages
+  let total = 0;
+  for (const data of groupDataMap.values()) {
+    total += data.amount;
+  }
+
+  // Convert to array and add percentages
+  const groupSummaries: GroupSummary[] = Array.from(groupDataMap.values()).map(data => ({
+    groupId: data.groupId,
+    groupName: data.groupName,
+    baseColor: data.baseColor,
+    priority: data.priority,
+    amount: data.amount,
+    count: data.count,
+    percentage: total > 0 ? (data.amount / total) * 100 : 0,
+    categories: data.categories,
+  }));
+
+  // Sort by priority (lower priority number = more critical = appears first)
+  return groupSummaries.sort((a, b) => a.priority - b.priority);
+}
+
+/**
  * Gets monthly summary with amounts grouped by category for each month.
  * Returns data sorted chronologically.
  * 
@@ -174,6 +267,63 @@ export async function getMonthlySummary(filters: TransactionFilters): Promise<Mo
 
   // Sort chronologically
   return monthlySummaries.sort((a, b) => a.month.localeCompare(b.month));
+}
+
+/**
+ * Get monthly summary aggregated by category groups
+ * Returns monthly data with group-level aggregation
+ * 
+ * @param filters - Transaction filters to apply
+ * @returns Array of monthly summaries with group data
+ */
+export async function getMonthlyGroupSummary(filters: TransactionFilters): Promise<{
+  month: string;
+  groups: Record<string, number>;
+  total: number;
+}[]> {
+  // Get regular monthly summary
+  const monthlySummary = await getMonthlySummary(filters);
+  
+  // Get rules and groups for mapping
+  const categoryRules = await db.categoryRules.toArray();
+  const categoryGroups = await db.categoryGroups.toArray();
+  
+  const ruleMap = new Map(categoryRules.map(rule => [rule.name, rule]));
+  const groupMap = new Map(categoryGroups.map(group => [group.id, group]));
+
+  // Transform category-based data to group-based data
+  return monthlySummary.map(monthData => {
+    const groups: Record<string, number> = {};
+    let total = 0;
+
+    // Aggregate categories by their groups
+    for (const [categoryName, amount] of Object.entries(monthData.categories)) {
+      const rule = ruleMap.get(categoryName);
+      
+      if (!rule || !rule.groupId) {
+        // Skip uncategorized or categories without groups
+        continue;
+      }
+
+      const group = groupMap.get(rule.groupId);
+      if (!group) {
+        continue;
+      }
+
+      if (!groups[group.name]) {
+        groups[group.name] = 0;
+      }
+
+      groups[group.name] += amount;
+      total += amount;
+    }
+
+    return {
+      month: monthData.month,
+      groups,
+      total,
+    };
+  });
 }
 
 /**

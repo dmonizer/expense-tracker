@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import Overview from './components/Dashboard/Overview';
 import CategoryManager from './components/Categories/CategoryManager';
+import CategoryGroupManager from './components/Categories/CategoryGroupManager';
 import FileUpload from './components/ImportWizard/FileUpload';
-import { initializeDefaultRules } from './services/seedData';
+import { initializeDefaults } from './services/seedData';
 
-type TabType = 'dashboard' | 'categories' | 'import';
+type TabType = 'dashboard' | 'categories' | 'groups' | 'import';
 
 interface Tab {
   id: TabType;
@@ -15,6 +16,7 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
   { id: 'categories', label: 'Categories', icon: '🏷️' },
+  { id: 'groups', label: 'Groups', icon: '🎨' },
   { id: 'import', label: 'Import', icon: '📁' },
 ];
 
@@ -23,13 +25,13 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
-  // Initialize default rules on first load
+  // Initialize default groups and rules on first load
   useEffect(() => {
     const initialize = async () => {
       try {
-        const result = await initializeDefaultRules();
+        const result = await initializeDefaults();
         if (!result.success) {
-          console.warn('Failed to initialize default rules:', result.message);
+          console.warn('Failed to initialize defaults:', result.message);
           setInitError(result.message);
         }
       } catch (error) {
@@ -49,6 +51,8 @@ function App() {
         return <Overview />;
       case 'categories':
         return <CategoryManager />;
+      case 'groups':
+        return <CategoryGroupManager />;
       case 'import':
         return <FileUpload />;
       default:

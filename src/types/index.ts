@@ -17,6 +17,22 @@ export interface Transaction {
 }
 
 // Category Rule Types
+// Constants
+export const MAX_CATEGORY_GROUPS = 10;
+
+// Category Group Types
+export interface CategoryGroup {
+  id: string;
+  name: string; // e.g., "Critical", "Important", "Optional"
+  description: string; // "Core living expenses", "Important but adjustable", etc.
+  baseColor: string; // Base HSL color for the family (e.g., "hsl(0, 70%, 50%)")
+  priority: number; // 1 = highest priority (most critical), higher numbers = lower priority
+  isDefault: boolean; // System-defined groups
+  sortOrder: number; // Display order
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Pattern {
   field: 'payee' | 'description';
   matchType: 'wordlist' | 'regex';
@@ -37,6 +53,8 @@ export interface CategoryRule {
   patternLogic: 'OR' | 'AND'; // How patterns are combined: OR = any match, AND = all match
   priority: number; // For handling conflicts (higher = more specific)
   type: 'income' | 'expense';
+  groupId?: string; // Link to CategoryGroup - determines color family
+  colorVariant?: number; // 0-N: which variation within the group's color family
   isDefault: boolean; // Track if it was a default rule (for UI hints)
   createdAt: Date;
   updatedAt: Date;
@@ -96,6 +114,17 @@ export interface CategorySummary {
   amount: number;
   count: number;
   percentage: number;
+}
+
+export interface GroupSummary {
+  groupId: string;
+  groupName: string;
+  baseColor: string;
+  priority: number;
+  amount: number;
+  count: number;
+  percentage: number;
+  categories: CategorySummary[]; // Drill-down data
 }
 
 export interface MonthlySummary {
