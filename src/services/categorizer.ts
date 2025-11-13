@@ -1,4 +1,4 @@
-import type { Transaction, CategoryRule, Pattern } from '../types/index';
+import type { Transaction, CategoryRule, Pattern } from '../types';
 import { db } from './db';
 
 /**

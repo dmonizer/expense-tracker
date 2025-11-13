@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Pattern } from '../../types/index';
+import type { Pattern } from '../../types';
 
 interface WordListEditorProps {
   pattern: Pattern;

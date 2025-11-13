@@ -1,4 +1,4 @@
-import type { Transaction, CategoryRule, Pattern } from '../types/index';
+import type { Transaction, CategoryRule, Pattern } from '../types';
 
 /**
  * Validates that a transaction object has all required fields
@@ -58,11 +58,9 @@ export function isValidTransaction(transaction: Partial<Transaction>): boolean {
     return false;
   }
 
-  if (!transaction.imported || !(transaction.imported instanceof Date) || isNaN(transaction.imported.getTime())) {
-    return false;
-  }
+  return !(!transaction.imported || !(transaction.imported instanceof Date) || isNaN(transaction.imported.getTime()));
 
-  return true;
+
 }
 
 /**
@@ -112,11 +110,9 @@ export function isValidCategoryRule(rule: Partial<CategoryRule>): boolean {
     return false;
   }
 
-  if (!rule.updatedAt || !(rule.updatedAt instanceof Date) || isNaN(rule.updatedAt.getTime())) {
-    return false;
-  }
+  return !(!rule.updatedAt || !(rule.updatedAt instanceof Date) || isNaN(rule.updatedAt.getTime()));
 
-  return true;
+
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { Transaction, CategorySummary, MonthlySummary, BalancePoint, TransactionFilters } from '../types/index';
+import type { Transaction, CategorySummary, MonthlySummary, BalancePoint, TransactionFilters } from '../types';
 import { db } from './db';
 import { format } from 'date-fns';
 

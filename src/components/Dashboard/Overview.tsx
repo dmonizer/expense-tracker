@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
-import type { TransactionFilters } from '../../types/index';
-import { formatCurrency } from '../../utils/formatters';
+import type { TransactionFilters } from '../../types';
+import { formatCurrency } from '../../utils';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import CategoryPieChart from './Charts/CategoryPieChart';
 import MonthlyBarChart from './Charts/MonthlyBarChart';

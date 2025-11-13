@@ -2,8 +2,8 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
 import { matchesPattern } from '../../services/categorizer';
-import type { CategoryRule, Transaction } from '../../types/index';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import type { CategoryRule, Transaction } from '../../types';
+import { formatCurrency, formatDate } from '../../utils';
 
 interface RulePreviewProps {
   rule: CategoryRule;

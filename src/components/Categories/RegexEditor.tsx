@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { isValidRegex } from '../../utils/validators';
-import type { Pattern } from '../../types/index';
+import { isValidRegex } from '../../utils';
+import type { Pattern } from '../../types';
 
 interface RegexEditorProps {
   pattern: Pattern;

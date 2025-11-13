@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { TransactionFilters } from '../../types';
 import { db } from '../../services/db';
-import { formatDate } from '../../utils/formatters';
+import { formatDate } from '../../utils';
 
 interface FiltersProps {
   filters: TransactionFilters;

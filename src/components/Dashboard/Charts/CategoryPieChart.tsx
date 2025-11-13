@@ -1,9 +1,9 @@
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import type { Transaction, TransactionFilters } from '../../../types/index';
+import type { Transaction, TransactionFilters } from '../../../types';
 import { getCategorySummary } from '../../../services/analytics';
-import { formatCurrency } from '../../../utils/formatters';
+import { formatCurrency } from '../../../utils';
 import { useEffect, useState } from 'react';
 
 ChartJS.register(ArcElement, Tooltip, Legend);

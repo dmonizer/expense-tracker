@@ -1,5 +1,5 @@
-import { isValidPattern } from '../../utils/validators';
-import type { Pattern } from '../../types/index';
+import { isValidPattern } from '../../utils';
+import type { Pattern } from '../../types';
 import WordListEditor from './WordListEditor';
 import RegexEditor from './RegexEditor';
 

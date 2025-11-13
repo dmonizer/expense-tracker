@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { isValidPattern } from '../../utils/validators';
-import type { CategoryRule, Pattern } from '../../types/index';
+import { isValidPattern } from '../../utils';
+import type { CategoryRule, Pattern } from '../../types';
 import PatternEditor from './PatternEditor';
 import RulePreview from './RulePreview';
 

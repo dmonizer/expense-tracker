@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
 import { recategorizeAll } from '../../services/categorizer';
-import type { CategoryRule } from '../../types/index';
+import type { CategoryRule } from '../../types';
 import RuleEditor from './RuleEditor';
 
 type SortField = 'name' | 'type' | 'priority' | 'patternCount';

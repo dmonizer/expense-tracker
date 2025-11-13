@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { CategoryRule } from '../types/index';
+import type { CategoryRule } from '../types';
 import { db } from './db';
 
 /**

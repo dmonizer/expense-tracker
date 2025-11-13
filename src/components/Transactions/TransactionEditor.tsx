@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { Transaction } from '../../types';
 import { db } from '../../services/db';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatDate } from '../../utils';
 import { extractPatternSuggestions, calculatePatternWeight } from '../../utils/patternExtractor';
 import { detectPatternConflicts, matchesPattern, recategorizeAll } from '../../services/categorizer';
 import type { Pattern, CategoryRule } from '../../types';

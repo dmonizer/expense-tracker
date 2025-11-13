@@ -9,9 +9,9 @@ import {
 } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import type { Transaction, TransactionFilters } from '../../../types/index';
+import type { Transaction, TransactionFilters } from '../../../types';
 import { getMonthlySummary } from '../../../services/analytics';
-import { formatCurrency } from '../../../utils/formatters';
+import { formatCurrency } from '../../../utils';
 import { format, parse } from 'date-fns';
 import { useEffect, useState } from 'react';
 

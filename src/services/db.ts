@@ -5,7 +5,7 @@ import type {
   ImportRecord,
   UserSettings,
   Pattern,
-} from '../types/index';
+} from '../types';
 
 /**
  * Database class extending Dexie for IndexedDB operations

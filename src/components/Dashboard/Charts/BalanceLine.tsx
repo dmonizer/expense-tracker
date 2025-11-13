@@ -11,9 +11,9 @@ import {
 } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import type { Transaction, TransactionFilters } from '../../../types/index';
+import type { Transaction, TransactionFilters } from '../../../types';
 import { getBalanceOverTime } from '../../../services/analytics';
-import { formatCurrency, formatDate } from '../../../utils/formatters';
+import { formatCurrency, formatDate } from '../../../utils';
 import { useEffect, useState } from 'react';
 
 ChartJS.register(
