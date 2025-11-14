@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Transaction } from '../../types';
 import { formatCurrency, formatDate } from '../../utils';
 
@@ -90,4 +91,4 @@ function TransactionRow({ transaction, onEditCategory }: TransactionRowProps) {
   );
 }
 
-export default TransactionRow;
+export default memo(TransactionRow);

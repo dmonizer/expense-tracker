@@ -3,6 +3,8 @@ import Overview from './components/Dashboard/Overview';
 import CategoryManager from './components/Categories/CategoryManager';
 import CategoryGroupManager from './components/Categories/CategoryGroupManager';
 import FileUpload from './components/ImportWizard/FileUpload';
+import ErrorBoundary from './components/ErrorBoundary';
+import LoadingSpinner from './components/UI/LoadingSpinner';
 import { initializeDefaults } from './services/seedData';
 
 type TabType = 'dashboard' | 'categories' | 'groups' | 'import';
@@ -62,11 +64,12 @@ function App() {
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Initializing application...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner
+          size="lg"
+          text="Initializing application..."
+          className="h-screen"
+        />
       </div>
     );
   }
@@ -118,7 +121,9 @@ function App() {
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
-          {renderContent()}
+          <ErrorBoundary key={activeTab}>
+            {renderContent()}
+          </ErrorBoundary>
         </div>
       </main>
 

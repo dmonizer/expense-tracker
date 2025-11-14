@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -338,4 +339,4 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
   );
 }
 
-export default MonthlyBarChart;
+export default memo(MonthlyBarChart);

@@ -20,7 +20,7 @@ export function extractPatternSuggestions(text: string): string[] {
   );
 
   if (filtered.length === 0) {
-    // Fallback: use first meaningful word
+    // Fallback: use the first meaningful word
     const firstWord = parts.find(p => p.length >= 3);
     return firstWord ? [firstWord] : [];
   }

@@ -1,8 +1,9 @@
 import type { Transaction, CategorySummary, GroupSummary, MonthlySummary, BalancePoint, TransactionFilters } from '../types';
 import { db } from './db';
 import { format } from 'date-fns';
-import { UNCATEGORIZED_GROUP_ID } from '../types';
+import { UNCATEGORIZED_GROUP_ID } from '../constants';
 import { DEFAULT_GROUP_COLORS } from '../utils/colorUtils';
+import { filterTransactions } from '../utils/transactionFilters';
 
 /**
  * Applies filters to an array of transactions.
@@ -10,59 +11,12 @@ import { DEFAULT_GROUP_COLORS } from '../utils/colorUtils';
  * 
  * @param transactions - Array of transactions to filter
  * @param filters - Filter criteria to apply
+ * @param categoryRules - Optional category rules for group filtering
  * @returns Filtered array of transactions
+ * @deprecated Use filterTransactions from utils/transactionFilters instead
  */
 export function applyFilters(transactions: Transaction[], filters: TransactionFilters): Transaction[] {
-  let filtered = [...transactions];
-
-  // Always exclude ignored transactions from calculations
-  filtered = filtered.filter(t => !t.ignored);
-
-  // Filter by date range
-  if (filters.dateFrom) {
-    filtered = filtered.filter(t => t.date >= filters.dateFrom!);
-  }
-  if (filters.dateTo) {
-    filtered = filtered.filter(t => t.date <= filters.dateTo!);
-  }
-
-  // Filter by categories
-  if (filters.categories && filters.categories.length > 0) {
-    filtered = filtered.filter(t => t.category && filters.categories!.includes(t.category));
-  }
-
-  // Filter by currencies
-  if (filters.currencies && filters.currencies.length > 0) {
-    filtered = filtered.filter(t => filters.currencies!.includes(t.currency));
-  }
-
-  // Filter by amount range
-  if (filters.minAmount !== undefined) {
-    filtered = filtered.filter(t => Math.abs(t.amount) >= filters.minAmount!);
-  }
-  if (filters.maxAmount !== undefined) {
-    filtered = filtered.filter(t => Math.abs(t.amount) <= filters.maxAmount!);
-  }
-
-  // Filter by transaction type
-  if (filters.transactionType && filters.transactionType !== 'both') {
-    if (filters.transactionType === 'income') {
-      filtered = filtered.filter(t => t.type === 'credit');
-    } else if (filters.transactionType === 'expense') {
-      filtered = filtered.filter(t => t.type === 'debit');
-    }
-  }
-
-  // Filter by search query (payee and description)
-  if (filters.searchQuery && filters.searchQuery.trim() !== '') {
-    const query = filters.searchQuery.toLowerCase();
-    filtered = filtered.filter(t => 
-      t.payee.toLowerCase().includes(query) || 
-      t.description.toLowerCase().includes(query)
-    );
-  }
-
-  return filtered;
+  return filterTransactions(transactions, filters);
 }
 
 /**

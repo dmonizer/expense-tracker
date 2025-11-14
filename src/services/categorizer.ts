@@ -1,5 +1,6 @@
 import type { Transaction, CategoryRule, Pattern } from '../types';
 import { db } from './db';
+import { CATEGORIZATION } from '../constants';
 
 /**
  * Checks if a transaction matches a specific pattern
@@ -23,7 +24,18 @@ export function matchesPattern(transaction: Transaction, pattern: Pattern): bool
     // Check positive words: at least one must match (OR logic for positive words)
     const hasPositiveMatch = positiveWords.length === 0 || positiveWords.some(word => {
       const searchWord = pattern.caseSensitive ? word.text : word.text.toLowerCase();
-      return searchText.includes(searchWord);
+      
+      // Direct substring match
+      if (searchText.includes(searchWord)) {
+        return true;
+      }
+      
+      // Fuzzy match: normalize whitespace and common punctuation
+      // This helps match "Selver AS selver.ee" against "Selver AS, selver.ee"
+      const normalizedSearch = searchText.replace(/[,;.]/g, ' ').replace(/\s+/g, ' ').trim();
+      const normalizedWord = searchWord.replace(/[,;.]/g, ' ').replace(/\s+/g, ' ').trim();
+      
+      return normalizedSearch.includes(normalizedWord);
     });
 
     // Check negated words: none must match (AND NOT logic)
@@ -118,8 +130,7 @@ export async function categorizeTransaction(
   // Calculate confidence (0-100)
   // Normalize score to 0-100 range
   // Using a logarithmic scale to prevent over-confidence
-  const maxReasonableScore = 100; // Reasonable max score for normalization
-  const confidence = Math.min(100, (bestMatch.score / maxReasonableScore) * 100);
+  const confidence = Math.min(100, (bestMatch.score / CATEGORIZATION.MAX_REASONABLE_SCORE) * 100);
 
   return {
     category: bestMatch.rule.name,
@@ -161,8 +172,7 @@ export async function categorizeBatch(transactions: Transaction[]): Promise<Tran
       const bestMatch = matches[0];
 
       // Calculate confidence (0-100)
-      const maxReasonableScore = 100;
-      const confidence = Math.min(100, (bestMatch.score / maxReasonableScore) * 100);
+      const confidence = Math.min(100, (bestMatch.score / CATEGORIZATION.MAX_REASONABLE_SCORE) * 100);
 
       updatedTransactions.push({
         ...transaction,

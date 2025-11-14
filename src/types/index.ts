@@ -21,8 +21,8 @@ export interface Transaction {
 // Constants
 export const MAX_CATEGORY_GROUPS = 10;
 
-// Special group ID for uncategorized expenses
-export const UNCATEGORIZED_GROUP_ID = '__uncategorized__';
+// Re-export constants for backward compatibility
+export { UNCATEGORIZED_GROUP_ID } from '../constants';
 
 // Category Group Types
 export interface CategoryGroup {

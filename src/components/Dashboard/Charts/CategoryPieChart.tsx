@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import type { TooltipItem } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
@@ -388,4 +389,4 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
   );
 }
 
-export default CategoryPieChart;
+export default memo(CategoryPieChart);

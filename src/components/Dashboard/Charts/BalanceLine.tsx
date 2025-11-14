@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -209,4 +210,4 @@ function BalanceLine({ transactions, filters }: BalanceLineProps) {
   );
 }
 
-export default BalanceLine;
+export default memo(BalanceLine);

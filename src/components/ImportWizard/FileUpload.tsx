@@ -4,6 +4,7 @@ import { parseSwedBankCSV, detectDuplicates, importTransactions } from '../../se
 import { categorizeBatch } from '../../services/categorizer';
 import PreviewTable from './PreviewTable';
 import ImportSummary from './ImportSummary';
+import { FILE_UPLOAD } from '../../constants';
 
 function FileUpload() {
   const [step, setStep] = useState<'upload' | 'preview' | 'summary'>('upload');
@@ -56,9 +57,8 @@ function FileUpload() {
     }
 
     // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024;
-    if (selectedFile.size > maxSize) {
-      setError('File size must be less than 10MB');
+    if (selectedFile.size > FILE_UPLOAD.MAX_SIZE_BYTES) {
+      setError(`File size must be less than ${FILE_UPLOAD.MAX_SIZE_MB}MB`);
       return;
     }
 
