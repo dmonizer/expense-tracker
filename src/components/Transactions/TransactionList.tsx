@@ -27,8 +27,12 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
   useEffect(() => {
     if (initialFilters) {
       setFilters(prev => ({
-        ...prev,
+        // Start with initialFilters to clear any removed filters
         ...initialFilters,
+        // Preserve UI-specific state (sorting) if not explicitly set in initialFilters
+        transactionType: initialFilters.transactionType ?? prev.transactionType ?? 'both',
+        sortField: initialFilters.sortField ?? prev.sortField ?? 'date',
+        sortDirection: initialFilters.sortDirection ?? prev.sortDirection ?? 'desc',
       }));
     }
   }, [initialFilters]);

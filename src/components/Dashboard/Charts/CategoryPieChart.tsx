@@ -11,19 +11,29 @@ import { useEffect, useState, useRef } from 'react';
 import GroupContextMenu from '../../Categories/GroupContextMenu';
 import { UNCATEGORIZED_GROUP_ID } from '../../../types';
 import { DEFAULT_GROUP_COLORS } from '../../../utils/colorUtils';
+import { useFilters } from '../../../contexts/FilterContext';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
+
+// Register custom tooltip positioner to follow cursor (if not already registered)
+if (!(Tooltip.positioners as any).cursor) {
+  (Tooltip.positioners as any).cursor = function(_elements: any, eventPosition: any) {
+    return {
+      x: eventPosition.x,
+      y: eventPosition.y
+    };
+  };
+}
 
 interface CategoryPieChartProps {
   transactions: Transaction[];
   filters: TransactionFilters;
-  onCategoryClick?: (categoryName: string) => void;
 }
 
-function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPieChartProps) {
+function CategoryPieChart({ transactions, filters }: CategoryPieChartProps) {
+  const { drilldownView, selectedGroupId, drillDownToGroup, drillDownToCategory, goBackOneLevel } = useFilters();
+  
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'group' | 'category'>('group');
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; categoryName: string } | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartData, setChartData] = useState<{
@@ -43,7 +53,7 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
     async function loadData() {
       setIsLoading(true);
       try {
-        if (viewMode === 'group' && !selectedGroupId) {
+        if (drilldownView === 'groups') {
           // Load group summary
           const groupSummary = await getGroupSummary(filters);
           
@@ -152,7 +162,7 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
     }
 
     loadData();
-  }, [transactions, filters, viewMode, selectedGroupId]);
+  }, [transactions, filters, drilldownView, selectedGroupId]);
 
   const handleChartClick = (_event: unknown, elements: unknown[]) => {
     if (!elements || !Array.isArray(elements) || elements.length === 0) {
@@ -164,24 +174,23 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
 
     if (!itemId) return;
 
-    if (viewMode === 'group' && !selectedGroupId) {
+    if (drilldownView === 'groups') {
       // Drill down into group
-      setSelectedGroupId(itemId);
-      setViewMode('category');
-    } else if (onCategoryClick) {
-      // Category clicked - call the callback
-      onCategoryClick(itemId);
+      // itemId is already the groupId (including UNCATEGORIZED_GROUP_ID for virtual group)
+      drillDownToGroup(itemId);
+    } else {
+      // Category clicked - drill down to category
+      drillDownToCategory(itemId);
     }
   };
 
   const handleBackClick = () => {
-    setSelectedGroupId(null);
-    setViewMode('group');
+    goBackOneLevel();
   };
 
   const handleContextMenu = (event: React.MouseEvent) => {
     // Only allow context menu in category view (not group view)
-    if (viewMode === 'group' && !selectedGroupId) {
+    if (drilldownView === 'groups') {
       return;
     }
 
@@ -245,10 +254,9 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
 
       // Trigger reload by updating a state (the chart will reload via useEffect)
       setContextMenu(null);
-      // Force chart reload by toggling state
-      const currentGroupId = selectedGroupId;
-      setSelectedGroupId(null);
-      setTimeout(() => setSelectedGroupId(currentGroupId), 0);
+      // Force chart reload by going back one level and then drilling down again
+      goBackOneLevel();
+      setTimeout(() => drillDownToGroup(groupId), 0);
     } catch (error) {
       console.error('Failed to update category group:', error);
     }
@@ -288,17 +296,18 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
           const itemId = chartData?.itemIds[legendItem.index];
           if (!itemId) return;
 
-          if (viewMode === 'group' && !selectedGroupId) {
+          if (drilldownView === 'groups') {
             // Drill down into group
-            setSelectedGroupId(itemId);
-            setViewMode('category');
-          } else if (onCategoryClick) {
-            // Category clicked - call the callback
-            onCategoryClick(itemId);
+            // itemId is already the groupId (including UNCATEGORIZED_GROUP_ID for virtual group)
+            drillDownToGroup(itemId);
+          } else {
+            // Category clicked - drill down to category
+            drillDownToCategory(itemId);
           }
         },
       },
       tooltip: {
+        position: 'cursor' as any,
         callbacks: {
           label: (context: TooltipItem<'pie'>) => {
             const label = context.label || '';
@@ -357,7 +366,7 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
 
   return (
     <div className="w-full h-full flex flex-col">
-      {selectedGroupId && (
+      {drilldownView !== 'groups' && (
         <div className="mb-2 flex items-center gap-2">
           <button
             onClick={handleBackClick}
@@ -366,10 +375,10 @@ function CategoryPieChart({ transactions, filters, onCategoryClick }: CategoryPi
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to groups
+            Back
           </button>
           <span className="text-sm text-gray-600">
-            {viewMode === 'category' ? 'Category view' : 'Group view'}
+            {drilldownView === 'category' ? 'Category view' : drilldownView === 'group' ? 'Group view' : 'Groups overview'}
           </span>
         </div>
       )}

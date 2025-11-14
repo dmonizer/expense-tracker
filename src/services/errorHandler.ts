@@ -86,17 +86,19 @@ export function getUserMessage(error: unknown): string {
 /**
  * Error severity levels
  */
-export enum ErrorSeverity {
-  INFO = 'info',
-  WARNING = 'warning',
-  ERROR = 'error',
-  CRITICAL = 'critical'
-}
+export const ErrorSeverity = {
+  INFO: 'info',
+  WARNING: 'warning',
+  ERROR: 'error',
+  CRITICAL: 'critical'
+} as const;
+
+export type ErrorSeverityType = typeof ErrorSeverity[keyof typeof ErrorSeverity];
 
 /**
  * Determines the severity of an error
  */
-export function getErrorSeverity(error: unknown): ErrorSeverity {
+export function getErrorSeverity(error: unknown): ErrorSeverityType {
   const normalized = normalizeError(error);
 
   if (normalized.code === 'ConstraintError') {

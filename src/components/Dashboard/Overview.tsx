@@ -1,67 +1,40 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
-import type { TransactionFilters } from '../../types';
 import { formatCurrency } from '../../utils';
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import CategoryPieChart from './Charts/CategoryPieChart';
 import MonthlyBarChart from './Charts/MonthlyBarChart';
 import BalanceLine from './Charts/BalanceLine';
 import TransactionList from '../Transactions/TransactionList';
+import { FilterProvider, useFilters } from '../../contexts/FilterContext';
 
-type DateRangePreset = 'thisMonth' | 'last3Months' | 'year' | 'custom';
-
-function Overview() {
+function OverviewContent() {
   // Fetch all transactions using Dexie live query
   const transactionsRaw = useLiveQuery(() => db.transactions.toArray(), []);
   const transactions = useMemo(() => transactionsRaw || [], [transactionsRaw]);
 
-  // State for filters
-  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('thisMonth');
-  const [customDateFrom, setCustomDateFrom] = useState<string>('');
-  const [customDateTo, setCustomDateTo] = useState<string>('');
-  const [filters, setFilters] = useState<TransactionFilters>({});
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  // Get filters from context
+  const {
+    dateRangePreset,
+    customDateFrom,
+    customDateTo,
+    setDateRangePreset,
+    setCustomDateRange,
+    drillDownToCategory,
+    clearCategoryFilter,
+    getTransactionFilters,
+    selectedCategory,
+  } = useFilters();
+
+  const filters = getTransactionFilters();
+
+  // UI state
   const [isExpanded, setIsExpanded] = useState(false);
 
-
-    // Summary stats
+  // Summary stats
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [netBalance, setNetBalance] = useState(0);
-
-  // Update filters when date range changes
-  useEffect(() => {
-    const newFilters: TransactionFilters = {
-      // Always filter to EUR currency to avoid mixing currencies
-      currencies: ['EUR'],
-    };
-
-    switch (dateRangePreset) {
-      case 'thisMonth':
-        newFilters.dateFrom = startOfMonth(new Date());
-        newFilters.dateTo = endOfMonth(new Date());
-        break;
-      case 'last3Months':
-        newFilters.dateFrom = startOfMonth(subMonths(new Date(), 2));
-        newFilters.dateTo = endOfMonth(new Date());
-        break;
-      case 'year':
-        newFilters.dateFrom = new Date(new Date().getFullYear(), 0, 1);
-        newFilters.dateTo = new Date(new Date().getFullYear(), 11, 31);
-        break;
-      case 'custom':
-        if (customDateFrom) {
-          newFilters.dateFrom = new Date(customDateFrom);
-        }
-        if (customDateTo) {
-          newFilters.dateTo = new Date(customDateTo);
-        }
-        break;
-    }
-
-    setFilters(newFilters);
-  }, [dateRangePreset, customDateFrom, customDateTo]);
 
   // Calculate summary stats
   useEffect(() => {
@@ -107,13 +80,11 @@ function Overview() {
 
   // Handler for chart click - filters transactions by category
   const handleCategoryClick = (categoryName: string | null) => {
-    setSelectedCategory(categoryName);
-  };
-
-  // Combine filters with selected category for transaction list
-  const transactionListFilters: TransactionFilters = {
-    ...filters,
-    ...(selectedCategory ? { categories: [selectedCategory] } : {}),
+    if (categoryName) {
+      drillDownToCategory(categoryName);
+    } else {
+      clearCategoryFilter();
+    }
   };
 
   return (
@@ -178,7 +149,7 @@ function Overview() {
               type="date"
               id="dateFrom"
               value={customDateFrom}
-              onChange={(e) => setCustomDateFrom(e.target.value)}
+              onChange={(e) => setCustomDateRange(e.target.value, customDateTo)}
               className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -190,7 +161,7 @@ function Overview() {
               type="date"
               id="dateTo"
               value={customDateTo}
-              onChange={(e) => setCustomDateTo(e.target.value)}
+              onChange={(e) => setCustomDateRange(customDateFrom, e.target.value)}
               className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -310,7 +281,6 @@ function Overview() {
             <CategoryPieChart
               transactions={transactions}
               filters={filters}
-              onCategoryClick={handleCategoryClick}
             />
           </div>
           {selectedCategory && (
@@ -329,7 +299,6 @@ function Overview() {
             <MonthlyBarChart
               transactions={transactions}
               filters={filters}
-              onCategoryClick={handleCategoryClick}
             />
           </div>
         </div>
@@ -381,7 +350,7 @@ function Overview() {
               )}
             </h2>
           </div>
-          <TransactionList initialFilters={transactionListFilters} />
+          <TransactionList initialFilters={filters} />
         </div>
       )}
 
@@ -432,6 +401,14 @@ function Overview() {
         </div>
       )}
     </div>
+  );
+}
+
+function Overview() {
+  return (
+    <FilterProvider>
+      <OverviewContent />
+    </FilterProvider>
   );
 }
 

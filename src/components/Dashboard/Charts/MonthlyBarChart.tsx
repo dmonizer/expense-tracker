@@ -15,21 +15,30 @@ import { getMonthlySummary, getMonthlyGroupSummary } from '../../../services/ana
 import { formatCurrency } from '../../../utils';
 import { getCategoryColor } from '../../../utils/colorUtils';
 import { db } from '../../../services/db';
-import { format, parse } from 'date-fns';
+import { format, parse, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { useEffect, useState } from 'react';
+import { useFilters } from '../../../contexts/FilterContext';
+import { UNCATEGORIZED_GROUP_ID } from '../../../constants';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+// Register custom tooltip positioner to follow cursor
+(Tooltip.positioners as any).cursor = function(_elements: any, eventPosition: any) {
+  return {
+    x: eventPosition.x,
+    y: eventPosition.y
+  };
+};
 
 interface MonthlyBarChartProps {
   transactions: Transaction[];
   filters: TransactionFilters;
-  onCategoryClick?: (categoryName: string) => void;
 }
 
-function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarChartProps) {
+function MonthlyBarChart({ transactions, filters }: MonthlyBarChartProps) {
+  const { drilldownView, selectedGroupId, drillDownToGroup, drillDownToCategory, goBackOneLevel } = useFilters();
+  
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'group' | 'category'>('group');
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [chartData, setChartData] = useState<{
     labels: string[];
     datasets: {
@@ -45,9 +54,28 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
     async function loadData() {
       setIsLoading(true);
       try {
-        if (viewMode === 'group' && !selectedGroupId) {
+        if (drilldownView === 'groups') {
           // Load monthly group summary
-          const monthlyGroupSummary = await getMonthlyGroupSummary(filters);
+          let monthlyGroupSummary = await getMonthlyGroupSummary(filters);
+          
+          // Generate all months in the date range if filters specify dates
+          if (filters.dateFrom && filters.dateTo) {
+            const allMonths = eachMonthOfInterval({
+              start: startOfMonth(filters.dateFrom),
+              end: endOfMonth(filters.dateTo)
+            });
+            
+            const monthlyMap = new Map(monthlyGroupSummary.map(item => [item.month, item]));
+            
+            monthlyGroupSummary = allMonths.map(date => {
+              const monthKey = format(date, 'yyyy-MM');
+              return monthlyMap.get(monthKey) || {
+                month: monthKey,
+                groups: {},
+                total: 0
+              };
+            });
+          }
           
           if (monthlyGroupSummary.length === 0) {
             setChartData(null);
@@ -97,7 +125,26 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
           });
         } else {
           // Load category summary (either all or filtered by group)
-          const summary = await getMonthlySummary(filters);
+          let summary = await getMonthlySummary(filters);
+          
+          // Generate all months in the date range if filters specify dates
+          if (filters.dateFrom && filters.dateTo) {
+            const allMonths = eachMonthOfInterval({
+              start: startOfMonth(filters.dateFrom),
+              end: endOfMonth(filters.dateTo)
+            });
+            
+            const monthlyMap = new Map(summary.map(item => [item.month, item]));
+            
+            summary = allMonths.map(date => {
+              const monthKey = format(date, 'yyyy-MM');
+              return monthlyMap.get(monthKey) || {
+                month: monthKey,
+                categories: {},
+                total: 0
+              };
+            });
+          }
           
           if (summary.length === 0) {
             setChartData(null);
@@ -118,8 +165,18 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
               // Filter by selected group if drilling down
               if (selectedGroupId) {
                 const rule = ruleMap.get(cat);
-                if (rule && rule.groupId === selectedGroupId) {
-                  categoriesSet.add(cat);
+                
+                // Special handling for uncategorized group
+                if (selectedGroupId === UNCATEGORIZED_GROUP_ID) {
+                  // Include categories without rules or without groupId
+                  if (!rule || !rule.groupId || rule.groupId === UNCATEGORIZED_GROUP_ID) {
+                    categoriesSet.add(cat);
+                  }
+                } else {
+                  // Regular drilldown logic
+                  if (rule && rule.groupId === selectedGroupId) {
+                    categoriesSet.add(cat);
+                  }
                 }
               } else {
                 categoriesSet.add(cat);
@@ -170,7 +227,7 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
     }
 
     loadData();
-  }, [transactions, filters, viewMode, selectedGroupId]);
+  }, [transactions, filters, drilldownView, selectedGroupId]);
 
   const handleChartClick = async (_event: unknown, elements: unknown[]) => {
     if (!elements || !Array.isArray(elements) || elements.length === 0) {
@@ -182,23 +239,27 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
     
     if (!itemLabel) return;
 
-    if (viewMode === 'group' && !selectedGroupId) {
-      // Drill down into group - need to find the groupId
-      const categoryGroups = await db.categoryGroups.toArray();
-      const group = categoryGroups.find(g => g.name === itemLabel);
-      if (group) {
-        setSelectedGroupId(group.id);
-        setViewMode('category');
+    if (drilldownView === 'groups') {
+      // Drill down into group
+      // Special handling for uncategorized/unknown expenses (virtual group)
+      if (itemLabel === 'Unknown expenses') {
+        drillDownToGroup(UNCATEGORIZED_GROUP_ID);
+      } else {
+        // Look up group in database
+        const categoryGroups = await db.categoryGroups.toArray();
+        const group = categoryGroups.find(g => g.name === itemLabel);
+        if (group) {
+          drillDownToGroup(group.id);
+        }
       }
-    } else if (onCategoryClick) {
-      // Category clicked
-      onCategoryClick(itemLabel);
+    } else {
+      // Category clicked - drill down to category
+      drillDownToCategory(itemLabel);
     }
   };
 
   const handleBackClick = () => {
-    setSelectedGroupId(null);
-    setViewMode('group');
+    goBackOneLevel();
   };
 
   const options = {
@@ -238,23 +299,32 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
           const itemLabel = legendItem.text;
           if (!itemLabel) return;
 
-          if (viewMode === 'group' && !selectedGroupId) {
+          if (drilldownView === 'groups') {
             // Drill down into group
-            const categoryGroups = await db.categoryGroups.toArray();
-            const group = categoryGroups.find(g => g.name === itemLabel);
-            if (group) {
-              setSelectedGroupId(group.id);
-              setViewMode('category');
+            // Special handling for uncategorized/unknown expenses (virtual group)
+            if (itemLabel === 'Unknown expenses') {
+              drillDownToGroup(UNCATEGORIZED_GROUP_ID);
+            } else {
+              const categoryGroups = await db.categoryGroups.toArray();
+              const group = categoryGroups.find(g => g.name === itemLabel);
+              if (group) {
+                drillDownToGroup(group.id);
+              }
             }
-          } else if (onCategoryClick) {
-            // Category clicked
-            onCategoryClick(itemLabel);
+          } else {
+            // Category clicked - drill down to category
+            drillDownToCategory(itemLabel);
           }
         },
       },
       tooltip: {
+        position: 'cursor' as any,
         mode: 'index' as const,
         intersect: false,
+        itemSort: (a: TooltipItem<'bar'>, b: TooltipItem<'bar'>) => {
+          // Sort by amount in descending order
+          return (b.parsed.y || 0) - (a.parsed.y || 0);
+        },
         callbacks: {
           label: (context: TooltipItem<'bar'>) => {
             const label = context.dataset.label || '';
@@ -316,7 +386,7 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
 
   return (
     <div className="w-full h-full flex flex-col">
-      {selectedGroupId && (
+      {drilldownView !== 'groups' && (
         <div className="mb-2 flex items-center gap-2">
           <button
             onClick={handleBackClick}
@@ -325,10 +395,10 @@ function MonthlyBarChart({ transactions, filters, onCategoryClick }: MonthlyBarC
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to groups
+            Back
           </button>
           <span className="text-sm text-gray-600">
-            {viewMode === 'category' ? 'Category view' : 'Group view'}
+            {drilldownView === 'category' ? 'Category view' : drilldownView === 'group' ? 'Group view' : 'Groups overview'}
           </span>
         </div>
       )}

@@ -61,8 +61,8 @@ export function matchesGroupFilter(
  */
 export function matchesDateRange(
   transaction: Transaction,
-  dateFrom?: string,
-  dateTo?: string
+  dateFrom?: Date,
+  dateTo?: Date
 ): boolean {
   if (dateFrom) {
     const txDate = new Date(transaction.date);
@@ -271,7 +271,7 @@ export function filterTransactions(
  */
 export function sortTransactions(
   transactions: Transaction[],
-  sortField: 'date' | 'amount' | 'payee' | 'category' = 'date',
+  sortField: 'date' | 'amount' | 'payee' | 'category' | 'description' = 'date',
   sortDirection: 'asc' | 'desc' = 'desc'
 ): Transaction[] {
   return [...transactions].sort((a, b) => {
@@ -289,6 +289,9 @@ export function sortTransactions(
         break;
       case 'category':
         compareValue = (a.category || '').localeCompare(b.category || '');
+        break;
+      case 'description':
+        compareValue = a.description.localeCompare(b.description);
         break;
     }
 
