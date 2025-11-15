@@ -20,9 +20,10 @@ function CategoryManager() {
   const [isCreating, setIsCreating] = useState(false);
   const [isRecategorizing, setIsRecategorizing] = useState(false);
 
-  // Fetch all rules and groups with live updates
+  // Fetch all rules, groups, and accounts with live updates
   const allRules = useLiveQuery(() => db.categoryRules.toArray(), []);
   const allGroups = useLiveQuery(() => db.categoryGroups.orderBy('sortOrder').toArray(), []);
+  const allAccounts = useLiveQuery(() => db.accounts.toArray(), []);
 
   // Apply filters and sorting
   const filteredRules = allRules
@@ -397,6 +398,9 @@ function CategoryManager() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Group
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Linked Account
+                </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('priority')}
@@ -464,6 +468,24 @@ function CategoryManager() {
                       })()
                     ) : (
                       <span className="text-xs text-gray-400">None</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {rule.accountId && allAccounts ? (
+                      (() => {
+                        const account = allAccounts.find(a => a.id === rule.accountId);
+                        if (account) {
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-700">{account.name}</span>
+                              <span className="text-xs text-gray-400">({account.currency})</span>
+                            </div>
+                          );
+                        }
+                        return <span className="text-xs text-gray-400">Not found</span>;
+                      })()
+                    ) : (
+                      <span className="text-xs text-gray-400">Auto-create on import</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{rule.priority}</td>

@@ -2,14 +2,34 @@ import Papa from 'papaparse';
 import { v4 as uuidv4 } from 'uuid';
 import { parse } from 'date-fns';
 import { db } from './db';
-import type { Transaction, SwedBankCSVRow, ImportRecord } from '../types';
+import type { 
+  Transaction, 
+  SwedBankCSVRow, 
+  ImportRecord, 
+  CategoryRule,
+  ImportFormatDefinition,
+  FieldMapping,
+  FieldTransform,
+} from '../types';
+import { createJournalEntryFromTransaction } from './journalEntryManager';
+import { initializeDefaultAccounts } from './accountManager';
+
+/**
+ * Detailed error information for CSV parsing
+ */
+export interface ParseError {
+  rowNumber: number;
+  message: string;
+  rawData: string; // The actual row data
+}
 
 /**
  * Result of CSV parsing operation
  */
 export interface ParseResult {
   transactions: Transaction[];
-  errors: string[];
+  errors: string[]; // Simple error messages (for backward compatibility)
+  errorDetails?: ParseError[]; // Detailed errors with row data
   totalRows: number;
 }
 
@@ -133,6 +153,266 @@ export async function parseSwedBankCSV(file: File): Promise<ParseResult> {
         resolve({
           transactions: [],
           errors: [`CSV parsing error: ${error.message}`],
+          totalRows: 0,
+        });
+      },
+    });
+  });
+}
+
+/**
+ * Apply field transformation to a value
+ */
+function applyTransform(value: string, transform?: FieldTransform): string | number | Date {
+  if (!transform) {
+    return value;
+  }
+
+  switch (transform.type) {
+    case 'date': {
+      if (!transform.dateFormat) {
+        throw new Error('Date transform requires dateFormat');
+      }
+      try {
+        const parsed = parse(value, transform.dateFormat, new Date());
+        if (isNaN(parsed.getTime())) {
+          throw new Error(`Invalid date: ${value}`);
+        }
+        return parsed;
+      } catch (error) {
+        throw new Error(`Date parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    case 'number': {
+      let cleaned = value;
+      
+      // Remove thousands separator if present
+      if (transform.thousandsSeparator) {
+        cleaned = cleaned.replace(new RegExp(`\\${transform.thousandsSeparator}`, 'g'), '');
+      }
+      
+      // Replace decimal separator with dot
+      if (transform.decimalSeparator === ',') {
+        cleaned = cleaned.replace(',', '.');
+      }
+      
+      const parsed = parseFloat(cleaned);
+      if (isNaN(parsed)) {
+        throw new Error(`Invalid number: ${value}`);
+      }
+      return parsed;
+    }
+
+    case 'debitCredit': {
+      if (value === transform.debitValue) {
+        return 'debit';
+      } else if (value === transform.creditValue) {
+        return 'credit';
+      } else {
+        throw new Error(`Unknown debit/credit value: ${value}`);
+      }
+    }
+
+    case 'currency': {
+      return value.toUpperCase().trim();
+    }
+
+    case 'custom': {
+      // Execute custom JavaScript expression
+      // Security note: This is dangerous in production, consider removing or sandboxing
+      if (transform.customExpression) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-implied-eval
+          const fn = new Function('value', `return ${transform.customExpression}`);
+          return fn(value);
+        } catch (error) {
+          throw new Error(`Custom transform error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+      return value;
+    }
+
+    default:
+      return value;
+  }
+}
+
+/**
+ * Parse CSV file using custom format definition
+ */
+export async function parseWithCustomFormat(
+  file: File,
+  format: ImportFormatDefinition
+): Promise<ParseResult> {
+  if (format.fileType !== 'csv' || !format.csvSettings) {
+    throw new Error('Only CSV format is supported');
+  }
+
+  return new Promise((resolve) => {
+    const errors: string[] = [];
+    const errorDetails: ParseError[] = [];
+    const transactions: Transaction[] = [];
+    let totalRows = 0;
+
+    Papa.parse(file, {
+      header: format.csvSettings?.hasHeader ?? true,
+      delimiter: format.csvSettings?.delimiter ?? ',',
+      skipEmptyLines: format.csvSettings?.skipEmptyLines ?? true,
+      transformHeader: (header: string) => header.trim(),
+      transform: (value: string) => value.trim(),
+      complete: (results) => {
+        let data = results.data;
+        totalRows = data.length;
+
+        // Skip rows if configured
+        if (format.csvSettings?.skipRows && format.csvSettings.skipRows > 0) {
+          data = data.slice(format.csvSettings.skipRows);
+        }
+
+        // Process each row
+        data.forEach((row, index) => {
+          try {
+            const transaction: Partial<Transaction> = {
+              id: uuidv4(),
+              imported: new Date(),
+              manuallyEdited: false,
+            };
+
+            // Separate column mappings from static mappings
+            // Backwards compatibility: treat undefined sourceType as 'column'
+            const columnMappings = format.fieldMappings.filter(m => !m.sourceType || m.sourceType === 'column');
+            const staticMappings = format.fieldMappings.filter(m => m.sourceType === 'static');
+
+            // Apply column field mappings
+            columnMappings.forEach((mapping: FieldMapping) => {
+              if (mapping.targetField === 'ignore') {
+                return;
+              }
+
+              // Skip if sourceColumn is not defined (shouldn't happen for column mappings)
+              if (mapping.sourceColumn === undefined) {
+                return;
+              }
+
+              // Get value from source column
+              let value: string;
+              if (typeof mapping.sourceColumn === 'string') {
+                // Header-based access
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                value = (row as any)[mapping.sourceColumn];
+              } else {
+                // Index-based access
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                value = (row as any)[mapping.sourceColumn];
+              }
+
+              // Use default value if missing
+              if (value === undefined || value === null || value === '') {
+                if (mapping.defaultValue !== undefined) {
+                  value = mapping.defaultValue;
+                } else if (mapping.required) {
+                  throw new Error(`Required field "${mapping.targetField}" is missing`);
+                } else {
+                  return;
+                }
+              }
+
+              // Apply transformation
+              try {
+                const transformed = applyTransform(value, mapping.transform);
+                
+                // Handle fields that can be summed (e.g., multiple fee columns)
+                if (mapping.targetField === 'fee') {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const existing = (transaction as any)[mapping.targetField] || 0;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (transaction as any)[mapping.targetField] = existing + (typeof transformed === 'number' ? transformed : 0);
+                } else {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (transaction as any)[mapping.targetField] = transformed;
+                }
+              } catch (error) {
+                throw new Error(
+                  `Field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
+                );
+              }
+            });
+
+            // Apply static field mappings
+            staticMappings.forEach((mapping: FieldMapping) => {
+              if (mapping.targetField === 'ignore' || !mapping.staticValue) {
+                return;
+              }
+
+              try {
+                const transformed = applyTransform(mapping.staticValue, mapping.transform);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (transaction as any)[mapping.targetField] = transformed;
+              } catch (error) {
+                throw new Error(
+                  `Static field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
+                );
+              }
+            });
+
+            // Detect if this is an investment transaction
+            const isInvestment = transaction.quantity !== undefined || 
+                                transaction.price !== undefined || 
+                                transaction.symbol !== undefined;
+
+            // Validate required transaction fields
+            if (!transaction.date) throw new Error('Missing date');
+            if (transaction.amount === undefined) throw new Error('Missing amount');
+            
+            // For investment transactions, provide smart defaults
+            if (isInvestment) {
+              if (!transaction.currency) transaction.currency = 'EUR'; // Default to EUR
+              if (!transaction.type) transaction.type = 'debit'; // Investment purchases are debits
+              if (!transaction.payee) transaction.payee = transaction.securityName || transaction.symbol || 'Investment';
+              if (!transaction.description) {
+                const desc = [];
+                if (transaction.quantity) desc.push(`${transaction.quantity} units`);
+                if (transaction.symbol) desc.push(transaction.symbol);
+                transaction.description = desc.length > 0 ? desc.join(' - ') : 'Investment transaction';
+              }
+            } else {
+              // Regular transaction - all fields required
+              if (!transaction.currency) throw new Error('Missing currency');
+              if (!transaction.type) throw new Error('Missing type');
+              if (!transaction.payee) throw new Error('Missing payee');
+              if (!transaction.description) throw new Error('Missing description');
+            }
+
+            // Set defaults for optional fields
+            if (!transaction.accountNumber) transaction.accountNumber = 'Unknown';
+            if (!transaction.transactionType) transaction.transactionType = isInvestment ? 'Investment' : 'Unknown';
+            if (!transaction.archiveId) transaction.archiveId = `${transaction.date.getTime()}-${transaction.amount}`;
+
+            transactions.push(transaction as Transaction);
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            errors.push(`Row ${index + 1}: ${errorMessage}`);
+            errorDetails.push({
+              rowNumber: index + 1,
+              message: errorMessage,
+              rawData: row as string,
+            });
+          }
+        });
+
+        resolve({
+          transactions,
+          errors,
+          errorDetails,
+          totalRows,
+        });
+      },
+      error: (error) => {
+        resolve({
+          transactions: [],
+          errors: [`CSV parsing error: ${error.message}`],
+          errorDetails: [],
           totalRows: 0,
         });
       },
@@ -275,6 +555,9 @@ export async function importTransactions(
   duplicateCount: number
 ): Promise<ImportResult> {
   try {
+    // Initialize default accounts if they don't exist
+    await initializeDefaultAccounts();
+
     // Create import record
     const importRecord: ImportRecord = {
       id: uuidv4(),
@@ -285,16 +568,42 @@ export async function importTransactions(
       duplicateCount: duplicateCount,
     };
 
-    // Perform batch operations in a transaction for consistency
-    await db.transaction('rw', db.transactions, db.importHistory, async () => {
-      // Bulk insert transactions
-      if (transactions.length > 0) {
-        await db.transactions.bulkAdd(transactions);
-      }
-
-      // Add import history record
-      await db.importHistory.add(importRecord);
+    // Get all category rules once for efficient lookup
+    const categoryRules = await db.categoryRules.toArray();
+    const categoryRuleMap = new Map<string, CategoryRule>();
+    categoryRules.forEach(rule => {
+      categoryRuleMap.set(rule.name, rule);
     });
+
+    // Perform batch operations in a transaction for consistency
+    // Phase 1: DUAL-WRITE - Create both old Transaction and new JournalEntry
+    await db.transaction(
+      'rw', 
+      db.transactions, 
+      db.importHistory,
+      async () => {
+        // Bulk insert transactions (OLD FORMAT - backward compatibility)
+        if (transactions.length > 0) {
+          await db.transactions.bulkAdd(transactions);
+        }
+
+        // Add import history record
+        await db.importHistory.add(importRecord);
+      }
+    );
+
+    // Create journal entries (NEW FORMAT - double-entry accounting)
+    // This is done outside the main transaction because createJournalEntryFromTransaction
+    // handles its own database operations and transactions
+    for (const transaction of transactions) {
+      // Find the category rule if transaction is categorized
+      const categoryRule = transaction.category 
+        ? categoryRuleMap.get(transaction.category)
+        : undefined;
+
+      // Create journal entry with proper double-entry splits
+      await createJournalEntryFromTransaction(transaction, categoryRule);
+    }
 
     return {
       success: true,

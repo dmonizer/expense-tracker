@@ -2,6 +2,8 @@ import type { CategoryRule, CategoryGroup } from '../types';
 import { db } from './db';
 import { DEFAULT_GROUP_COLORS } from '../utils/colorUtils';
 import { UNCATEGORIZED_GROUP_ID } from '../types';
+import { initializeDefaultAccounts } from './accountManager';
+import { initializeDefaultExchangeRates } from './exchangeRateManager';
 
 /**
  * Predefined group IDs for default category groups
@@ -834,11 +836,17 @@ export async function initializeDefaults(): Promise<{
     // First clean up any duplicates
     await cleanupDuplicates();
     
-    // Then initialize groups
+    // Initialize groups
     const groupsResult = await initializeDefaultGroups();
     
-    // Then initialize rules
+    // Initialize rules
     const rulesResult = await initializeDefaultRules();
+
+    // Initialize default accounts (Phase 1: Double-entry accounting)
+    await initializeDefaultAccounts();
+
+    // Initialize default exchange rates (Phase 2: Multi-currency)
+    await initializeDefaultExchangeRates();
 
     const success = groupsResult.success && rulesResult.success;
     const message = `${groupsResult.message} ${rulesResult.message}`;

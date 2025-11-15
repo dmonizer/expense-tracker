@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import Overview from './components/Dashboard/Overview';
 import CategoryManager from './components/Categories/CategoryManager';
 import CategoryGroupManager from './components/Categories/CategoryGroupManager';
 import FileUpload from './components/ImportWizard/FileUpload';
+import AccountViewer from './components/Accounts/AccountViewer';
+import ExchangeRateManager from './components/Settings/ExchangeRateManager';
+import AllApiSettings from './components/Settings/AllApiSettings';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 import { initializeDefaults } from './services/seedData';
+import { initializeBuiltInFormats } from './services/formatManager';
+import { db } from './services/db';
+import { refreshAllPrices } from './services/priceFetcher';
+import { refreshCommonExchangeRates } from './services/exchangeRateManager';
 
-type TabType = 'dashboard' | 'categories' | 'groups' | 'import';
+type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'rates' | 'settings' | 'import';
 
 interface Tab {
   id: TabType;
@@ -19,6 +27,9 @@ const tabs: Tab[] = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
   { id: 'categories', label: 'Categories', icon: '🏷️' },
   { id: 'groups', label: 'Groups', icon: '🎨' },
+  { id: 'accounts', label: 'Accounts', icon: '🏦' },
+  { id: 'rates', label: 'Exchange Rates', icon: '💱' },
+  { id: 'settings', label: 'Settings', icon: '⚙️' },
   { id: 'import', label: 'Import', icon: '📁' },
 ];
 
@@ -27,15 +38,22 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
 
+  // Watch settings for changes (live query)
+  const settings = useLiveQuery(() => db.settings.get('default'));
+
   // Initialize default groups and rules on first load
   useEffect(() => {
     const initialize = async () => {
       try {
+        // Initialize default categories/groups
         const result = await initializeDefaults();
         if (!result.success) {
           console.warn('Failed to initialize defaults:', result.message);
           setInitError(result.message);
         }
+        
+        // Initialize built-in import formats
+        await initializeBuiltInFormats();
       } catch (error) {
         console.error('Error during initialization:', error);
         setInitError(error instanceof Error ? error.message : 'Unknown error');
@@ -47,6 +65,73 @@ function App() {
     initialize();
   }, []);
 
+  // Automatic price refresh scheduler (runs in background, reacts to settings changes)
+  useEffect(() => {
+    if (!isInitialized || !settings) return;
+
+    // Check if auto-refresh is enabled and at least one provider is enabled
+    const hasEnabledProviders = settings.priceApiProviders?.some(p => p.enabled) ||
+      (settings.priceApiProvider && settings.priceApiProvider !== 'none' && settings.priceApiKey); // Legacy support
+
+    if (settings.priceApiAutoRefresh && hasEnabledProviders) {
+      const intervalMs = (settings.priceApiRefreshInterval || 60) * 60 * 1000;
+
+      console.log(`[Auto-Refresh] Setting up automatic price refresh every ${settings.priceApiRefreshInterval} minutes`);
+
+      // Set up interval for automatic refresh
+      const intervalId = setInterval(async () => {
+        try {
+          console.log('[Auto-Refresh] Running automatic price refresh...');
+          const results = await refreshAllPrices();
+          console.log(`[Auto-Refresh] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
+        } catch (error) {
+          console.error('[Auto-Refresh] Failed:', error);
+        }
+      }, intervalMs);
+
+      // Clean up interval on unmount or when settings change
+      return () => {
+        console.log('[Auto-Refresh] Cleaning up automatic price refresh interval');
+        clearInterval(intervalId);
+      };
+    } else {
+      console.log('[Auto-Refresh] Auto-refresh is disabled or not configured');
+    }
+  }, [isInitialized, settings?.priceApiAutoRefresh, settings?.priceApiProviders, settings?.priceApiRefreshInterval]);
+
+  // Automatic exchange rate refresh scheduler (runs in background, reacts to settings changes)
+  useEffect(() => {
+    if (!isInitialized || !settings) return;
+
+    // Check if auto-refresh is enabled and at least one provider is enabled
+    const hasEnabledProviders = settings.exchangeRateApiProviders?.some(p => p.enabled);
+
+    if (settings.exchangeRateAutoRefresh && hasEnabledProviders) {
+      const intervalMs = (settings.exchangeRateRefreshInterval || 1440) * 60 * 1000;
+
+      console.log(`[Auto-Refresh-Rates] Setting up automatic exchange rate refresh every ${settings.exchangeRateRefreshInterval} minutes`);
+
+      // Set up interval for automatic refresh
+      const intervalId = setInterval(async () => {
+        try {
+          console.log('[Auto-Refresh-Rates] Running automatic exchange rate refresh...');
+          const results = await refreshCommonExchangeRates();
+          console.log(`[Auto-Refresh-Rates] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
+        } catch (error) {
+          console.error('[Auto-Refresh-Rates] Failed:', error);
+        }
+      }, intervalMs);
+
+      // Clean up interval on unmount or when settings change
+      return () => {
+        console.log('[Auto-Refresh-Rates] Cleaning up automatic exchange rate refresh interval');
+        clearInterval(intervalId);
+      };
+    } else {
+      console.log('[Auto-Refresh-Rates] Auto-refresh is disabled or not configured');
+    }
+  }, [isInitialized, settings?.exchangeRateAutoRefresh, settings?.exchangeRateApiProviders, settings?.exchangeRateRefreshInterval]);
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -55,6 +140,12 @@ function App() {
         return <CategoryManager />;
       case 'groups':
         return <CategoryGroupManager />;
+      case 'accounts':
+        return <AccountViewer />;
+      case 'rates':
+        return <ExchangeRateManager />;
+      case 'settings':
+        return <AllApiSettings />;
       case 'import':
         return <FileUpload />;
       default:

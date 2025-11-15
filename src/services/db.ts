@@ -6,6 +6,13 @@ import type {
   ImportRecord,
   UserSettings,
   Pattern,
+  Account,
+  JournalEntry,
+  Split,
+  ExchangeRate,
+  AccountBalance,
+  Holding,
+  ImportFormatDefinition,
 } from '../types';
 
 /**
@@ -19,6 +26,19 @@ class ExpenseTrackerDatabase extends Dexie {
   categoryGroups!: Table<CategoryGroup>;
   importHistory!: Table<ImportRecord>;
   settings!: Table<UserSettings>;
+  
+  // Double-entry accounting tables (Phase 1)
+  accounts!: Table<Account>;
+  journalEntries!: Table<JournalEntry>;
+  splits!: Table<Split>;
+  exchangeRates!: Table<ExchangeRate>;
+  accountBalances!: Table<AccountBalance>;
+
+  // Investment tracking (Phase 5)
+  holdings!: Table<Holding>;
+
+  // Import format definitions
+  importFormats!: Table<ImportFormatDefinition>;
 
   constructor() {
     super('ExpenseTrackerDB');
@@ -101,6 +121,126 @@ class ExpenseTrackerDatabase extends Dexie {
           rule.colorVariant = 0;
         }
       });
+    });
+
+    // Version 6: Add double-entry accounting tables (Phase 1: Backend setup)
+    this.version(6).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+      // New double-entry accounting tables
+      accounts: 'id, type, currency, isActive, categoryRuleId',
+      journalEntries: 'id, date, status, importId, archiveId',
+      splits: 'id, journalEntryId, accountId, category',
+      exchangeRates: 'id, [fromCurrency+toCurrency], date',
+      accountBalances: '[accountId+currency+date], accountId',
+    }).upgrade(async (tx) => {
+      // Migration: Add accountId field to existing category rules (will be populated later)
+      await tx.table('categoryRules').toCollection().modify(rule => {
+        if (!rule.accountId) {
+          rule.accountId = undefined;
+        }
+      });
+    });
+
+    // Version 7: Fix indexes on accounts table (add name and accountNumber)
+    this.version(7).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+      // Double-entry accounting tables with corrected indexes
+      accounts: 'id, name, type, currency, isActive, categoryRuleId, accountNumber',
+      journalEntries: 'id, date, status, importId, archiveId',
+      splits: 'id, journalEntryId, accountId, category',
+      exchangeRates: 'id, [fromCurrency+toCurrency], date',
+      accountBalances: '[accountId+currency+date], accountId',
+    });
+
+    // Version 8: Add holdings table for investment tracking
+    this.version(8).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+      accounts: 'id, name, type, currency, isActive, categoryRuleId, accountNumber',
+      journalEntries: 'id, date, status, importId, archiveId',
+      splits: 'id, journalEntryId, accountId, category',
+      exchangeRates: 'id, [fromCurrency+toCurrency], date',
+      accountBalances: '[accountId+currency+date], accountId',
+      // Investment tracking
+      holdings: 'id, accountId, symbol, type',
+    });
+
+    // Version 9: Multiple API providers support + holding provider tracking
+    this.version(9).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+      accounts: 'id, name, type, currency, isActive, categoryRuleId, accountNumber',
+      journalEntries: 'id, date, status, importId, archiveId',
+      splits: 'id, journalEntryId, accountId, category',
+      exchangeRates: 'id, [fromCurrency+toCurrency], date',
+      accountBalances: '[accountId+currency+date], accountId',
+      // Investment tracking - add priceApiProvider index
+      holdings: 'id, accountId, symbol, type, priceApiProvider',
+    }).upgrade(async (tx) => {
+      // Migrate legacy single provider to new multi-provider format
+      const settings = await tx.table('settings').get('default');
+      if (settings && settings.priceApiProvider && settings.priceApiProvider !== 'none') {
+        // Convert legacy single provider to array format
+        const providers = [{
+          type: settings.priceApiProvider,
+          apiKey: settings.priceApiKey || '',
+          enabled: true,
+          priority: 1,
+        }];
+
+        await tx.table('settings').update('default', {
+          priceApiProviders: providers,
+        });
+
+        console.log('[Migration v9] Converted legacy API provider to multi-provider format');
+      }
+    });
+
+    // Version 10: Multiple exchange rate API providers support
+    this.version(10).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+      accounts: 'id, name, type, currency, isActive, categoryRuleId, accountNumber',
+      journalEntries: 'id, date, status, importId, archiveId',
+      splits: 'id, journalEntryId, accountId, category',
+      // Add apiProvider index to exchange rates
+      exchangeRates: 'id, [fromCurrency+toCurrency], date, apiProvider',
+      accountBalances: '[accountId+currency+date], accountId',
+      holdings: 'id, accountId, symbol, type, priceApiProvider',
+    });
+
+    // Version 11: Add import format definitions table
+    this.version(11).stores({
+      transactions: 'id, date, category, archiveId',
+      categoryRules: 'id, priority, type, name, groupId',
+      categoryGroups: 'id, priority, sortOrder',
+      importHistory: 'id, importDate',
+      settings: 'id',
+      accounts: 'id, name, type, currency, isActive, categoryRuleId, accountNumber',
+      journalEntries: 'id, date, status, importId, archiveId',
+      splits: 'id, journalEntryId, accountId, category',
+      exchangeRates: 'id, [fromCurrency+toCurrency], date, apiProvider',
+      accountBalances: '[accountId+currency+date], accountId',
+      holdings: 'id, accountId, symbol, type, priceApiProvider',
+      // Import format definitions
+      importFormats: 'id, name, isDefault, isBuiltIn, createdAt',
     });
   }
 }

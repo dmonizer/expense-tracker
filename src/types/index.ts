@@ -15,6 +15,13 @@ export interface Transaction {
   archiveId: string; // "Arhiveerimistunnus" - for deduplication
   imported: Date; // When imported
   ignored?: boolean; // Exclude from calculations
+  
+  // Investment transaction fields (optional)
+  symbol?: string; // Security symbol/ISIN (e.g., "SE0014261756")
+  quantity?: number; // Number of shares/units purchased/sold
+  price?: number; // Price per share/unit
+  fee?: number; // Transaction fee/commission
+  securityName?: string; // Full name of security
 }
 
 // Category Rule Types
@@ -60,6 +67,7 @@ export interface CategoryRule {
   groupId?: string; // Link to CategoryGroup - determines color family
   colorVariant?: number; // 0-N: which variation within the group's color family
   isDefault: boolean; // Track if it was a default rule (for UI hints)
+  accountId?: string; // Link to Account (for double-entry accounting)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -74,12 +82,127 @@ export interface ImportRecord {
   duplicateCount: number;
 }
 
+// Import Format Types
+export type TransactionField = 
+  | 'accountNumber'
+  | 'date'
+  | 'payee'
+  | 'description'
+  | 'amount'
+  | 'currency'
+  | 'type'
+  | 'transactionType'
+  | 'archiveId'
+  | 'symbol'
+  | 'quantity'
+  | 'price'
+  | 'fee'
+  | 'securityName'
+  | 'ignore'; // For columns we want to skip
+
+export interface FieldTransform {
+  type: 'date' | 'number' | 'currency' | 'debitCredit' | 'custom';
+  
+  // Date transform
+  dateFormat?: string; // 'dd.MM.yyyy', 'MM/dd/yyyy', etc.
+  
+  // Number transform
+  decimalSeparator?: '.' | ',';
+  thousandsSeparator?: '.' | ',' | ' ' | '';
+  
+  // Debit/Credit transform
+  debitValue?: string; // What represents debit (e.g., 'D', '-', 'out')
+  creditValue?: string; // What represents credit (e.g., 'K', '+', 'in')
+  
+  // Custom transform (JavaScript expression)
+  customExpression?: string; // e.g., "value.toUpperCase()"
+}
+
+export interface FieldMapping {
+  targetField: TransactionField; // What field in our Transaction type
+  sourceType: 'column' | 'static'; // Whether to map from column or use static value
+  sourceColumn?: string | number; // Column name or index (for 'column' type)
+  staticValue?: string; // Static value to use (for 'static' type)
+  transform?: FieldTransform; // Optional transformation
+  required: boolean;
+  defaultValue?: string; // Use if column is missing
+}
+
+export interface CSVSettings {
+  delimiter: string; // ';', ',', '	'
+  hasHeader: boolean;
+  encoding: string; // 'utf-8', 'windows-1252', etc.
+  skipEmptyLines: boolean;
+  skipRows?: number; // Number of rows to skip at start
+}
+
+export interface DetectionPattern {
+  headerPattern?: string[]; // Match header columns
+  sampleRowPattern?: string; // Regex for first data row
+  fileNamePattern?: string; // Regex for filename
+}
+
+export interface ImportFormatDefinition {
+  id: string;
+  name: string;
+  description?: string;
+  fileType: 'csv' | 'xml'; // Start with CSV, XML later
+  
+  // CSV-specific settings
+  csvSettings?: CSVSettings;
+  
+  // Field mappings
+  fieldMappings: FieldMapping[];
+  
+  // Detection pattern (for auto-detection)
+  detectionPattern?: DetectionPattern;
+  
+  // Metadata
+  isBuiltIn: boolean; // true for Swedbank (non-editable)
+  isDefault: boolean; // Use as default if no format detected
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Price API Provider Types
+export type PriceApiProviderType = 'twelvedata' | 'alphavantage' | 'yahoo';
+
+export interface PriceApiProvider {
+  type: PriceApiProviderType;
+  apiKey: string;
+  enabled: boolean;
+  priority: number; // Lower number = higher priority (try first)
+}
+
+// Exchange Rate API Provider Types
+export type ExchangeRateApiProviderType = 'exchangerate-api' | 'fixer' | 'ecb' | 'openexchangerates';
+
+export interface ExchangeRateApiProvider {
+  type: ExchangeRateApiProviderType;
+  apiKey?: string; // Optional - some APIs don't need keys (like ECB)
+  enabled: boolean;
+  priority: number; // Lower number = higher priority (try first)
+}
+
 // User Settings Types
 export interface UserSettings {
   id: string;
   defaultCurrency: string;
   dateFormat: string;
   theme: 'light' | 'dark' | 'auto';
+  // Price API Settings - supports multiple providers
+  priceApiProviders?: PriceApiProvider[]; // Multiple providers with priorities
+  priceApiAutoRefresh?: boolean;
+  priceApiRefreshInterval?: number; // in minutes
+  priceApiLastRefresh?: Date;
+  // Exchange Rate API Settings - supports multiple providers
+  exchangeRateApiProviders?: ExchangeRateApiProvider[]; // Multiple providers with priorities
+  exchangeRateAutoRefresh?: boolean;
+  exchangeRateRefreshInterval?: number; // in minutes
+  exchangeRateLastRefresh?: Date;
+  // Legacy fields (deprecated, keep for migration)
+  priceApiProvider?: 'twelvedata' | 'alphavantage' | 'yahoo' | 'none';
+  priceApiKey?: string;
 }
 
 // CSV Row Types (for parsing)
@@ -141,4 +264,146 @@ export interface MonthlySummary {
 export interface BalancePoint {
   date: Date;
   balance: number;
+}
+
+// ============================================
+// Double-Entry Accounting Types (Phase 1)
+// ============================================
+
+// Account Types
+export type AccountType = 'asset' | 'liability' | 'equity' | 'income' | 'expense';
+export type AccountSubtype = 'checking' | 'savings' | 'investment' | 'credit_card' | 'cash' | 'loan' | 'other';
+
+export interface Account {
+  id: string;
+  name: string; // "Swedbank Main", "Cash Wallet", "Groceries"
+  type: AccountType;
+  subtype?: AccountSubtype;
+  currency: string; // Primary currency
+  institution?: string; // "Swedbank", "LHV"
+  accountNumber?: string; // Original bank account number
+  
+  // Multi-currency support
+  supportedCurrencies: string[]; // ["EUR", "USD", "GBP"]
+  
+  // Metadata
+  isActive: boolean;
+  openingBalance: number;
+  openingBalanceDate: Date;
+  description?: string;
+  color?: string; // For UI
+  
+  // System accounts (cannot be deleted)
+  isSystem: boolean; // true for expense category accounts
+  
+  // Link to category system (for expense/income accounts)
+  categoryRuleId?: string; // Links to existing CategoryRule
+  groupId?: string; // Links to CategoryGroup
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Journal Entry and Split Types
+export type JournalEntryStatus = 'pending' | 'cleared' | 'reconciled';
+
+export interface Split {
+  id: string;
+  journalEntryId: string;
+  
+  accountId: string; // Which account is affected
+  
+  // Amount in account's currency (positive = debit, negative = credit)
+  amount: number;
+  currency: string;
+  
+  // Multi-currency: original amount if different from account currency
+  foreignAmount?: number;
+  foreignCurrency?: string;
+  exchangeRate?: number;
+  
+  // Categorization (for expense/income accounts)
+  category?: string; // From CategoryRule
+  categoryConfidence?: number;
+  
+  // Reconciliation
+  reconciled: boolean;
+  reconciledDate?: Date;
+  
+  memo?: string; // Split-specific note
+}
+
+export interface JournalEntry {
+  id: string;
+  date: Date;
+  description: string;
+  
+  // Import tracking
+  importId?: string; // Link to ImportRecord
+  archiveId?: string; // Original archiveId for deduplication
+  
+  // Multi-split support
+  splits: Split[];
+  
+  // Status
+  status: JournalEntryStatus;
+  
+  // Original transaction data (for reference)
+  originalPayee?: string;
+  originalDescription?: string;
+  originalTransactionType?: string;
+  
+  // Metadata
+  notes?: string;
+  tags?: string[];
+  manuallyEdited: boolean;
+  
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Exchange Rate Types
+export type ExchangeRateSource = 'manual' | 'api' | 'ecb';
+
+export interface ExchangeRate {
+  id: string;
+  fromCurrency: string;
+  toCurrency: string;
+  rate: number;
+  date: Date;
+  source: ExchangeRateSource;
+  apiProvider?: ExchangeRateApiProviderType; // Which API provider fetched this rate (if source is 'api')
+  createdAt: Date;
+}
+
+// Account Balance Types (for caching/performance)
+export interface AccountBalance {
+  accountId: string;
+  currency: string;
+  balance: number;
+  date: Date; // As of this date
+  lastUpdated: Date;
+}
+
+/**
+ * Holding represents a security/instrument held in an investment account
+ * (stocks, funds, crypto, etc.)
+ */
+export interface Holding {
+  id: string;
+  accountId: string; // Link to the account that holds this
+  symbol: string; // Ticker symbol or identifier (e.g., "SWED-A", "AAPL", "BTC")
+  name?: string; // Full name (e.g., "Swedbank AB Class A")
+  type: 'stock' | 'fund' | 'etf' | 'bond' | 'crypto' | 'other';
+  quantity: number; // Number of shares/units
+  purchasePrice: number; // Average purchase price per unit
+  purchaseCurrency: string; // Currency of purchase price
+  purchaseDate?: Date; // When acquired
+  currentPrice?: number; // Latest fetched price
+  currentPriceCurrency?: string; // Currency of current price
+  currentPriceDate?: Date; // When the price was last updated
+  priceApiProvider?: PriceApiProviderType; // Which provider successfully fetched the price
+  notes?: string; // User notes
+  createdAt: Date;
+  updatedAt: Date;
 }

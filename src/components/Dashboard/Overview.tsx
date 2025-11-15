@@ -7,6 +7,7 @@ import MonthlyBarChart from './Charts/MonthlyBarChart';
 import BalanceLine from './Charts/BalanceLine';
 import TransactionList from '../Transactions/TransactionList';
 import { FilterProvider, useFilters } from '../../contexts/FilterContext';
+import NetWorthSummary from './NetWorthSummary';
 
 function OverviewContent() {
   // Fetch all transactions using Dexie live query
@@ -168,7 +169,10 @@ function OverviewContent() {
         </div>
       )}
 
-      {/* Summary Cards */}
+      {/* Net Worth Summary */}
+      <NetWorthSummary />
+
+      {/* Transaction Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Income Card */}
         <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">

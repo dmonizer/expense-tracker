@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import type { Transaction } from '../../types';
-import { parseSwedBankCSV, detectDuplicates, importTransactions } from '../../services/csvParser';
+import type { Transaction, ImportFormatDefinition } from '../../types';
+import { parseSwedBankCSV, parseWithCustomFormat, detectDuplicates, importTransactions } from '../../services/csvParser';
 import { categorizeBatch } from '../../services/categorizer';
+import { detectFormat } from '../../services/formatDetector';
 import PreviewTable from './PreviewTable';
 import ImportSummary from './ImportSummary';
+import FormatSelector from './FormatSelector';
 import { FILE_UPLOAD } from '../../constants';
 
 function FileUpload() {
-  const [step, setStep] = useState<'upload' | 'preview' | 'summary'>('upload');
+  const [step, setStep] = useState<'upload' | 'formatSelect' | 'preview' | 'summary'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,13 +69,52 @@ function FileUpload() {
     processFile(selectedFile);
   };
 
+  const handleFormatSelected = (format: ImportFormatDefinition) => {
+    if (file) {
+      processFileWithFormat(file, format);
+    }
+  };
+
   const processFile = async (fileToProcess: File) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Step 1: Parse CSV
-      const parseResult = await parseSwedBankCSV(fileToProcess);
+      // Try to auto-detect format
+      const detectedFormat = await detectFormat(fileToProcess);
+      
+      if (detectedFormat) {
+        console.log('[FileUpload] Using detected format:', detectedFormat.name);
+        await processFileWithFormat(fileToProcess, detectedFormat);
+      } else {
+        // No format detected, show selector
+        console.log('[FileUpload] No format detected, showing selector');
+        setLoading(false);
+        setStep('formatSelect');
+      }
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to detect format';
+      setError(errorMessage);
+      setLoading(false);
+    }
+  };
+
+  const processFileWithFormat = async (fileToProcess: File, format: ImportFormatDefinition) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Step 1: Parse CSV with format
+      let parseResult;
+      
+      if (format.id === 'swedbank-estonia-builtin') {
+        // Use legacy parser for Swedbank
+        parseResult = await parseSwedBankCSV(fileToProcess);
+      } else {
+        // Use generic parser with format definition
+        parseResult = await parseWithCustomFormat(fileToProcess, format);
+      }
 
       if (parseResult.errors.length > 0) {
         setParseErrors(parseResult.errors);
@@ -238,7 +279,7 @@ function FileUpload() {
               </div>
 
               <p className="text-sm text-gray-500">
-                CSV files up to 10MB (Swedbank Estonia format)
+                CSV files up to 10MB
               </p>
             </div>
           </div>
@@ -288,16 +329,26 @@ function FileUpload() {
           {/* Info Box */}
           <div className="mt-8 bg-gray-100 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-gray-900 mb-2">
-              Supported Format
+              Supported Formats
             </h3>
             <p className="text-sm text-gray-600">
-              This importer supports Swedbank Estonia bank statement CSV files.
-              The file should contain columns for date, payee, description,
-              amount, and other transaction details.
+              This importer supports various CSV formats. The system will automatically
+              detect known formats or you can create a custom format for your bank.
             </p>
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Render format selection step
+  if (step === 'formatSelect' && file) {
+    return (
+      <FormatSelector
+        file={file}
+        onFormatSelected={handleFormatSelected}
+        onCancel={handleCancel}
+      />
     );
   }
 
