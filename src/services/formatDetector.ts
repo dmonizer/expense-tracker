@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import type { ImportFormatDefinition } from '../types';
+import type { ImportFormatDefinition, TransactionField } from '../types';
 import { getAllFormats, getDefaultFormat } from './formatManager';
 
 /**
@@ -183,12 +183,12 @@ export async function validateFormat(
     }
 
     // Check if required fields can be mapped
-    const requiredFields = ['date', 'amount', 'payee', 'description', 'currency', 'type'];
+    const requiredFields: TransactionField[] = ['date', 'amount', 'payee', 'description', 'currency', 'type'];
     const mappedFields = format.fieldMappings
       .filter(m => m.required)
       .map(m => m.targetField);
 
-    const missingFields = requiredFields.filter(f => !mappedFields.includes(f as any));
+    const missingFields = requiredFields.filter(f => !mappedFields.includes(f));
     
     if (missingFields.length > 0) {
       return { 

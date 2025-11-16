@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+// This file exports both the FilterProvider component and the useFilters hook
+// which is a standard React context pattern
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import type { TransactionFilters } from '../types';
 
@@ -44,7 +47,7 @@ interface FilterContextValue extends FilterState {
 
 const FilterContext = createContext<FilterContextValue | undefined>(undefined);
 
-export function FilterProvider({ children }: { children: ReactNode }) {
+export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [dateRangePreset, setDateRangePresetState] = useState<DateRangePreset>('thisMonth');
   const [customDateFrom, setCustomDateFrom] = useState<string>('');
   const [customDateTo, setCustomDateTo] = useState<string>('');

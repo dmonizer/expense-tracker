@@ -16,7 +16,7 @@ function ImportSummary({
   errors = [],
   onViewTransactions,
   onImportAnother,
-}: ImportSummaryProps) {
+}: Readonly<ImportSummaryProps>) {
   return (
     <div className="flex items-center justify-center h-full p-8">
       <div className="max-w-2xl w-full">

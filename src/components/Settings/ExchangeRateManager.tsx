@@ -49,7 +49,7 @@ function ExchangeRateManager() {
   };
 
   const handleAddRate = async () => {
-    if (!rate || isNaN(parseFloat(rate))) {
+    if (!rate || Number.isNaN(Number.parseFloat(rate))) {
       setError('Please enter a valid rate');
       return;
     }
@@ -61,7 +61,7 @@ function ExchangeRateManager() {
       await setExchangeRate(
         fromCurrency,
         toCurrency,
-        parseFloat(rate),
+        Number.parseFloat(rate),
         new Date(rateDate),
         'manual'
       );

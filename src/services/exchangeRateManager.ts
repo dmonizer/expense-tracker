@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
-import type { ExchangeRate, ExchangeRateSource } from '../types';
+import type { ExchangeRate, ExchangeRateSource, ExchangeRateApiProviderType } from '../types';
 
 /**
  * Exchange Rate Manager - Handles currency conversion rates
@@ -592,9 +592,9 @@ export async function fetchAndSaveExchangeRate(
   ).then(async (rate) => {
     // Update with provider info
     await db.exchangeRates.update(rate.id, {
-      apiProvider: result.provider as any,
+      apiProvider: result.provider as ExchangeRateApiProviderType,
     });
-    return { ...rate, apiProvider: result.provider as any };
+    return { ...rate, apiProvider: result.provider as ExchangeRateApiProviderType };
   });
 }
 

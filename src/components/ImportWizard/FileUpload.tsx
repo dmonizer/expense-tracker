@@ -40,13 +40,13 @@ function FileUpload() {
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files?.[0]) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files?.[0]) {
       handleFileSelect(e.target.files[0]);
     }
   };
@@ -200,7 +200,7 @@ function FileUpload() {
   const handleViewTransactions = () => {
     // This would trigger navigation to transactions tab
     // For now, we'll just reset
-    window.location.reload();
+    globalThis.location.reload();
   };
 
   const resetState = () => {

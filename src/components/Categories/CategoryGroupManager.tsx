@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import type { CategoryGroup } from '../../types';
-import { MAX_CATEGORY_GROUPS } from '../../types';
-import { getColorPalette } from '../../utils/colorUtils';
+import {useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '../../services/db';
+import type {CategoryGroup} from '../../types';
+import {MAX_CATEGORY_GROUPS} from '../../types';
+import {getColorPalette} from '../../utils/colorUtils';
 
 function CategoryGroupManager() {
   const [editingGroup, setEditingGroup] = useState<CategoryGroup | null>(null);
@@ -54,7 +54,7 @@ function CategoryGroupManager() {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete "${group.name}"? Categories in this group will become uncategorized.`)) {
+    if (!globalThis.confirm(`Are you sure you want to delete "${group.name}"? Categories in this group will become uncategorized.`)) {
       return;
     }
 
@@ -205,7 +205,7 @@ interface GroupEditorModalProps {
   onCancel: () => void;
 }
 
-function GroupEditorModal({ group: initialGroup, isCreating, onSave, onCancel }: GroupEditorModalProps) {
+function GroupEditorModal({ group: initialGroup, isCreating, onSave, onCancel }: Readonly<GroupEditorModalProps>) {
   const [group, setGroup] = useState<CategoryGroup>(initialGroup);
   const colorPalette = getColorPalette();
 

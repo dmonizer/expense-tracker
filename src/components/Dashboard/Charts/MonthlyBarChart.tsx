@@ -23,7 +23,11 @@ import { UNCATEGORIZED_GROUP_ID } from '../../../constants';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 // Register custom tooltip positioner to follow cursor
-(Tooltip.positioners as any).cursor = function(_elements: any, eventPosition: any) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(Tooltip.positioners as any).cursor = function(
+  _elements: unknown, 
+  eventPosition: { x: number; y: number }
+) {
   return {
     x: eventPosition.x,
     y: eventPosition.y
@@ -35,189 +39,352 @@ interface MonthlyBarChartProps {
   filters: TransactionFilters;
 }
 
-function MonthlyBarChart({ transactions, filters }: MonthlyBarChartProps) {
+// ============================================
+// Helper Types
+// ============================================
+
+interface ChartDataset {
+  label: string;
+  data: number[];
+  backgroundColor: string;
+  borderColor: string;
+  borderWidth: number;
+}
+
+interface ChartData {
+  labels: string[];
+  datasets: ChartDataset[];
+}
+
+// ============================================
+// Helper Functions - Data Transformation
+// ============================================
+
+/**
+ * Fill missing months in a date range with empty data
+ */
+function fillMissingMonths<T extends { month: string }>(
+  data: T[],
+  dateFrom: Date | undefined,
+  dateTo: Date | undefined,
+  emptyDataFactory: (month: string) => T
+): T[] {
+  if (!dateFrom || !dateTo) {
+    return data;
+  }
+
+  const allMonths = eachMonthOfInterval({
+    start: startOfMonth(dateFrom),
+    end: endOfMonth(dateTo)
+  });
+
+  const dataMap = new Map(data.map(item => [item.month, item]));
+
+  return allMonths.map(date => {
+    const monthKey = format(date, 'yyyy-MM');
+    return dataMap.get(monthKey) || emptyDataFactory(monthKey);
+  });
+}
+
+/**
+ * Format month labels for display
+ */
+function formatMonthLabels(summaries: Array<{ month: string }>): string[] {
+  return summaries.map(item => {
+    const date = parse(item.month, 'yyyy-MM', new Date());
+    return format(date, 'MMM yyyy');
+  });
+}
+
+/**
+ * Make border color from background color (increase opacity)
+ */
+function makeBorderColor(backgroundColor: string): string {
+  return backgroundColor.replace(/[\d.]+\)$/, '1)');
+}
+
+/**
+ * Check if a category should be included based on selected group
+ */
+function shouldIncludeCategory(
+  category: string,
+  selectedGroupId: string | null | undefined,
+  ruleMap: Map<string, { groupId?: string }>
+): boolean {
+  if (!selectedGroupId) {
+    return true;
+  }
+
+  const rule = ruleMap.get(category);
+
+  // Handle uncategorized group
+  if (selectedGroupId === UNCATEGORIZED_GROUP_ID) {
+    return !rule || !rule.groupId || rule.groupId === UNCATEGORIZED_GROUP_ID;
+  }
+
+  // Regular group filtering
+  return rule?.groupId === selectedGroupId;
+}
+
+/**
+ * Get color for a category based on its group and variant
+ */
+function getCategoryColorFromRule(
+  category: string,
+  ruleMap: Map<string, { groupId?: string; colorVariant?: number }>,
+  groupMap: Map<string, { baseColor: string }>
+): string {
+  const DEFAULT_COLOR = 'hsl(0, 0%, 60%)';
+  
+  const rule = ruleMap.get(category);
+  if (!rule?.groupId) {
+    return DEFAULT_COLOR;
+  }
+
+  const group = groupMap.get(rule.groupId);
+  if (!group) {
+    return DEFAULT_COLOR;
+  }
+
+  return getCategoryColor(group.baseColor, rule.colorVariant || 0);
+}
+
+// ============================================
+// Helper Functions - Data Loading
+// ============================================
+
+/**
+ * Load and format group summary data
+ */
+async function loadGroupSummaryData(
+  filters: TransactionFilters
+): Promise<ChartData | null> {
+  const summaries = await getMonthlyGroupSummary(filters);
+  const filledSummaries = fillMissingMonths(
+    summaries,
+    filters.dateFrom,
+    filters.dateTo,
+    (month): { month: string; groups: Record<string, number>; total: number } => 
+      ({ month, groups: {}, total: 0 })
+  );
+
+  if (filledSummaries.length === 0) {
+    return null;
+  }
+
+  // Get group data for colors and sorting
+  const categoryGroups = await db.categoryGroups.toArray();
+  const groupMap = new Map(categoryGroups.map(g => [g.name, g]));
+
+  // Extract unique groups and sort by priority
+  const groupsSet = new Set<string>();
+  filledSummaries.forEach(item => {
+    Object.keys(item.groups).forEach(group => groupsSet.add(group));
+  });
+
+  const sortedGroups = Array.from(groupsSet).sort((a, b) => {
+    const groupA = groupMap.get(a);
+    const groupB = groupMap.get(b);
+    if (!groupA || !groupB) return 0;
+    return groupA.priority - groupB.priority;
+  });
+
+  // Create datasets
+  const datasets: ChartDataset[] = sortedGroups.map(groupName => {
+    const group = groupMap.get(groupName);
+    const backgroundColor = group?.baseColor || 'hsl(0, 0%, 60%)';
+
+    return {
+      label: groupName,
+      data: filledSummaries.map(item => item.groups[groupName] || 0),
+      backgroundColor,
+      borderColor: makeBorderColor(backgroundColor),
+      borderWidth: 1,
+    };
+  });
+
+  return {
+    labels: formatMonthLabels(filledSummaries),
+    datasets,
+  };
+}
+
+/**
+ * Load and format category summary data
+ */
+async function loadCategorySummaryData(
+  filters: TransactionFilters,
+  selectedGroupId: string | null | undefined
+): Promise<ChartData | null> {
+  const summaries = await getMonthlySummary(filters);
+  const filledSummaries = fillMissingMonths(
+    summaries,
+    filters.dateFrom,
+    filters.dateTo,
+    (month): { month: string; categories: Record<string, number>; total: number } => 
+      ({ month, categories: {}, total: 0 })
+  );
+
+  if (filledSummaries.length === 0) {
+    return null;
+  }
+
+  // Get category rules and groups
+  const categoryRules = await db.categoryRules.toArray();
+  const categoryGroups = await db.categoryGroups.toArray();
+  const ruleMap = new Map(categoryRules.map(rule => [rule.name, rule]));
+  const groupMap = new Map(categoryGroups.map(group => [group.id, group]));
+
+  // Extract and filter categories
+  const categoriesSet = new Set<string>();
+  filledSummaries.forEach(item => {
+    Object.keys(item.categories).forEach(cat => {
+      if (shouldIncludeCategory(cat, selectedGroupId, ruleMap)) {
+        categoriesSet.add(cat);
+      }
+    });
+  });
+
+  const sortedCategories = Array.from(categoriesSet).sort();
+
+  // Create datasets
+  const datasets: ChartDataset[] = sortedCategories.map(category => {
+    const backgroundColor = getCategoryColorFromRule(category, ruleMap, groupMap);
+
+    return {
+      label: category,
+      data: filledSummaries.map(item => item.categories[category] || 0),
+      backgroundColor,
+      borderColor: makeBorderColor(backgroundColor),
+      borderWidth: 1,
+    };
+  });
+
+  return {
+    labels: formatMonthLabels(filledSummaries),
+    datasets,
+  };
+}
+
+/**
+ * Handle drilldown action for a group or category label
+ */
+async function handleDrilldown(
+  itemLabel: string,
+  drilldownView: string,
+  drillDownToGroup: (groupId: string) => void,
+  drillDownToCategory: (category: string) => void
+): Promise<void> {
+  if (drilldownView === 'groups') {
+    // Handle group drilldown
+    if (itemLabel === 'Unknown expenses') {
+      drillDownToGroup(UNCATEGORIZED_GROUP_ID);
+    } else {
+      const categoryGroups = await db.categoryGroups.toArray();
+      const group = categoryGroups.find(g => g.name === itemLabel);
+      if (group) {
+        drillDownToGroup(group.id);
+      }
+    }
+  } else {
+    // Handle category drilldown
+    drillDownToCategory(itemLabel);
+  }
+}
+
+// ============================================
+// Helper Functions - Chart Configuration
+// ============================================
+
+/**
+ * Create chart options with event handlers
+ */
+function createChartOptions(
+  filters: TransactionFilters,
+  drilldownView: string,
+  handleChartClick: (event: unknown, elements: unknown[]) => void,
+  drillDownToGroup: (groupId: string) => void,
+  drillDownToCategory: (category: string) => void
+) {
+  const currency = filters.currencies?.[0] || 'EUR';
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    onClick: handleChartClick,
+    scales: {
+      x: {
+        stacked: true,
+        grid: {
+          display: false,
+        },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        ticks: {
+          callback: (tickValue: string | number) => {
+            const value = typeof tickValue === 'string' ? parseFloat(tickValue) : tickValue;
+            return formatCurrency(value, currency);
+          },
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          padding: 10,
+          font: {
+            size: 11,
+          },
+          boxWidth: 12,
+        },
+        onClick: async (_event: unknown, legendItem: { text?: string }) => {
+          const itemLabel = legendItem.text;
+          if (!itemLabel) return;
+          await handleDrilldown(itemLabel, drilldownView, drillDownToGroup, drillDownToCategory);
+        },
+      },
+      tooltip: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        position: 'cursor' as any,
+        mode: 'index' as const,
+        intersect: false,
+        itemSort: (a: TooltipItem<'bar'>, b: TooltipItem<'bar'>) => {
+          return (b.parsed.y || 0) - (a.parsed.y || 0);
+        },
+        callbacks: {
+          label: (context: TooltipItem<'bar'>) => {
+            const label = context.dataset.label || '';
+            const value = context.parsed.y || 0;
+            return `${label}: ${formatCurrency(value, currency)}`;
+          },
+          footer: (tooltipItems: TooltipItem<'bar'>[]) => {
+            const total = tooltipItems.reduce((sum, item) => sum + (item.parsed.y || 0), 0);
+            return `Total: ${formatCurrency(total, currency)}`;
+          },
+        },
+      },
+    },
+  };
+}
+
+function MonthlyBarChart({ transactions, filters }: Readonly<MonthlyBarChartProps>) {
   const { drilldownView, selectedGroupId, drillDownToGroup, drillDownToCategory, goBackOneLevel } = useFilters();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [chartData, setChartData] = useState<{
-    labels: string[];
-    datasets: {
-      label: string;
-      data: number[];
-      backgroundColor: string;
-      borderColor: string;
-      borderWidth: number;
-    }[];
-  } | null>(null);
+  const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
       try {
-        if (drilldownView === 'groups') {
-          // Load monthly group summary
-          let monthlyGroupSummary = await getMonthlyGroupSummary(filters);
-          
-          // Generate all months in the date range if filters specify dates
-          if (filters.dateFrom && filters.dateTo) {
-            const allMonths = eachMonthOfInterval({
-              start: startOfMonth(filters.dateFrom),
-              end: endOfMonth(filters.dateTo)
-            });
-            
-            const monthlyMap = new Map(monthlyGroupSummary.map(item => [item.month, item]));
-            
-            monthlyGroupSummary = allMonths.map(date => {
-              const monthKey = format(date, 'yyyy-MM');
-              return monthlyMap.get(monthKey) || {
-                month: monthKey,
-                groups: {},
-                total: 0
-              };
-            });
-          }
-          
-          if (monthlyGroupSummary.length === 0) {
-            setChartData(null);
-            setIsLoading(false);
-            return;
-          }
+        const data = drilldownView === 'groups'
+          ? await loadGroupSummaryData(filters)
+          : await loadCategorySummaryData(filters, selectedGroupId);
 
-          // Get group data for colors and sorting
-          const categoryGroups = await db.categoryGroups.toArray();
-          const groupMap = new Map(categoryGroups.map(g => [g.name, g]));
-
-          // Extract unique groups and sort by priority
-          const groupsSet = new Set<string>();
-          monthlyGroupSummary.forEach(item => {
-            Object.keys(item.groups).forEach(group => groupsSet.add(group));
-          });
-          const groups = Array.from(groupsSet).sort((a, b) => {
-            const groupA = groupMap.get(a);
-            const groupB = groupMap.get(b);
-            if (!groupA || !groupB) return 0;
-            return groupA.priority - groupB.priority;
-          });
-
-          // Format month labels
-          const labels = monthlyGroupSummary.map(item => {
-            const date = parse(item.month, 'yyyy-MM', new Date());
-            return format(date, 'MMM yyyy');
-          });
-
-          // Create datasets (one per group)
-          const datasets = groups.map(groupName => {
-            const group = groupMap.get(groupName);
-            const backgroundColor = group?.baseColor || 'hsl(0, 0%, 60%)';
-            
-            return {
-              label: groupName,
-              data: monthlyGroupSummary.map(item => item.groups[groupName] || 0),
-              backgroundColor,
-              borderColor: backgroundColor.replace(/[\d.]+\)$/, '1)'),
-              borderWidth: 1,
-            };
-          });
-
-          setChartData({
-            labels,
-            datasets,
-          });
-        } else {
-          // Load category summary (either all or filtered by group)
-          let summary = await getMonthlySummary(filters);
-          
-          // Generate all months in the date range if filters specify dates
-          if (filters.dateFrom && filters.dateTo) {
-            const allMonths = eachMonthOfInterval({
-              start: startOfMonth(filters.dateFrom),
-              end: endOfMonth(filters.dateTo)
-            });
-            
-            const monthlyMap = new Map(summary.map(item => [item.month, item]));
-            
-            summary = allMonths.map(date => {
-              const monthKey = format(date, 'yyyy-MM');
-              return monthlyMap.get(monthKey) || {
-                month: monthKey,
-                categories: {},
-                total: 0
-              };
-            });
-          }
-          
-          if (summary.length === 0) {
-            setChartData(null);
-            setIsLoading(false);
-            return;
-          }
-
-          // Get category rules and groups for filtering and colors
-          const categoryRules = await db.categoryRules.toArray();
-          const categoryGroups = await db.categoryGroups.toArray();
-          const ruleMap = new Map(categoryRules.map(rule => [rule.name, rule]));
-          const groupMap = new Map(categoryGroups.map(group => [group.id, group]));
-
-          // Extract all unique categories
-          const categoriesSet = new Set<string>();
-          summary.forEach(item => {
-            Object.keys(item.categories).forEach(cat => {
-              // Filter by selected group if drilling down
-              if (selectedGroupId) {
-                const rule = ruleMap.get(cat);
-                
-                // Special handling for uncategorized group
-                if (selectedGroupId === UNCATEGORIZED_GROUP_ID) {
-                  // Include categories without rules or without groupId
-                  if (!rule || !rule.groupId || rule.groupId === UNCATEGORIZED_GROUP_ID) {
-                    categoriesSet.add(cat);
-                  }
-                } else {
-                  // Regular drilldown logic
-                  if (rule && rule.groupId === selectedGroupId) {
-                    categoriesSet.add(cat);
-                  }
-                }
-              } else {
-                categoriesSet.add(cat);
-              }
-            });
-          });
-          const categories = Array.from(categoriesSet).sort();
-
-          // Format month labels
-          const labels = summary.map(item => {
-            const date = parse(item.month, 'yyyy-MM', new Date());
-            return format(date, 'MMM yyyy');
-          });
-
-          // Generate colors based on group colors and variants
-          const colors = categories.map(category => {
-            const rule = ruleMap.get(category);
-            if (!rule || !rule.groupId) {
-              return 'hsl(0, 0%, 60%)';
-            }
-            const group = groupMap.get(rule.groupId);
-            if (!group) {
-              return 'hsl(0, 0%, 60%)';
-            }
-            return getCategoryColor(group.baseColor, rule.colorVariant || 0);
-          });
-
-          // Create datasets (one per category)
-          const datasets = categories.map((category, idx) => ({
-            label: category,
-            data: summary.map(item => item.categories[category] || 0),
-            backgroundColor: colors[idx],
-            borderColor: colors[idx].replace(/[\d.]+\)$/, '1)'),
-            borderWidth: 1,
-          }));
-
-          setChartData({
-            labels,
-            datasets,
-          });
-        }
+        setChartData(data);
       } catch (error) {
         console.error('Error loading monthly summary:', error);
         setChartData(null);
@@ -239,108 +406,20 @@ function MonthlyBarChart({ transactions, filters }: MonthlyBarChartProps) {
     
     if (!itemLabel) return;
 
-    if (drilldownView === 'groups') {
-      // Drill down into group
-      // Special handling for uncategorized/unknown expenses (virtual group)
-      if (itemLabel === 'Unknown expenses') {
-        drillDownToGroup(UNCATEGORIZED_GROUP_ID);
-      } else {
-        // Look up group in database
-        const categoryGroups = await db.categoryGroups.toArray();
-        const group = categoryGroups.find(g => g.name === itemLabel);
-        if (group) {
-          drillDownToGroup(group.id);
-        }
-      }
-    } else {
-      // Category clicked - drill down to category
-      drillDownToCategory(itemLabel);
-    }
+    await handleDrilldown(itemLabel, drilldownView, drillDownToGroup, drillDownToCategory);
   };
 
   const handleBackClick = () => {
     goBackOneLevel();
   };
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    onClick: handleChartClick,
-    scales: {
-      x: {
-        stacked: true,
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        stacked: true,
-        beginAtZero: true,
-        ticks: {
-          callback: (tickValue: string | number) => {
-            const value = typeof tickValue === 'string' ? parseFloat(tickValue) : tickValue;
-            const currency = filters.currencies?.[0] || 'EUR';
-            return formatCurrency(value, currency);
-          },
-        },
-      },
-    },
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          padding: 10,
-          font: {
-            size: 11,
-          },
-          boxWidth: 12,
-        },
-        onClick: async (_event: unknown, legendItem: { text?: string }, _legend: unknown) => {
-          const itemLabel = legendItem.text;
-          if (!itemLabel) return;
-
-          if (drilldownView === 'groups') {
-            // Drill down into group
-            // Special handling for uncategorized/unknown expenses (virtual group)
-            if (itemLabel === 'Unknown expenses') {
-              drillDownToGroup(UNCATEGORIZED_GROUP_ID);
-            } else {
-              const categoryGroups = await db.categoryGroups.toArray();
-              const group = categoryGroups.find(g => g.name === itemLabel);
-              if (group) {
-                drillDownToGroup(group.id);
-              }
-            }
-          } else {
-            // Category clicked - drill down to category
-            drillDownToCategory(itemLabel);
-          }
-        },
-      },
-      tooltip: {
-        position: 'cursor' as any,
-        mode: 'index' as const,
-        intersect: false,
-        itemSort: (a: TooltipItem<'bar'>, b: TooltipItem<'bar'>) => {
-          // Sort by amount in descending order
-          return (b.parsed.y || 0) - (a.parsed.y || 0);
-        },
-        callbacks: {
-          label: (context: TooltipItem<'bar'>) => {
-            const label = context.dataset.label || '';
-            const value = context.parsed.y || 0;
-            const currency = filters.currencies?.[0] || 'EUR';
-            return `${label}: ${formatCurrency(value, currency)}`;
-          },
-          footer: (tooltipItems: TooltipItem<'bar'>[]) => {
-            const total = tooltipItems.reduce((sum, item) => sum + (item.parsed.y || 0), 0);
-            const currency = filters.currencies?.[0] || 'EUR';
-            return `Total: ${formatCurrency(total, currency)}`;
-          },
-        },
-      },
-    },
-  };
+  const options = createChartOptions(
+    filters,
+    drilldownView,
+    handleChartClick,
+    drillDownToGroup,
+    drillDownToCategory
+  );
 
   // Loading state
   if (isLoading) {

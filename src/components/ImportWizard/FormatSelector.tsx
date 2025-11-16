@@ -14,7 +14,7 @@ export default function FormatSelector({
   file, 
   onFormatSelected, 
   onCancel 
-}: FormatSelectorProps) {
+}: Readonly<FormatSelectorProps>) {
   const [detectedFormat, setDetectedFormat] = useState<ImportFormatDefinition | null>(null);
   const [allFormats, setAllFormats] = useState<ImportFormatDefinition[]>([]);
   const [selectedFormatId, setSelectedFormatId] = useState<string>('');

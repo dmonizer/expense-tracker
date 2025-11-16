@@ -32,7 +32,7 @@ export default function FormatWizardMain({
   onComplete, 
   onCancel,
   existingFormat 
-}: FormatWizardProps) {
+}: Readonly<FormatWizardProps>) {
   const [currentStep, setCurrentStep] = useState(1);
   const [wizardState, setWizardState] = useState<WizardState>({
     csvSettings: existingFormat?.csvSettings || {

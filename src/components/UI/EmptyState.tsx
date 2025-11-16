@@ -14,7 +14,7 @@ export default function EmptyState({
   description,
   action,
   className = ''
-}: EmptyStateProps) {
+}: Readonly<EmptyStateProps>) {
   return (
     <div className={`flex items-center justify-center h-full ${className}`}>
       <div className="text-center max-w-md">

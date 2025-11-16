@@ -13,7 +13,7 @@ interface FiltersProps {
  * Filter controls for transaction list
  * Includes date range, category selection, amount range, transaction type, and search
  */
-function Filters({ filters, onFiltersChange }: FiltersProps) {
+function Filters({ filters, onFiltersChange }: Readonly<FiltersProps>) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState<TransactionFilters>(filters);
 

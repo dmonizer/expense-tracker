@@ -1,5 +1,62 @@
 import type { Transaction, CategoryRule, Pattern } from '../types';
 
+// Helper validation functions
+/**
+ * Validates a string field is non-empty
+ */
+function isValidString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+/**
+ * Validates a date object is valid
+ */
+function isValidDate(value: unknown): value is Date {
+  return value instanceof Date && !Number.isNaN(value.getTime());
+}
+
+/**
+ * Validates a number is not NaN
+ */
+function isValidNumber(value: unknown): value is number {
+  return typeof value === 'number' && !Number.isNaN(value);
+}
+
+/**
+ * Validates a boolean field
+ */
+function isValidBoolean(value: unknown): value is boolean {
+  return typeof value === 'boolean';
+}
+
+/**
+ * Validates required string field
+ */
+function hasRequiredString(obj: Record<string, unknown>, field: string): boolean {
+  return isValidString(obj[field]);
+}
+
+/**
+ * Validates required number field
+ */
+function hasRequiredNumber(obj: Record<string, unknown>, field: string): boolean {
+  return isValidNumber(obj[field]);
+}
+
+/**
+ * Validates required boolean field
+ */
+function hasRequiredBoolean(obj: Record<string, unknown>, field: string): boolean {
+  return isValidBoolean(obj[field]);
+}
+
+/**
+ * Validates required date field
+ */
+function hasRequiredDate(obj: Record<string, unknown>, field: string): boolean {
+  return isValidDate(obj[field]);
+}
+
 /**
  * Validates that a transaction object has all required fields
  * @param transaction - Partial transaction object to validate
@@ -13,54 +70,28 @@ export function isValidTransaction(transaction: Partial<Transaction>): boolean {
     return false;
   }
 
-  // Check required fields
-  if (!transaction.id || typeof transaction.id !== 'string') {
+  const requiredStrings = ['id', 'accountNumber', 'payee', 'description', 'currency', 'transactionType', 'archiveId'];
+  const hasAllStrings = requiredStrings.every(field => hasRequiredString(transaction, field));
+  if (!hasAllStrings) {
     return false;
   }
 
-  if (!transaction.accountNumber || typeof transaction.accountNumber !== 'string') {
+  const requiredDates = ['date', 'imported'];
+  const hasAllDates = requiredDates.every(field => hasRequiredDate(transaction, field));
+  if (!hasAllDates) {
     return false;
   }
 
-  if (!transaction.date || !(transaction.date instanceof Date) || isNaN(transaction.date.getTime())) {
+  if (!hasRequiredNumber(transaction, 'amount')) {
     return false;
   }
 
-  if (!transaction.payee || typeof transaction.payee !== 'string') {
+  if (!hasRequiredBoolean(transaction, 'manuallyEdited')) {
     return false;
   }
 
-  if (!transaction.description || typeof transaction.description !== 'string') {
-    return false;
-  }
-
-  if (transaction.amount === undefined || typeof transaction.amount !== 'number' || isNaN(transaction.amount)) {
-    return false;
-  }
-
-  if (!transaction.currency || typeof transaction.currency !== 'string') {
-    return false;
-  }
-
-  if (!transaction.type || (transaction.type !== 'debit' && transaction.type !== 'credit')) {
-    return false;
-  }
-
-  if (transaction.manuallyEdited === undefined || typeof transaction.manuallyEdited !== 'boolean') {
-    return false;
-  }
-
-  if (!transaction.transactionType || typeof transaction.transactionType !== 'string') {
-    return false;
-  }
-
-  if (!transaction.archiveId || typeof transaction.archiveId !== 'string') {
-    return false;
-  }
-
-  return !(!transaction.imported || !(transaction.imported instanceof Date) || isNaN(transaction.imported.getTime()));
-
-
+  const validTypes = ['debit', 'credit'];
+  return validTypes.includes(transaction.type as string);
 }
 
 /**
@@ -76,43 +107,87 @@ export function isValidCategoryRule(rule: Partial<CategoryRule>): boolean {
     return false;
   }
 
-  // Check required fields
-  if (!rule.id || typeof rule.id !== 'string') {
+  const requiredStrings = ['id', 'name'];
+  const hasAllStrings = requiredStrings.every(field => hasRequiredString(rule, field));
+  if (!hasAllStrings) {
     return false;
   }
 
-  if (!rule.name || typeof rule.name !== 'string' || rule.name.trim().length === 0) {
+  const requiredDates = ['createdAt', 'updatedAt'];
+  const hasAllDates = requiredDates.every(field => hasRequiredDate(rule, field));
+  if (!hasAllDates) {
     return false;
   }
 
-  if (!rule.patterns || !Array.isArray(rule.patterns) || rule.patterns.length === 0) {
+  if (!hasRequiredNumber(rule, 'priority')) {
     return false;
   }
 
-  // Validate all patterns
-  if (!rule.patterns.every(pattern => isValidPattern(pattern))) {
+  if (!hasRequiredBoolean(rule, 'isDefault')) {
     return false;
   }
 
-  if (rule.priority === undefined || typeof rule.priority !== 'number') {
+  if (!isValidPatternArray(rule.patterns)) {
     return false;
   }
 
-  if (!rule.type || (rule.type !== 'income' && rule.type !== 'expense')) {
+  const validTypes = ['income', 'expense'];
+  return validTypes.includes(rule.type as string);
+}
+
+/**
+ * Validates pattern array has at least one valid pattern
+ */
+function isValidPatternArray(patterns: unknown): patterns is Pattern[] {
+  if (!Array.isArray(patterns) || patterns.length === 0) {
+    return false;
+  }
+  return patterns.every(pattern => isValidPattern(pattern));
+}
+
+/**
+ * Validates wordlist pattern fields
+ */
+function isValidWordlistPattern(pattern: Partial<Pattern>): boolean {
+  if (!Array.isArray(pattern.words) || pattern.words.length === 0) {
     return false;
   }
 
-  if (rule.isDefault === undefined || typeof rule.isDefault !== 'boolean') {
+  const allWordsValid = pattern.words.every(word =>
+    typeof word === 'object' &&
+    word !== null &&
+    isValidString(word.text) &&
+    isValidBoolean(word.negated)
+  );
+
+  if (!allWordsValid) {
     return false;
   }
 
-  if (!rule.createdAt || !(rule.createdAt instanceof Date) || isNaN(rule.createdAt.getTime())) {
+  if (pattern.caseSensitive !== undefined && !isValidBoolean(pattern.caseSensitive)) {
     return false;
   }
 
-  return !(!rule.updatedAt || !(rule.updatedAt instanceof Date) || isNaN(rule.updatedAt.getTime()));
+  return true;
+}
 
+/**
+ * Validates regex pattern fields
+ */
+function isValidRegexPattern(pattern: Partial<Pattern>): boolean {
+  if (!isValidString(pattern.regex)) {
+    return false;
+  }
 
+  if (!isValidRegex(pattern.regex)) {
+    return false;
+  }
+
+  if (pattern.regexFlags !== undefined && typeof pattern.regexFlags !== 'string') {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -128,57 +203,29 @@ export function isValidPattern(pattern: Partial<Pattern>): boolean {
     return false;
   }
 
-  // Check required fields
-  if (!pattern.field || (pattern.field !== 'payee' && pattern.field !== 'description')) {
+  const validFields = ['payee', 'description'];
+  if (!validFields.includes(pattern.field as string)) {
     return false;
   }
 
-  if (!pattern.matchType || (pattern.matchType !== 'wordlist' && pattern.matchType !== 'regex')) {
+  const validMatchTypes = ['wordlist', 'regex'];
+  if (!validMatchTypes.includes(pattern.matchType as string)) {
     return false;
   }
 
-  if (pattern.weight === undefined || typeof pattern.weight !== 'number' || pattern.weight <= 0) {
+  if (!isValidNumber(pattern.weight) || (pattern.weight as number) <= 0) {
     return false;
   }
 
-  // Validate based on match type
   if (pattern.matchType === 'wordlist') {
-    if (!pattern.words || !Array.isArray(pattern.words) || pattern.words.length === 0) {
-      return false;
-    }
-
-    // All words must be objects with text and negated properties
-    if (!pattern.words.every(word => 
-      typeof word === 'object' && 
-      word !== null &&
-      typeof word.text === 'string' && 
-      word.text.trim().length > 0 &&
-      typeof word.negated === 'boolean'
-    )) {
-      return false;
-    }
-
-    // caseSensitive should be boolean if provided
-    if (pattern.caseSensitive !== undefined && typeof pattern.caseSensitive !== 'boolean') {
-      return false;
-    }
-  } else if (pattern.matchType === 'regex') {
-    if (!pattern.regex || typeof pattern.regex !== 'string' || pattern.regex.trim().length === 0) {
-      return false;
-    }
-
-    // Validate regex is valid
-    if (!isValidRegex(pattern.regex)) {
-      return false;
-    }
-
-    // regexFlags should be string if provided
-    if (pattern.regexFlags !== undefined && typeof pattern.regexFlags !== 'string') {
-      return false;
-    }
+    return isValidWordlistPattern(pattern);
   }
 
-  return true;
+  if (pattern.matchType === 'regex') {
+    return isValidRegexPattern(pattern);
+  }
+
+  return false;
 }
 
 /**

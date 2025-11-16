@@ -1,4 +1,5 @@
 import { db } from './db';
+import type { PriceApiProviderType } from '../types';
 
 /**
  * Price fetching service - supports multiple API providers
@@ -191,7 +192,7 @@ export async function fetchPrice(
     // If no providers in new format, check legacy format
     if (providers.length === 0 && settings.priceApiProvider && settings.priceApiProvider !== 'none') {
       providers = [{
-        type: settings.priceApiProvider as any,
+        type: settings.priceApiProvider as PriceApiProviderType,
         apiKey: settings.priceApiKey || '',
         enabled: true,
         priority: 1,
@@ -298,7 +299,7 @@ export async function updateHoldingPrice(holdingId: string): Promise<boolean> {
       currentPrice: quote.price,
       currentPriceCurrency: quote.currency,
       currentPriceDate: quote.timestamp,
-      priceApiProvider: quote.source as any, // Remember which provider succeeded
+      priceApiProvider: quote.source as PriceApiProviderType, // Remember which provider succeeded
       updatedAt: new Date(),
     });
 

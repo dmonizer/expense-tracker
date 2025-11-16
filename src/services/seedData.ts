@@ -744,9 +744,10 @@ export async function initializeDefaultRules(): Promise<{
     // Insert only new rules
     try {
       await db.categoryRules.bulkAdd(rulesToAdd);
-    } catch (bulkError: any) {
+    } catch (bulkError: unknown) {
       // If ConstraintError, rules were added by another concurrent initialization
-      if (bulkError?.name === 'ConstraintError' || bulkError?.failures?.every((f: any) => f?.name === 'ConstraintError')) {
+      const error = bulkError as { name?: string; failures?: Array<{ name?: string }> };
+      if (error?.name === 'ConstraintError' || error?.failures?.every(f => f?.name === 'ConstraintError')) {
         const currentCount = await db.categoryRules.count();
         return {
           success: true,
@@ -797,9 +798,10 @@ export async function initializeDefaultGroups(): Promise<{
     // Insert only new groups
     try {
       await db.categoryGroups.bulkAdd(groupsToAdd);
-    } catch (bulkError: any) {
+    } catch (bulkError: unknown) {
       // If ConstraintError, groups were added by another concurrent initialization
-      if (bulkError?.name === 'ConstraintError' || bulkError?.failures?.every((f: any) => f?.name === 'ConstraintError')) {
+      const error = bulkError as { name?: string; failures?: Array<{ name?: string }> };
+      if (error?.name === 'ConstraintError' || error?.failures?.every(f => f?.name === 'ConstraintError')) {
         const currentCount = await db.categoryGroups.count();
         return {
           success: true,

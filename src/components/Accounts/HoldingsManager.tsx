@@ -45,8 +45,8 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
 
     try {
       const { v4: uuidv4 } = await import('uuid');
-      const quantity = parseFloat(form.quantity);
-      const purchasePrice = parseFloat(form.purchasePrice) || 0;
+      const quantity = Number.parseFloat(form.quantity);
+      const purchasePrice = Number.parseFloat(form.purchasePrice) || 0;
 
       if (editing) {
         await db.holdings.update(editing.id, {

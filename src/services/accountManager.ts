@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
 import { db } from './db';
 import type { Account, CategoryRule } from '../types';
 
@@ -6,6 +6,88 @@ import type { Account, CategoryRule } from '../types';
  * Account Manager - Handles account creation and management for double-entry accounting
  * Phase 1: Backend setup with dual-write pattern
  */
+
+// Namespace UUID for system accounts (random UUID, used as namespace for v5)
+const SYSTEM_ACCOUNT_NAMESPACE = '550e8400-e29b-41d4-a716-446655440000';
+
+// System account names as constants to avoid magic strings
+const OPENING_BALANCES_ACCOUNT_NAME = 'Opening Balances';
+const UNCATEGORIZED_EXPENSES_ACCOUNT_NAME = 'Uncategorized Expenses';
+const UNCATEGORIZED_INCOME_ACCOUNT_NAME = 'Uncategorized Income';
+
+// Default currency and supported currencies for system accounts
+const DEFAULT_CURRENCY = 'EUR';
+const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP'] as const;
+
+/**
+ * Generate a deterministic UUID for a system account based on its name
+ * This prevents race conditions during initialization by ensuring the same account
+ * always gets the same ID
+ */
+function getSystemAccountId(accountName: string): string {
+  return uuidv5(accountName, SYSTEM_ACCOUNT_NAMESPACE);
+}
+
+/**
+ * Helper function to create or get a system account with race condition safety
+ * Implements DRY principle by consolidating common logic for system accounts
+ */
+async function getOrCreateSystemAccount(
+  name: string,
+  type: 'equity' | 'expense' | 'income',
+  description: string
+): Promise<Account> {
+  const accountId = getSystemAccountId(name);
+  
+  // First try to get by deterministic ID (faster and more reliable)
+  const existingAccount = await db.accounts.get(accountId);
+  if (existingAccount) {
+    return existingAccount;
+  }
+
+  const account: Account = {
+    id: accountId,
+    name,
+    type,
+    currency: DEFAULT_CURRENCY,
+    supportedCurrencies: [...SUPPORTED_CURRENCIES],
+    isActive: true,
+    isSystem: true,
+    openingBalance: 0,
+    openingBalanceDate: new Date(),
+    description,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  try {
+    await db.accounts.add(account);
+  } catch (error) {
+    // If add fails due to duplicate key (race condition), fetch and return existing
+    const existing = await db.accounts.get(accountId);
+    if (existing) {
+      return existing;
+    }
+    throw error; // Re-throw if it's a different error
+  }
+
+  return account;
+}
+
+/**
+ * Helper function to get the color for a category group
+ * Returns default gray color if no group is specified
+ */
+async function getGroupColor(groupId?: string): Promise<string> {
+  const DEFAULT_COLOR = 'hsl(0, 0%, 50%)';
+  
+  if (!groupId) {
+    return DEFAULT_COLOR;
+  }
+
+  const group = await db.categoryGroups.get(groupId);
+  return group?.baseColor ?? DEFAULT_COLOR;
+}
 
 /**
  * Ensure an expense/income account exists for a category rule
@@ -40,14 +122,8 @@ export async function ensureExpenseAccountForCategory(
     return existingByName;
   }
 
-  // Get the category group for color information
-  let groupColor = 'hsl(0, 0%, 50%)';
-  if (categoryRule.groupId) {
-    const group = await db.categoryGroups.get(categoryRule.groupId);
-    if (group) {
-      groupColor = group.baseColor;
-    }
-  }
+  // Get the category group color information
+  const groupColor = await getGroupColor(categoryRule.groupId);
 
   // Create matching expense/income account
   const account: Account = {
@@ -125,35 +201,11 @@ export async function getOrCreateBankAccount(
  * Used for initial balances when setting up accounts
  */
 export async function getOpeningBalancesAccount(): Promise<Account> {
-  const openingBalancesName = 'Opening Balances';
-  
-  const existingAccount = await db.accounts
-    .where('name')
-    .equals(openingBalancesName)
-    .first();
-
-  if (existingAccount) {
-    return existingAccount;
-  }
-
-  const account: Account = {
-    id: uuidv4(),
-    name: openingBalancesName,
-    type: 'equity',
-    currency: 'EUR',
-    supportedCurrencies: ['EUR', 'USD', 'GBP'], // Support all currencies
-    isActive: true,
-    isSystem: true,
-    openingBalance: 0,
-    openingBalanceDate: new Date(),
-    description: 'System account for opening balances',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  await db.accounts.add(account);
-
-  return account;
+  return getOrCreateSystemAccount(
+    OPENING_BALANCES_ACCOUNT_NAME,
+    'equity',
+    'System account for opening balances'
+  );
 }
 
 /**
@@ -161,35 +213,11 @@ export async function getOpeningBalancesAccount(): Promise<Account> {
  * Used for transactions that don't match any category rule
  */
 export async function getUncategorizedExpenseAccount(): Promise<Account> {
-  const uncategorizedName = 'Uncategorized Expenses';
-  
-  const existingAccount = await db.accounts
-    .where('name')
-    .equals(uncategorizedName)
-    .first();
-
-  if (existingAccount) {
-    return existingAccount;
-  }
-
-  const account: Account = {
-    id: uuidv4(),
-    name: uncategorizedName,
-    type: 'expense',
-    currency: 'EUR',
-    supportedCurrencies: ['EUR', 'USD', 'GBP'], // Support all currencies
-    isActive: true,
-    isSystem: true,
-    openingBalance: 0,
-    openingBalanceDate: new Date(),
-    description: 'Default account for uncategorized expenses',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  await db.accounts.add(account);
-
-  return account;
+  return getOrCreateSystemAccount(
+    UNCATEGORIZED_EXPENSES_ACCOUNT_NAME,
+    'expense',
+    'Default account for uncategorized expenses'
+  );
 }
 
 /**
@@ -197,35 +225,11 @@ export async function getUncategorizedExpenseAccount(): Promise<Account> {
  * Used for income transactions that don't match any category rule
  */
 export async function getUncategorizedIncomeAccount(): Promise<Account> {
-  const uncategorizedName = 'Uncategorized Income';
-  
-  const existingAccount = await db.accounts
-    .where('name')
-    .equals(uncategorizedName)
-    .first();
-
-  if (existingAccount) {
-    return existingAccount;
-  }
-
-  const account: Account = {
-    id: uuidv4(),
-    name: uncategorizedName,
-    type: 'income',
-    currency: 'EUR',
-    supportedCurrencies: ['EUR', 'USD', 'GBP'], // Support all currencies
-    isActive: true,
-    isSystem: true,
-    openingBalance: 0,
-    openingBalanceDate: new Date(),
-    description: 'Default account for uncategorized income',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  await db.accounts.add(account);
-
-  return account;
+  return getOrCreateSystemAccount(
+    UNCATEGORIZED_INCOME_ACCOUNT_NAME,
+    'income',
+    'Default account for uncategorized income'
+  );
 }
 
 /**
@@ -285,7 +289,7 @@ export async function updateAccountOpeningBalance(
   openingBalance: number,
   openingBalanceDate?: Date
 ): Promise<void> {
-  const updateData: any = {
+  const updateData: Partial<Account> = {
     openingBalance,
     updatedAt: new Date(),
   };

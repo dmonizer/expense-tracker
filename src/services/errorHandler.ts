@@ -157,6 +157,7 @@ export function handleError(
  * @param onError - Optional error callback
  * @returns Wrapped function
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
   fn: T,
   context?: string,

@@ -269,7 +269,7 @@ export async function getSplitsForAccount(
   startDate?: Date,
   endDate?: Date
 ): Promise<Split[]> {
-  let query = db.splits.where('accountId').equals(accountId);
+  const query = db.splits.where('accountId').equals(accountId);
   
   // Note: We'll need to join with journalEntries to filter by date
   // For now, get all splits and filter in memory

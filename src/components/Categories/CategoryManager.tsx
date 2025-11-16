@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import { recategorizeAll } from '../../services/categorizer';
-import type { CategoryRule } from '../../types';
-import { getCategoryColor } from '../../utils/colorUtils';
+import {useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '../../services/db';
+import {recategorizeAll} from '../../services/categorizer';
+import type {CategoryRule} from '../../types';
+import {getCategoryColor} from '../../utils/colorUtils';
 import RuleEditor from './RuleEditor';
 
 type SortField = 'name' | 'type' | 'priority' | 'patternCount';
@@ -78,12 +78,12 @@ function CategoryManager() {
   };
 
   const handleDelete = async (rule: CategoryRule) => {
-    if (window.confirm(`Are you sure you want to delete the rule "${rule.name}"?`)) {
+    if (globalThis.confirm(`Are you sure you want to delete the rule "${rule.name}"?`)) {
       try {
         await db.categoryRules.delete(rule.id);
 
         // Ask if user wants to re-categorize after deletion
-        if (window.confirm('Rule deleted. Re-categorize all transactions with updated rules?')) {
+        if (globalThis.confirm('Rule deleted. Re-categorize all transactions with updated rules?')) {
           setIsRecategorizing(true);
           try {
             const count = await recategorizeAll();
@@ -121,7 +121,7 @@ function CategoryManager() {
   };
 
   const handleRecategorizeAll = async () => {
-    if (window.confirm('This will re-categorize all transactions that have not been manually edited. Continue?')) {
+    if (globalThis.confirm('This will re-categorize all transactions that have not been manually edited. Continue?')) {
       setIsRecategorizing(true);
       try {
         const count = await recategorizeAll();
@@ -146,7 +146,7 @@ function CategoryManager() {
       setIsCreating(false);
 
       // Ask if user wants to re-categorize after saving
-      if (window.confirm('Rule saved. Re-categorize all transactions with updated rules?')) {
+      if (globalThis.confirm('Rule saved. Re-categorize all transactions with updated rules?')) {
         setIsRecategorizing(true);
         try {
           const count = await recategorizeAll();
@@ -202,11 +202,11 @@ function CategoryManager() {
 
         // Validate the imported data
         if (!Array.isArray(importedRules)) {
-          throw new Error('Invalid file format: expected an array of rules');
+          throw new TypeError('Invalid file format: expected an array of rules');
         }
 
         // Ask user how to handle import
-        const mode = window.confirm(
+        const mode = globalThis.confirm(
           `Import ${importedRules.length} rules. Click OK to ADD to existing rules, or Cancel to REPLACE all rules.`
         ) ? 'add' : 'replace';
 
@@ -229,7 +229,7 @@ function CategoryManager() {
         alert(`Successfully imported ${rulesToAdd.length} rules.`);
 
         // Ask if user wants to re-categorize
-        if (window.confirm('Re-categorize all transactions with the new rules?')) {
+        if (globalThis.confirm('Re-categorize all transactions with the new rules?')) {
           handleRecategorizeAll();
         }
       } catch (error) {
@@ -258,7 +258,7 @@ function CategoryManager() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Category Rules</h1>
         <p className="text-gray-600">
-          Manage rules for automatic transaction categorization. {allRules.length} rule{allRules.length !== 1 ? 's' : ''} total.
+          Manage rules for automatic transaction categorization. {allRules.length} rule{allRules.length === 1 ? '' : 's'} total.
         </p>
       </div>
 
@@ -384,36 +384,36 @@ function CategoryManager() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('name')}
                 >
                   Name {getSortIcon('name')}
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('type')}
                 >
                   Type {getSortIcon('type')}
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Group
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Linked Account
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('priority')}
                 >
                   Priority {getSortIcon('priority')}
                 </th>
                 <th
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                   onClick={() => handleSort('patternCount')}
                 >
                   Patterns {getSortIcon('patternCount')}
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -421,7 +421,7 @@ function CategoryManager() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRules.map(rule => (
                 <tr key={rule.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center">
                       <span className="font-medium text-gray-900">{rule.name}</span>
                       {rule.isDefault && (
@@ -436,7 +436,7 @@ function CategoryManager() {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded ${
                         rule.type === 'income'
@@ -447,7 +447,7 @@ function CategoryManager() {
                       {rule.type}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     {rule.groupId && allGroups ? (
                       (() => {
                         const group = allGroups.find(g => g.id === rule.groupId);
@@ -460,7 +460,7 @@ function CategoryManager() {
                                 style={{ backgroundColor: color }}
                                 title={`${group.name} (Variant ${rule.colorVariant || 0})`}
                               />
-                              <span className="text-sm text-gray-700">{group.name}</span>
+                              <span className="text-xs text-gray-700">{group.name}</span>
                             </div>
                           );
                         }
@@ -470,14 +470,14 @@ function CategoryManager() {
                       <span className="text-xs text-gray-400">None</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     {rule.accountId && allAccounts ? (
                       (() => {
                         const account = allAccounts.find(a => a.id === rule.accountId);
                         if (account) {
                           return (
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-700">{account.name}</span>
+                              <span className="text-xs text-gray-700">{account.name}</span>
                               <span className="text-xs text-gray-400">({account.currency})</span>
                             </div>
                           );
@@ -488,26 +488,26 @@ function CategoryManager() {
                       <span className="text-xs text-gray-400">Auto-create on import</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{rule.priority}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700">{rule.priority}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-700">
                     {rule.patterns.length}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-3 py-2 whitespace-nowrap text-right text-xs font-medium">
                     <button
                       onClick={() => setEditingRule(rule)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
+                      className="text-blue-600 hover:text-blue-900 mr-2 text-xs"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDuplicate(rule)}
-                      className="text-green-600 hover:text-green-900 mr-3"
+                      className="text-green-600 hover:text-green-900 mr-2 text-xs"
                     >
                       Duplicate
                     </button>
                     <button
                       onClick={() => handleDelete(rule)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 hover:text-red-900 text-xs"
                     >
                       Delete
                     </button>

@@ -8,7 +8,7 @@ export default function LoadingSpinner({
   size = 'md',
   text,
   className = ''
-}: LoadingSpinnerProps) {
+}: Readonly<LoadingSpinnerProps>) {
   const sizeClasses = {
     sm: 'h-4 w-4 border',
     md: 'h-8 w-8 border-2',

@@ -8,7 +8,7 @@ interface PreviewTableProps {
   onCancel: () => void;
 }
 
-function PreviewTable({ transactions, duplicateIds, onConfirm, onCancel }: PreviewTableProps) {
+function PreviewTable({ transactions, duplicateIds, onConfirm, onCancel }: Readonly<PreviewTableProps>) {
   // Show first 20 transactions for preview
   const previewTransactions = transactions.slice(0, 20);
 

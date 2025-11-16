@@ -5,6 +5,7 @@ import CategoryManager from './components/Categories/CategoryManager';
 import CategoryGroupManager from './components/Categories/CategoryGroupManager';
 import FileUpload from './components/ImportWizard/FileUpload';
 import AccountViewer from './components/Accounts/AccountViewer';
+import JournalView from './components/Journal/JournalView';
 import ExchangeRateManager from './components/Settings/ExchangeRateManager';
 import AllApiSettings from './components/Settings/AllApiSettings';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -15,7 +16,7 @@ import { db } from './services/db';
 import { refreshAllPrices } from './services/priceFetcher';
 import { refreshCommonExchangeRates } from './services/exchangeRateManager';
 
-type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'rates' | 'settings' | 'import';
+type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import';
 
 interface Tab {
   id: TabType;
@@ -28,6 +29,7 @@ const tabs: Tab[] = [
   { id: 'categories', label: 'Categories', icon: '🏷️' },
   { id: 'groups', label: 'Groups', icon: '🎨' },
   { id: 'accounts', label: 'Accounts', icon: '🏦' },
+  { id: 'journal', label: 'Journal', icon: '📔' },
   { id: 'rates', label: 'Exchange Rates', icon: '💱' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
   { id: 'import', label: 'Import', icon: '📁' },
@@ -142,6 +144,8 @@ function App() {
         return <CategoryGroupManager />;
       case 'accounts':
         return <AccountViewer />;
+      case 'journal':
+        return <JournalView />;
       case 'rates':
         return <ExchangeRateManager />;
       case 'settings':
