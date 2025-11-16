@@ -168,50 +168,78 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         return value;
     }
 
+    function transformDate(dateFormat?:string) {
+
+        if (!dateFormat) {
+            throw new Error('Date transform requires dateFormat');
+        }
+        try {
+            const parsed = parse(value, dateFormat, new Date());
+            if (isNaN(parsed.getTime())) {
+                throw new TypeError(`Invalid date: ${value}`);
+            }
+            return parsed;
+        } catch (error) {
+            throw new Error(`Date parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+
+    function transformNumber(transform:FieldTransform) {
+        let cleaned = value;
+
+        // Remove thousands separator if present
+        if (transform.thousandsSeparator) {
+            cleaned = cleaned.replaceAll(new RegExp(`\\${transform.thousandsSeparator}`, 'g'), '');
+        }
+
+        // Replace decimal separator with dot
+        if (transform.decimalSeparator === ',') {
+            cleaned = cleaned.replace(',', '.');
+        }
+
+        const parsed = Number.parseFloat(cleaned);
+        if (Number.isNaN(parsed)) {
+            throw new TypeError(`Invalid number: ${value}`);
+        }
+        return parsed;
+    }
+
+    function transformCreditDebit(transform:FieldTransform) {
+        if (value === transform.debitValue) {
+            return 'debit';
+        } else if (value === transform.creditValue) {
+            return 'credit';
+        } else {
+            throw new Error(`Unknown debit/credit value: ${value}`);
+        }
+    }
+
+    function transformCustom(transform:FieldTransform) {
+        // Execute custom JavaScript expression
+        // Security note: This is dangerous in production, consider removing or sandboxing
+        if (transform.customExpression) {
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-implied-eval
+                const fn = new Function('value', `return ${transform.customExpression}`);
+                return fn(value);
+            } catch (error) {
+                throw new Error(`Custom transform error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+        }
+        return value;
+    }
+
     switch (transform.type) {
         case 'date': {
-            if (!transform.dateFormat) {
-                throw new Error('Date transform requires dateFormat');
-            }
-            try {
-                const parsed = parse(value, transform.dateFormat, new Date());
-                if (isNaN(parsed.getTime())) {
-                    throw new Error(`Invalid date: ${value}`);
-                }
-                return parsed;
-            } catch (error) {
-                throw new Error(`Date parse error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            }
+            return transformDate(transform.dateFormat);
         }
 
         case 'number': {
-            let cleaned = value;
-
-            // Remove thousands separator if present
-            if (transform.thousandsSeparator) {
-                cleaned = cleaned.replace(new RegExp(`\\${transform.thousandsSeparator}`, 'g'), '');
-            }
-
-            // Replace decimal separator with dot
-            if (transform.decimalSeparator === ',') {
-                cleaned = cleaned.replace(',', '.');
-            }
-
-            const parsed = parseFloat(cleaned);
-            if (isNaN(parsed)) {
-                throw new Error(`Invalid number: ${value}`);
-            }
-            return parsed;
+            return transformNumber(transform);
         }
 
         case 'debitCredit': {
-            if (value === transform.debitValue) {
-                return 'debit';
-            } else if (value === transform.creditValue) {
-                return 'credit';
-            } else {
-                throw new Error(`Unknown debit/credit value: ${value}`);
-            }
+            return transformCreditDebit(transform);
         }
 
         case 'currency': {
@@ -219,18 +247,7 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         }
 
         case 'custom': {
-            // Execute custom JavaScript expression
-            // Security note: This is dangerous in production, consider removing or sandboxing
-            if (transform.customExpression) {
-                try {
-                    // eslint-disable-next-line @typescript-eslint/no-implied-eval
-                    const fn = new Function('value', `return ${transform.customExpression}`);
-                    return fn(value);
-                } catch (error) {
-                    throw new Error(`Custom transform error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                }
-            }
-            return value;
+            return transformCustom(transform);
         }
 
         default:

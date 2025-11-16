@@ -176,7 +176,13 @@ export async function categorizeBatch(transactions: Transaction[]): Promise<Tran
   const rules = await db.categoryRules.toArray();
 
   if (rules.length === 0) {
-    return transactions;
+    // No rules exist, clear categories from all transactions
+    return transactions.map(transaction => ({
+      ...transaction,
+      category: undefined,
+      categoryConfidence: undefined,
+      manuallyEdited: false,
+    }));
   }
 
   // Process each transaction
@@ -242,11 +248,24 @@ export async function recategorizeAll(): Promise<number> {
   // Update transactions in database
   await db.transaction('rw', db.transactions, async () => {
     for (const transaction of categorizedTransactions) {
-      await db.transactions.update(transaction.id, {
-        category: transaction.category,
-        categoryConfidence: transaction.categoryConfidence,
-        manuallyEdited: transaction.manuallyEdited,
-      });
+      // Get the existing transaction from database
+      const existing = await db.transactions.get(transaction.id);
+      if (existing) {
+        // Create updated transaction
+        const updated = { ...existing };
+
+        if (transaction.category !== undefined) {
+          updated.category = transaction.category;
+          updated.categoryConfidence = transaction.categoryConfidence;
+        } else {
+          // Remove category fields when undefined
+          delete updated.category;
+          delete updated.categoryConfidence;
+        }
+        updated.manuallyEdited = transaction.manuallyEdited;
+
+        await db.transactions.put(updated);
+      }
     }
   });
 
