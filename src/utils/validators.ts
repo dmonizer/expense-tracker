@@ -203,8 +203,26 @@ export function isValidPattern(pattern: Partial<Pattern>): boolean {
     return false;
   }
 
-  const validFields = ['payee', 'description'];
-  if (!validFields.includes(pattern.field as string)) {
+  // Validate fields array (support both new and legacy format)
+  const validFieldNames = ['payee', 'description', 'accountNumber', 'transactionType', 'currency', 'archiveId'];
+  
+  // Check for new format (fields array)
+  if (pattern.fields) {
+    if (!Array.isArray(pattern.fields) || pattern.fields.length === 0) {
+      return false;
+    }
+    if (!pattern.fields.every(f => validFieldNames.includes(f as string))) {
+      return false;
+    }
+  } 
+  // Check for legacy format (single field)
+  else if (pattern.field) {
+    if (!validFieldNames.includes(pattern.field as string)) {
+      return false;
+    }
+  } 
+  // No field specification at all
+  else {
     return false;
   }
 

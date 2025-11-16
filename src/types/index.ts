@@ -45,7 +45,7 @@ export interface CategoryGroup {
 }
 
 export interface Pattern {
-  field: 'payee' | 'description';
+  fields?: string[]; // Array of fields to match against (e.g., ['payee', 'description'])
   matchType: 'wordlist' | 'regex';
   // For wordlist mode
   words?: Array<{text: string, negated: boolean}>; // [{text: "MCDONALDS", negated: false}, {text: "LIDL", negated: true}]
@@ -55,6 +55,9 @@ export interface Pattern {
   regexFlags?: string; // "i", "gi", etc.
   // Common
   weight: number; // Specificity weight
+  
+  // Legacy field for migration (will be removed in future version)
+  field?: 'payee' | 'description';
 }
 
 export interface CategoryRule {

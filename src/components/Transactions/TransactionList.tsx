@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import type { Transaction, TransactionFilters } from '../../types';
 import { db } from '../../services/db';
 import TransactionRow from './TransactionRow';
-import TransactionEditor from './TransactionEditor';
+import UnifiedRuleEditor from '../Categories/UnifiedRuleEditor';
 import Filters from './Filters';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import EmptyState, { DocumentIcon } from '../UI/EmptyState';
@@ -70,15 +70,6 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
   } = usePagination(filteredTransactions, {
     itemsPerPage: PAGINATION.DEFAULT_PAGE_SIZE
   });
-
-  // Handle category save
-  const handleSaveCategory = async (transactionId: string, categoryName: string, ignored?: boolean) => {
-    await db.transactions.update(transactionId, {
-      category: categoryName || undefined,
-      manuallyEdited: true,
-      ignored: ignored || false,
-    });
-  };;
 
   const handleSort = (field: 'date' | 'payee' | 'amount' | 'category' | 'description') => {
     setFilters(prev => ({
@@ -289,10 +280,22 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
 
       {/* Transaction Editor Modal */}
       {editingTransaction && (
-        <TransactionEditor
+        <UnifiedRuleEditor
+          mode="quick"
+          rule={{
+            id: crypto.randomUUID(),
+            name: editingTransaction.category || '',
+            patterns: [],
+            patternLogic: 'OR',
+            priority: 1,
+            type: editingTransaction.type === 'credit' ? 'income' : 'expense',
+            isDefault: false,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }}
           transaction={editingTransaction}
-          onClose={() => setEditingTransaction(null)}
-          onSave={handleSaveCategory}
+          onSave={async () => {}} // Handled internally in quick mode
+          onCancel={() => setEditingTransaction(null)}
         />
       )}
     </div>

@@ -15,6 +15,7 @@ import { initializeBuiltInFormats } from './services/formatManager';
 import { db } from './services/db';
 import { refreshAllPrices } from './services/priceFetcher';
 import { refreshCommonExchangeRates } from './services/exchangeRateManager';
+import { migrateAllPatterns } from './utils/patternMigration';
 
 type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import';
 
@@ -53,9 +54,16 @@ function App() {
           console.warn('Failed to initialize defaults:', result.message);
           setInitError(result.message);
         }
-        
+
         // Initialize built-in import formats
         await initializeBuiltInFormats();
+
+        // Run pattern migration to update legacy patterns to new multi-field format
+        const migrationResult = await migrateAllPatterns();
+        console.log(`Pattern migration: ${migrationResult.migrated}/${migrationResult.total} patterns migrated`);
+        if (migrationResult.errors.length > 0) {
+          console.warn('Pattern migration had errors:', migrationResult.errors);
+        }
       } catch (error) {
         console.error('Error during initialization:', error);
         setInitError(error instanceof Error ? error.message : 'Unknown error');

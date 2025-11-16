@@ -4,7 +4,7 @@ import {db} from '../../services/db';
 import {recategorizeAll} from '../../services/categorizer';
 import type {CategoryRule} from '../../types';
 import {getCategoryColor} from '../../utils/colorUtils';
-import RuleEditor from './RuleEditor';
+import UnifiedRuleEditor from './UnifiedRuleEditor';
 
 type SortField = 'name' | 'type' | 'priority' | 'patternCount';
 type SortDirection = 'asc' | 'desc';
@@ -521,7 +521,8 @@ function CategoryManager() {
 
       {/* Rule Editor Modal */}
       {editingRule && (
-        <RuleEditor
+        <UnifiedRuleEditor
+          mode="full"
           rule={editingRule}
           onSave={handleSaveRule}
           onCancel={handleCancelEdit}

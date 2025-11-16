@@ -3,59 +3,87 @@ import { db } from './db';
 import { CATEGORIZATION } from '../constants';
 
 /**
+ * Gets the value of a transaction field by name
+ */
+function getTransactionFieldValue(transaction: Transaction, field: string): string {
+  switch (field) {
+    case 'payee':
+      return transaction.payee || '';
+    case 'description':
+      return transaction.description || '';
+    case 'accountNumber':
+      return transaction.accountNumber || '';
+    case 'transactionType':
+      return transaction.transactionType || '';
+    case 'currency':
+      return transaction.currency || '';
+    case 'archiveId':
+      return transaction.archiveId || '';
+    default:
+      return '';
+  }
+}
+
+/**
  * Checks if a transaction matches a specific pattern
  * @param transaction - The transaction to check
  * @param pattern - The pattern to match against
  * @returns true if the transaction matches the pattern, false otherwise
  */
 export function matchesPattern(transaction: Transaction, pattern: Pattern): boolean {
-  const fieldValue = transaction[pattern.field] || '';
+  // Support legacy patterns with single 'field' property
+  const fields = pattern.fields || (pattern.field ? [pattern.field] : ['payee']);
 
-  if (pattern.matchType === 'wordlist') {
-    const words = pattern.words || [];
-    const searchText = pattern.caseSensitive ? fieldValue : fieldValue.toLowerCase();
+  // Check if ANY of the specified fields match (OR logic across fields)
+  return fields.some(field => {
+    const fieldValue = getTransactionFieldValue(transaction, field);
 
-    // All conditions must be satisfied:
-    // - At least one positive word must match (if any positive words exist)
-    // - No negated word must match
-    const positiveWords = words.filter(w => !w.negated);
-    const negatedWords = words.filter(w => w.negated);
+    if (pattern.matchType === 'wordlist') {
+      const words = pattern.words || [];
+      const searchText = pattern.caseSensitive ? fieldValue : fieldValue.toLowerCase();
 
-    // Check positive words: at least one must match (OR logic for positive words)
-    const hasPositiveMatch = positiveWords.length === 0 || positiveWords.some(word => {
-      const searchWord = pattern.caseSensitive ? word.text : word.text.toLowerCase();
-      
-      // Direct substring match
-      if (searchText.includes(searchWord)) {
-        return true;
+      // All conditions must be satisfied:
+      // - At least one positive word must match (if any positive words exist)
+      // - No negated word must match
+      const positiveWords = words.filter(w => !w.negated);
+      const negatedWords = words.filter(w => w.negated);
+
+      // Check positive words: at least one must match (OR logic for positive words)
+      const hasPositiveMatch = positiveWords.length === 0 || positiveWords.some(word => {
+        const searchWord = pattern.caseSensitive ? word.text : word.text.toLowerCase();
+
+        // Direct substring match
+        if (searchText.includes(searchWord)) {
+          return true;
+        }
+
+        // Fuzzy match: normalize whitespace and common punctuation
+        // This helps match "Selver AS selver.ee" against "Selver AS, selver.ee"
+        const normalizedSearch = searchText.replace(/[,;.]/g, ' ').replace(/\s+/g, ' ').trim();
+        const normalizedWord = searchWord.replace(/[,;.]/g, ' ').replace(/\s+/g, ' ').trim();
+
+        return normalizedSearch.includes(normalizedWord);
+      });
+
+      // Check negated words: none must match (AND NOT logic)
+      const hasNegatedMatch = negatedWords.some(word => {
+        const searchWord = pattern.caseSensitive ? word.text : word.text.toLowerCase();
+        return searchText.includes(searchWord);
+      });
+
+      // Pattern matches if positive condition is met AND no negated words match
+      return hasPositiveMatch && !hasNegatedMatch;
+    } else {
+      // Regex mode
+      try {
+        const regex = new RegExp(pattern.regex || '', pattern.regexFlags || '');
+        return regex.test(fieldValue);
+      } catch (e) {
+        console.error('Invalid regex pattern:', pattern.regex, e);
+        return false;
       }
-      
-      // Fuzzy match: normalize whitespace and common punctuation
-      // This helps match "Selver AS selver.ee" against "Selver AS, selver.ee"
-      const normalizedSearch = searchText.replace(/[,;.]/g, ' ').replace(/\s+/g, ' ').trim();
-      const normalizedWord = searchWord.replace(/[,;.]/g, ' ').replace(/\s+/g, ' ').trim();
-      
-      return normalizedSearch.includes(normalizedWord);
-    });
-
-    // Check negated words: none must match (AND NOT logic)
-    const hasNegatedMatch = negatedWords.some(word => {
-      const searchWord = pattern.caseSensitive ? word.text : word.text.toLowerCase();
-      return searchText.includes(searchWord);
-    });
-
-    // Pattern matches if positive condition is met AND no negated words match
-    return hasPositiveMatch && !hasNegatedMatch;
-  } else {
-    // Regex mode
-    try {
-      const regex = new RegExp(pattern.regex || '', pattern.regexFlags || '');
-      return regex.test(fieldValue);
-    } catch (e) {
-      console.error('Invalid regex pattern:', pattern.regex, e);
-      return false;
     }
-  }
+  });
 }
 
 /**
