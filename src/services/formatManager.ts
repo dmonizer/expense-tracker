@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
 import type { ImportFormatDefinition } from '../types';
+import { logger } from '../utils';
 
 /**
  * Format Manager Service
@@ -248,17 +249,17 @@ export async function initializeBuiltInFormats(): Promise<void> {
 
     try {
       await db.importFormats.add(swedbank);
-      console.log('[FormatManager] Initialized built-in Swedbank format');
+      logger.info('[FormatManager] Initialized built-in Swedbank format');
     } catch (error) {
       // If the format already exists (race condition), ignore the error
       if (error instanceof Error && error.name === 'ConstraintError') {
-        console.log('[FormatManager] Built-in Swedbank format already exists, skipping initialization');
+        logger.info('[FormatManager] Built-in Swedbank format already exists, skipping initialization');
       } else {
         throw error;
       }
     }
   } else {
-    console.log('[FormatManager] Built-in Swedbank format already exists');
+    logger.info('[FormatManager] Built-in Swedbank format already exists');
   }
 }
 

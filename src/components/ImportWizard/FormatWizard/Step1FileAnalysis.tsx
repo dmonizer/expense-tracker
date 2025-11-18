@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../../utils';
 import Papa from 'papaparse';
 import type { CSVSettings } from '../../../types';
 import type { WizardState } from './FormatWizardMain';
@@ -58,7 +59,7 @@ export default function Step1FileAnalysis({
         setCSVSettings(prev => ({ ...prev, delimiter: detected.delimiter }));
       }
     } catch (err) {
-      console.error('Delimiter detection error:', err);
+      logger.error('Delimiter detection error:', err);
       setError('Failed to analyze file');
     } finally {
       setIsLoading(false);
@@ -98,13 +99,13 @@ export default function Step1FileAnalysis({
           
           setIsLoading(false);
         } catch (err) {
-          console.error('Parse error:', err);
+          logger.error('Parse error:', err);
           setError('Failed to parse CSV file');
           setIsLoading(false);
         }
       },
       error: (err) => {
-        console.error('CSV parse error:', err);
+        logger.error('CSV parse error:', err);
         setError(`Parse error: ${err.message}`);
         setIsLoading(false);
       },

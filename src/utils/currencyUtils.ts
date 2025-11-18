@@ -1,4 +1,5 @@
 import { convertCurrency } from '../services/exchangeRateManager';
+import { logger } from './logger';
 
 /**
  * Currency utility functions
@@ -169,7 +170,7 @@ export async function getBaseCurrency(): Promise<string> {
       return settings[0].defaultCurrency;
     }
   } catch (error) {
-    console.error('Failed to get base currency:', error);
+    logger.error('Failed to get base currency:', error);
   }
   return 'EUR'; // Default
 }

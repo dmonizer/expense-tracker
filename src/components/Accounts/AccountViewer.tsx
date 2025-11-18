@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
+import { logger } from '../../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../services/db';
 import type { Account } from '../../types';
 import LoadingSpinner from '../UI/LoadingSpinner';
 import { cleanupDuplicateAccounts, rebuildAccountingFromTransactions } from '../../services/databaseCleanup';
 import { getDisplayBalance } from '../../services/journalEntryManager';
-import { updateAccountName, updateAccountOpeningBalance } from '../../services/accountManager';
+import { updateAccount, updateAccountOpeningBalance } from '../../services/accountManager';
 import { formatCurrency } from '../../utils/currencyUtils';
 import { 
   getAccountTypeIcon, 
@@ -13,8 +14,9 @@ import {
   getAccountTypeBadgeColor,
   type AccountType 
 } from '../../utils/accountTypeHelpers';
+import type { AccountSubtype } from '../../types';
 import { useAccounts, useAccountFiltering, type AccountWithDetails } from '../../hooks/useAccounts';
-import { RenameAccountModal, OpeningBalanceModal, CreateAccountModal } from './AccountModals';
+import { EditAccountModal, OpeningBalanceModal, CreateAccountModal } from './AccountModals';
 import AccountDetailView from './AccountDetailView';
 import HoldingsManager from './HoldingsManager';
 
@@ -39,7 +41,7 @@ function AccountViewer() {
   const [managingHoldingsAccount, setManagingHoldingsAccount] = useState<Account | null>(null);
 
   // Modal state
-  const [renamingAccount, setRenamingAccount] = useState<Account | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingBalanceAccount, setEditingBalanceAccount] = useState<Account | null>(null);
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
@@ -68,7 +70,7 @@ function AccountViewer() {
 
       await reload();
     } catch (err) {
-      console.error('Cleanup failed:', err);
+      logger.error('Cleanup failed:', err);
       setError(err instanceof Error ? err.message : 'Cleanup failed');
     } finally {
       setCleanupRunning(false);
@@ -100,7 +102,7 @@ function AccountViewer() {
 
       await reload();
     } catch (err) {
-      console.error('Rebuild failed:', err);
+      logger.error('Rebuild failed:', err);
       setError(err instanceof Error ? err.message : 'Rebuild failed');
     } finally {
       setRebuildRunning(false);
@@ -108,14 +110,23 @@ function AccountViewer() {
   }, [reload]);
 
   /**
-   * Handle account rename
+   * Handle account edit
    */
-  const handleRenameAccount = useCallback(async (accountId: string, newName: string) => {
+  const handleEditAccount = useCallback(async (accountId: string, updates: {
+    name?: string;
+    description?: string;
+    color?: string;
+    institution?: string;
+    subtype?: AccountSubtype;
+    isActive?: boolean;
+    accountNumber?: string;
+    supportedCurrencies?: string[];
+  }) => {
     try {
-      await updateAccountName(accountId, newName);
+      await updateAccount(accountId, updates);
       await reload();
     } catch (err) {
-      console.error('Failed to update account:', err);
+      logger.error('Failed to update account:', err);
       throw err;
     }
   }, [reload]);
@@ -128,7 +139,7 @@ function AccountViewer() {
       await updateAccountOpeningBalance(accountId, balance);
       await reload();
     } catch (err) {
-      console.error('Failed to update opening balance:', err);
+      logger.error('Failed to update opening balance:', err);
       throw err;
     }
   }, [reload]);
@@ -371,7 +382,7 @@ function AccountViewer() {
               key={account.id}
               account={account}
               onViewTransactions={setSelectedAccountId}
-              onRename={setRenamingAccount}
+              onEdit={setEditingAccount}
               onEditBalance={setEditingBalanceAccount}
               onManageHoldings={setManagingHoldingsAccount}
             />
@@ -379,12 +390,12 @@ function AccountViewer() {
       </div>
 
       {/* Modals */}
-      {renamingAccount && (
-        <RenameAccountModal
+      {editingAccount && (
+        <EditAccountModal
           isOpen={true}
-          account={renamingAccount}
-          onClose={() => setRenamingAccount(null)}
-          onSave={handleRenameAccount}
+          account={editingAccount}
+          onClose={() => setEditingAccount(null)}
+          onSave={handleEditAccount}
         />
       )}
 
@@ -459,7 +470,7 @@ function AccountViewer() {
 interface AccountCardProps {
   account: AccountWithDetails;
   onViewTransactions: (id: string) => void;
-  onRename: (account: Account) => void;
+  onEdit: (account: Account) => void;
   onEditBalance: (account: Account) => void;
   onManageHoldings: (account: Account) => void;
 }
@@ -467,7 +478,7 @@ interface AccountCardProps {
 function AccountCard({ 
   account, 
   onViewTransactions, 
-  onRename, 
+  onEdit, 
   onEditBalance, 
   onManageHoldings 
 }: Readonly<AccountCardProps>) {
@@ -610,10 +621,10 @@ function AccountCard({
           📊 View Transactions
         </button>
         <button
-          onClick={() => onRename(account)}
+          onClick={() => onEdit(account)}
           className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200 transition-colors flex items-center gap-1"
         >
-          ✏️ Rename
+          ✏️ Edit
         </button>
         {(account.type === 'asset' || account.type === 'liability') && (
           <button

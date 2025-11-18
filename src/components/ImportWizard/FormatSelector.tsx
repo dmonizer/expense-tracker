@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import type { ImportFormatDefinition } from '../../types';
 import { getAllFormats } from '../../services/formatManager';
 import { detectFormat } from '../../services/formatDetector';
@@ -44,7 +45,7 @@ export default function FormatSelector({
         setSelectedFormatId(formats[0].id);
       }
     } catch (error) {
-      console.error('Format initialization error:', error);
+      logger.error('Format initialization error:', error);
     } finally {
       setIsDetecting(false);
     }

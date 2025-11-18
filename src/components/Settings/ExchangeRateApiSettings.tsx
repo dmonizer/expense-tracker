@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import { db } from '../../services/db';
 import type { UserSettings, ExchangeRateApiProvider, ExchangeRateApiProviderType } from '../../types';
 import { refreshCommonExchangeRates } from '../../services/exchangeRateManager';
@@ -79,7 +80,7 @@ function ExchangeRateApiSettings() {
       setAutoRefresh(userSettings.exchangeRateAutoRefresh || false);
       setRefreshInterval(userSettings.exchangeRateRefreshInterval || 1440);
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      logger.error('Failed to load settings:', error);
       setMessage({ type: 'error', text: 'Failed to load settings' });
     } finally {
       setLoading(false);
@@ -160,7 +161,7 @@ function ExchangeRateApiSettings() {
       setMessage({ type: 'success', text: 'Settings saved successfully!' });
       await loadSettings();
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      logger.error('Failed to save settings:', error);
       setMessage({ type: 'error', text: 'Failed to save settings' });
     } finally {
       setSaving(false);
@@ -185,7 +186,7 @@ function ExchangeRateApiSettings() {
         text: `Updated ${results.success} of ${results.total} currency pairs. ${results.failed > 0 ? `${results.failed} failed.` : ''}`,
       });
     } catch (error) {
-      console.error('Failed to refresh rates:', error);
+      logger.error('Failed to refresh rates:', error);
       setMessage({ type: 'error', text: 'Failed to refresh exchange rates' });
     } finally {
       setRefreshing(false);

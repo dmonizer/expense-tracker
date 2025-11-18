@@ -1,4 +1,5 @@
 import {memo, useEffect, useState} from 'react';
+import { logger } from '../../../utils';
 import type {TooltipItem} from 'chart.js';
 import {
     CategoryScale,
@@ -97,7 +98,7 @@ function BalanceLine({transactions, filters}: Readonly<BalanceLineProps>) {
                     ],
                 });
             } catch (error) {
-                console.error('Error loading balance data:', error);
+                logger.error('Error loading balance data:', error);
                 setChartData(null);
             } finally {
                 setIsLoading(false);

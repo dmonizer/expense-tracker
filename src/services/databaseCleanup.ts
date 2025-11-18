@@ -2,6 +2,7 @@ import { db } from './db';
 import { createJournalEntryFromTransaction } from './journalEntryManager';
 import { initializeDefaultAccounts } from './accountManager';
 import type { CategoryRule } from '../types';
+import { logger } from '../utils';
 
 /**
  * Database Cleanup Utilities
@@ -17,7 +18,7 @@ export async function cleanupDuplicateAccounts(): Promise<{
   duplicatesRemoved: number;
   uniqueAccountsKept: number;
 }> {
-  console.log('Starting duplicate account cleanup...');
+  logger.info('Starting duplicate account cleanup...');
   
   // Get all accounts
   const allAccounts = await db.accounts.toArray();
@@ -48,14 +49,14 @@ export async function cleanupDuplicateAccounts(): Promise<{
       const keepAccount = accounts[0];
       accountsToKeep.add(keepAccount.id);
       
-      console.log(`Found ${accounts.length} duplicates for "${accounts[0].name}" (${accounts[0].type})`);
-      console.log(`  Keeping: ${keepAccount.id} (created ${keepAccount.createdAt})`);
+      logger.info(`Found ${accounts.length} duplicates for "${accounts[0].name}" (${accounts[0].type})`);
+      logger.info(`  Keeping: ${keepAccount.id} (created ${keepAccount.createdAt})`);
       
       // Mark the rest for deletion
       for (let i = 1; i < accounts.length; i++) {
         accountsToDelete.push(accounts[i].id);
         duplicatesRemoved++;
-        console.log(`  Deleting: ${accounts[i].id} (created ${accounts[i].createdAt})`);
+        logger.info(`  Deleting: ${accounts[i].id} (created ${accounts[i].createdAt})`);
       }
       
       // Update any category rules pointing to duplicate accounts to point to the kept account
@@ -83,13 +84,13 @@ export async function cleanupDuplicateAccounts(): Promise<{
   // Delete duplicate accounts
   if (accountsToDelete.length > 0) {
     await db.accounts.bulkDelete(accountsToDelete);
-    console.log(`Deleted ${accountsToDelete.length} duplicate accounts`);
+    logger.info(`Deleted ${accountsToDelete.length} duplicate accounts`);
   }
   
-  console.log('Cleanup complete!');
-  console.log(`  Total accounts before: ${totalAccounts}`);
-  console.log(`  Duplicates removed: ${duplicatesRemoved}`);
-  console.log(`  Unique accounts kept: ${accountsToKeep.size}`);
+  logger.info('Cleanup complete!');
+  logger.info(`  Total accounts before: ${totalAccounts}`);
+  logger.info(`  Duplicates removed: ${duplicatesRemoved}`);
+  logger.info(`  Unique accounts kept: ${accountsToKeep.size}`);
   
   return {
     totalAccounts,
@@ -103,7 +104,7 @@ export async function cleanupDuplicateAccounts(): Promise<{
  * Use this to start fresh with the double-entry system while keeping your old data
  */
 export async function clearAccountingData(): Promise<void> {
-  console.log('Clearing all accounting data...');
+  logger.info('Clearing all accounting data...');
   
   // Clear accounting tables in one transaction
   await db.transaction('rw', db.accounts, db.journalEntries, db.splits, db.accountBalances, db.exchangeRates, async () => {
@@ -119,7 +120,7 @@ export async function clearAccountingData(): Promise<void> {
     rule.accountId = undefined;
   });
   
-  console.log('Accounting data cleared. Transactions and categories are preserved.');
+  logger.info('Accounting data cleared. Transactions and categories are preserved.');
 }
 
 /**
@@ -194,20 +195,20 @@ export async function rebuildAccountingFromTransactions(): Promise<{
   accountsCreated: number;
   journalEntriesCreated: number;
 }> {
-  console.log('Rebuilding accounting data from transactions...');
+  logger.info('Rebuilding accounting data from transactions...');
   
   // Step 1: Clear all accounting data
-  console.log('Step 1: Clearing existing accounting data...');
+  logger.info('Step 1: Clearing existing accounting data...');
   await clearAccountingData();
   
   // Step 2: Initialize default accounts
-  console.log('Step 2: Initializing default accounts...');
+  logger.info('Step 2: Initializing default accounts...');
   await initializeDefaultAccounts();
   
   // Step 3: Get all transactions
-  console.log('Step 3: Loading all transactions...');
+  logger.info('Step 3: Loading all transactions...');
   const allTransactions = await db.transactions.toArray();
-  console.log(`Found ${allTransactions.length} transactions to process`);
+  logger.info(`Found ${allTransactions.length} transactions to process`);
   
   if (allTransactions.length === 0) {
     return {
@@ -218,7 +219,7 @@ export async function rebuildAccountingFromTransactions(): Promise<{
   }
   
   // Step 4: Get all category rules for lookup
-  console.log('Step 4: Loading category rules...');
+  logger.info('Step 4: Loading category rules...');
   const categoryRules = await db.categoryRules.toArray();
   const categoryRuleMap = new Map<string, CategoryRule>();
   categoryRules.forEach(rule => {
@@ -226,7 +227,7 @@ export async function rebuildAccountingFromTransactions(): Promise<{
   });
   
   // Step 5: Create journal entries for each transaction
-  console.log('Step 5: Creating journal entries...');
+  logger.info('Step 5: Creating journal entries...');
   let journalEntriesCreated = 0;
   
   for (const transaction of allTransactions) {
@@ -241,10 +242,10 @@ export async function rebuildAccountingFromTransactions(): Promise<{
       journalEntriesCreated++;
       
       if (journalEntriesCreated % 100 === 0) {
-        console.log(`  Processed ${journalEntriesCreated}/${allTransactions.length} transactions...`);
+        logger.info(`  Processed ${journalEntriesCreated}/${allTransactions.length} transactions...`);
       }
     } catch (error) {
-      console.error(`Failed to create journal entry for transaction ${transaction.id}:`, error);
+      logger.error(`Failed to create journal entry for transaction ${transaction.id}:`, error);
       // Continue with other transactions
     }
   }
@@ -252,10 +253,10 @@ export async function rebuildAccountingFromTransactions(): Promise<{
   // Step 6: Count created accounts
   const accountsCreated = await db.accounts.count();
   
-  console.log('Rebuild complete!');
-  console.log(`  Transactions processed: ${allTransactions.length}`);
-  console.log(`  Journal entries created: ${journalEntriesCreated}`);
-  console.log(`  Accounts created: ${accountsCreated}`);
+  logger.info('Rebuild complete!');
+  logger.info(`  Transactions processed: ${allTransactions.length}`);
+  logger.info(`  Journal entries created: ${journalEntriesCreated}`);
+  logger.info(`  Accounts created: ${accountsCreated}`);
   
   return {
     transactionsProcessed: allTransactions.length,

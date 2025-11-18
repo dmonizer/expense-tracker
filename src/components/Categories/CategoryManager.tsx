@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import { logger } from '../../utils';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {db} from '../../services/db';
 import {recategorizeAll} from '../../services/categorizer';
@@ -89,14 +90,14 @@ function CategoryManager() {
             const count = await recategorizeAll();
             alert(`Successfully re-categorized ${count} transactions.`);
           } catch (error) {
-            console.error('Error re-categorizing:', error);
+            logger.error('Error re-categorizing:', error);
             alert('Failed to re-categorize transactions. Please try again.');
           } finally {
             setIsRecategorizing(false);
           }
         }
       } catch (error) {
-        console.error('Error deleting rule:', error);
+        logger.error('Error deleting rule:', error);
         alert('Failed to delete rule. Please try again.');
       }
     }
@@ -115,7 +116,7 @@ function CategoryManager() {
       await db.categoryRules.add(newRule);
       setEditingRule(newRule);
     } catch (error) {
-      console.error('Error duplicating rule:', error);
+      logger.error('Error duplicating rule:', error);
       alert('Failed to duplicate rule. Please try again.');
     }
   };
@@ -127,7 +128,7 @@ function CategoryManager() {
         const count = await recategorizeAll();
         alert(`Successfully re-categorized ${count} transactions.`);
       } catch (error) {
-        console.error('Error re-categorizing:', error);
+        logger.error('Error re-categorizing:', error);
         alert('Failed to re-categorize transactions. Please try again.');
       } finally {
         setIsRecategorizing(false);
@@ -152,14 +153,14 @@ function CategoryManager() {
           const count = await recategorizeAll();
           alert(`Successfully re-categorized ${count} transactions.`);
         } catch (error) {
-          console.error('Error re-categorizing:', error);
+          logger.error('Error re-categorizing:', error);
           alert('Failed to re-categorize transactions. Please try again.');
         } finally {
           setIsRecategorizing(false);
         }
       }
     } catch (error) {
-      console.error('Error saving rule:', error);
+      logger.error('Error saving rule:', error);
       alert('Failed to save rule. Please try again.');
     }
   };
@@ -182,7 +183,7 @@ function CategoryManager() {
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
     } catch (error) {
-      console.error('Error exporting rules:', error);
+      logger.error('Error exporting rules:', error);
       alert('Failed to export rules. Please try again.');
     }
   };
@@ -233,7 +234,7 @@ function CategoryManager() {
           handleRecategorizeAll();
         }
       } catch (error) {
-        console.error('Error importing rules:', error);
+        logger.error('Error importing rules:', error);
         alert(`Failed to import rules: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     };

@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
 import type { ExchangeRate, ExchangeRateSource, ExchangeRateApiProviderType } from '../types';
+import { logger } from '../utils';
 
 /**
  * Exchange Rate Manager - Handles currency conversion rates
@@ -271,21 +272,21 @@ async function fetchFromExchangeRateApi(
     const response = await fetch(baseUrl);
 
     if (!response.ok) {
-      console.error(`exchangerate-api error: ${response.status}`);
+      logger.error(`exchangerate-api error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
 
     if (data.result === 'error') {
-      console.error(`exchangerate-api error: ${data['error-type']}`);
+      logger.error(`exchangerate-api error: ${data['error-type']}`);
       return null;
     }
 
     const rate = apiKey ? data.conversion_rate : data.rates[toCurrency];
 
     if (!rate) {
-      console.error(`No rate found for ${fromCurrency} to ${toCurrency}`);
+      logger.error(`No rate found for ${fromCurrency} to ${toCurrency}`);
       return null;
     }
 
@@ -295,7 +296,7 @@ async function fetchFromExchangeRateApi(
       date: new Date(),
     };
   } catch (error) {
-    console.error(`Error fetching from exchangerate-api:`, error);
+    logger.error(`Error fetching from exchangerate-api:`, error);
     return null;
   }
 }
@@ -311,7 +312,7 @@ async function fetchFromFixer(
 ): Promise<ExchangeRateApiResult | null> {
   try {
     if (!apiKey) {
-      console.error('Fixer API key required');
+      logger.error('Fixer API key required');
       return null;
     }
 
@@ -319,21 +320,21 @@ async function fetchFromFixer(
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`Fixer API error: ${response.status}`);
+      logger.error(`Fixer API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
 
     if (!data.success) {
-      console.error(`Fixer API error: ${data.error?.info || 'Unknown error'}`);
+      logger.error(`Fixer API error: ${data.error?.info || 'Unknown error'}`);
       return null;
     }
 
     const rate = data.rates[toCurrency];
 
     if (!rate) {
-      console.error(`No rate found for ${fromCurrency} to ${toCurrency}`);
+      logger.error(`No rate found for ${fromCurrency} to ${toCurrency}`);
       return null;
     }
 
@@ -343,7 +344,7 @@ async function fetchFromFixer(
       date: new Date(data.date),
     };
   } catch (error) {
-    console.error(`Error fetching from Fixer:`, error);
+    logger.error(`Error fetching from Fixer:`, error);
     return null;
   }
 }
@@ -362,7 +363,7 @@ async function fetchFromECB(
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`ECB API error: ${response.status}`);
+      logger.error(`ECB API error: ${response.status}`);
       return null;
     }
 
@@ -373,7 +374,7 @@ async function fetchFromECB(
     const matches = [...xmlText.matchAll(rateRegex)];
 
     if (matches.length === 0) {
-      console.error(`No rates found in ECB data`);
+      logger.error(`No rates found in ECB data`);
       return null;
     }
 
@@ -393,7 +394,7 @@ async function fetchFromECB(
       // Cross rate through EUR
       rate = rates[toCurrency] / rates[fromCurrency];
     } else {
-      console.error(`Cannot calculate rate for ${fromCurrency} to ${toCurrency}`);
+      logger.error(`Cannot calculate rate for ${fromCurrency} to ${toCurrency}`);
       return null;
     }
 
@@ -403,7 +404,7 @@ async function fetchFromECB(
       date: new Date(),
     };
   } catch (error) {
-    console.error(`Error fetching from ECB:`, error);
+    logger.error(`Error fetching from ECB:`, error);
     return null;
   }
 }
@@ -419,7 +420,7 @@ async function fetchFromOpenExchangeRates(
 ): Promise<ExchangeRateApiResult | null> {
   try {
     if (!apiKey) {
-      console.error('Open Exchange Rates API key required');
+      logger.error('Open Exchange Rates API key required');
       return null;
     }
 
@@ -428,14 +429,14 @@ async function fetchFromOpenExchangeRates(
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`Open Exchange Rates API error: ${response.status}`);
+      logger.error(`Open Exchange Rates API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
 
     if (data.error) {
-      console.error(`Open Exchange Rates error: ${data.message}`);
+      logger.error(`Open Exchange Rates error: ${data.message}`);
       return null;
     }
 
@@ -451,7 +452,7 @@ async function fetchFromOpenExchangeRates(
       // Cross rate through USD
       rate = rates[toCurrency] / rates[fromCurrency];
     } else {
-      console.error(`Cannot calculate rate for ${fromCurrency} to ${toCurrency}`);
+      logger.error(`Cannot calculate rate for ${fromCurrency} to ${toCurrency}`);
       return null;
     }
 
@@ -461,7 +462,7 @@ async function fetchFromOpenExchangeRates(
       date: new Date(data.timestamp * 1000),
     };
   } catch (error) {
-    console.error(`Error fetching from Open Exchange Rates:`, error);
+    logger.error(`Error fetching from Open Exchange Rates:`, error);
     return null;
   }
 }
@@ -480,7 +481,7 @@ export async function fetchExchangeRate(
     const settings = await db.settings.get('default');
 
     if (!settings) {
-      console.log('No settings found');
+      logger.info('No settings found');
       return null;
     }
 
@@ -488,7 +489,7 @@ export async function fetchExchangeRate(
     const providers = settings.exchangeRateApiProviders?.filter(p => p.enabled) || [];
 
     if (providers.length === 0) {
-      console.log('No exchange rate API providers configured');
+      logger.info('No exchange rate API providers configured');
       return null;
     }
 
@@ -499,7 +500,7 @@ export async function fetchExchangeRate(
     if (preferredProvider) {
       const preferred = providers.find(p => p.type === preferredProvider);
       if (preferred) {
-        console.log(`[FetchExchangeRate] Trying preferred provider ${preferredProvider} for ${fromCurrency}/${toCurrency}`);
+        logger.info(`[FetchExchangeRate] Trying preferred provider ${preferredProvider} for ${fromCurrency}/${toCurrency}`);
         const result = await fetchFromProvider(fromCurrency, toCurrency, preferred.type, preferred.apiKey);
         if (result) {
           return result;
@@ -511,18 +512,18 @@ export async function fetchExchangeRate(
 
     // Try each provider in priority order
     for (const provider of providers) {
-      console.log(`[FetchExchangeRate] Trying ${provider.type} for ${fromCurrency}/${toCurrency}`);
+      logger.info(`[FetchExchangeRate] Trying ${provider.type} for ${fromCurrency}/${toCurrency}`);
       const result = await fetchFromProvider(fromCurrency, toCurrency, provider.type, provider.apiKey);
       if (result) {
-        console.log(`[FetchExchangeRate] Successfully fetched ${fromCurrency}/${toCurrency} from ${provider.type}`);
+        logger.info(`[FetchExchangeRate] Successfully fetched ${fromCurrency}/${toCurrency} from ${provider.type}`);
         return result;
       }
     }
 
-    console.log(`[FetchExchangeRate] All providers failed for ${fromCurrency}/${toCurrency}`);
+    logger.info(`[FetchExchangeRate] All providers failed for ${fromCurrency}/${toCurrency}`);
     return null;
   } catch (error) {
-    console.error(`Error in fetchExchangeRate for ${fromCurrency}/${toCurrency}:`, error);
+    logger.error(`Error in fetchExchangeRate for ${fromCurrency}/${toCurrency}:`, error);
     return null;
   }
 }
@@ -543,7 +544,7 @@ async function fetchFromProvider(
 
       case 'fixer':
         if (!apiKey) {
-          console.error('Fixer requires API key');
+          logger.error('Fixer requires API key');
           return null;
         }
         return await fetchFromFixer(fromCurrency, toCurrency, apiKey);
@@ -553,17 +554,17 @@ async function fetchFromProvider(
 
       case 'openexchangerates':
         if (!apiKey) {
-          console.error('Open Exchange Rates requires API key');
+          logger.error('Open Exchange Rates requires API key');
           return null;
         }
         return await fetchFromOpenExchangeRates(fromCurrency, toCurrency, apiKey);
 
       default:
-        console.error(`Unknown exchange rate provider: ${providerType}`);
+        logger.error(`Unknown exchange rate provider: ${providerType}`);
         return null;
     }
   } catch (error) {
-    console.error(`Error fetching from ${providerType}:`, error);
+    logger.error(`Error fetching from ${providerType}:`, error);
     return null;
   }
 }

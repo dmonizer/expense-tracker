@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '../../utils';
 import type { Transaction, ImportFormatDefinition } from '../../types';
 import { parseSwedBankCSV, parseWithCustomFormat, detectDuplicates, importTransactions } from '../../services/csvParser';
 import { categorizeBatch } from '../../services/categorizer';
@@ -84,11 +85,11 @@ function FileUpload() {
       const detectedFormat = await detectFormat(fileToProcess);
       
       if (detectedFormat) {
-        console.log('[FileUpload] Using detected format:', detectedFormat.name);
+        logger.info('[FileUpload] Using detected format:', detectedFormat.name);
         await processFileWithFormat(fileToProcess, detectedFormat);
       } else {
         // No format detected, show selector
-        console.log('[FileUpload] No format detected, showing selector');
+        logger.info('[FileUpload] No format detected, showing selector');
         setLoading(false);
         setStep('formatSelect');
       }

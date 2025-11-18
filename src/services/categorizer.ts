@@ -1,6 +1,7 @@
 import type { Transaction, CategoryRule, Pattern } from '../types';
 import { db } from './db';
 import { CATEGORIZATION } from '../constants';
+import { logger } from '../utils';
 
 /**
  * Gets the value of a transaction field by name
@@ -79,7 +80,7 @@ export function matchesPattern(transaction: Transaction, pattern: Pattern): bool
         const regex = new RegExp(pattern.regex || '', pattern.regexFlags || '');
         return regex.test(fieldValue);
       } catch (e) {
-        console.error('Invalid regex pattern:', pattern.regex, e);
+        logger.error('Invalid regex pattern: ' + pattern.regex, e);
         return false;
       }
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../../utils';
 import { format as formatDate } from 'date-fns';
 import type { 
   Transaction, 
@@ -59,7 +60,7 @@ export default function Step3Preview({
       setErrors(result.errors);
       setErrorDetails(result.errorDetails || []);
     } catch (error) {
-      console.error('Preview parse error:', error);
+      logger.error('Preview parse error:', error);
       setErrors([`Parse error: ${error instanceof Error ? error.message : 'Unknown error'}`]);
     } finally {
       setIsLoading(false);

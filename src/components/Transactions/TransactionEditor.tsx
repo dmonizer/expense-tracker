@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { Transaction } from '../../types';
 import { db } from '../../services/db';
@@ -187,7 +188,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
       
       onClose();
     } catch (error) {
-      console.error('Failed to save category:', error);
+      logger.error('Failed to save category:', error);
       alert('Failed to save category. Please try again.');
     } finally {
       setIsSaving(false);
@@ -232,7 +233,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
       // Show success message
       alert(`Category "${trimmedName}" created successfully! You can add patterns to it later in the Categories tab.`);
     } catch (error) {
-      console.error('Failed to create category:', error);
+      logger.error('Failed to create category:', error);
       alert('Failed to create category. Please try again.');
     }
   };

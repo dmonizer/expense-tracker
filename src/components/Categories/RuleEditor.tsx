@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import { logger } from '../../utils';
 import {isValidPattern} from '../../utils';
 import type {CategoryGroup, CategoryRule, Pattern} from '../../types';
 import {db} from '../../services/db';
@@ -30,7 +31,7 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
                 const groups = await db.categoryGroups.orderBy('sortOrder').toArray();
                 setCategoryGroups(groups);
             } catch (error) {
-                console.error('Failed to load category groups:', error);
+                logger.error('Failed to load category groups:', error);
             } finally {
                 setLoadingGroups(false);
             }

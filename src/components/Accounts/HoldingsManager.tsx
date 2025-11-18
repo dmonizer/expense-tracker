@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import { db } from '../../services/db';
 import type { Account, Holding } from '../../types';
 import { formatCurrency } from '../../utils/currencyUtils';
@@ -34,7 +35,7 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
         .toArray();
       setHoldings(accountHoldings);
     } catch (error) {
-      console.error('Failed to load holdings:', error);
+      logger.error('Failed to load holdings:', error);
     } finally {
       setLoading(false);
     }
@@ -80,7 +81,7 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
       setForm({ symbol: '', name: '', type: 'stock', quantity: '', purchasePrice: '', notes: '' });
       await loadHoldings();
     } catch (error) {
-      console.error('Failed to save holding:', error);
+      logger.error('Failed to save holding:', error);
     }
   };
 
@@ -90,7 +91,7 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
       await db.holdings.delete(id);
       await loadHoldings();
     } catch (error) {
-      console.error('Failed to delete holding:', error);
+      logger.error('Failed to delete holding:', error);
     }
   };
 

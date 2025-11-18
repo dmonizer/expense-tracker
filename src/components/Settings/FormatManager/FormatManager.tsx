@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../../utils';
 import type { ImportFormatDefinition } from '../../../types';
 import { 
   getAllFormats, 
@@ -36,7 +37,7 @@ export default function FormatManager() {
       const allFormats = await getAllFormats();
       setFormats(allFormats);
     } catch (err) {
-      console.error('Load formats error:', err);
+      logger.error('Load formats error:', err);
       setError('Failed to load formats');
     } finally {
       setIsLoading(false);

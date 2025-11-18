@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { logger } from '../../utils';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
 import { formatCurrency } from '../../utils';
@@ -383,7 +384,7 @@ function OverviewContent() {
           <button
             onClick={() => {
               // Navigate to import page - this would need router integration
-              console.log('Navigate to import page');
+              logger.info('Navigate to import page');
             }}
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../utils';
 import { db } from '../services/db';
 import type { Account, CategoryRule } from '../types';
 import { calculateAccountBalance, getDisplayBalance } from '../services/journalEntryManager';
@@ -46,7 +47,7 @@ export function useAccounts() {
             currentBalance = getDisplayBalance(balanceResult.balance, account.type);
             balanceCurrency = balanceResult.currency;
           } catch (error) {
-            console.error(`Failed to calculate balance for ${account.name}:`, error);
+            logger.error(`Failed to calculate balance for ${account.name}:`, error);
           }
 
           return {
@@ -65,7 +66,7 @@ export function useAccounts() {
       const sortedAccounts = sortAccountsByTypeAndName(accountsWithDetails);
       setAccounts(sortedAccounts);
     } catch (err) {
-      console.error('Failed to load accounts:', err);
+      logger.error('Failed to load accounts:', err);
       setError(err instanceof Error ? err.message : 'Failed to load accounts');
     } finally {
       setLoading(false);

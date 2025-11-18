@@ -13,6 +13,7 @@ import type {
 } from '../types';
 import {createJournalEntryFromTransaction} from './journalEntryManager';
 import {initializeDefaultAccounts} from './accountManager';
+import { logger } from '../utils';
 
 /**
  * Detailed error information for CSV parsing
@@ -722,7 +723,7 @@ export async function importTransactions(
             importRecordId: importRecord.id,
         };
     } catch (error) {
-        console.error('Import error:', error);
+        logger.error('Import error:', error);
         return {
             success: false,
             newCount: 0,

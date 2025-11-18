@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import { db } from '../../services/db';
 import type { UserSettings, PriceApiProvider, PriceApiProviderType } from '../../types';
 import { refreshAllPrices } from '../../services/priceFetcher';
@@ -70,7 +71,7 @@ function ApiSettings() {
       setAutoRefresh(userSettings.priceApiAutoRefresh || false);
       setRefreshInterval(userSettings.priceApiRefreshInterval || 60);
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      logger.error('Failed to load settings:', error);
       setMessage({ type: 'error', text: 'Failed to load settings' });
     } finally {
       setLoading(false);
@@ -150,7 +151,7 @@ function ApiSettings() {
       setMessage({ type: 'success', text: 'Settings saved successfully!' });
       await loadSettings();
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      logger.error('Failed to save settings:', error);
       setMessage({ type: 'error', text: 'Failed to save settings' });
     } finally {
       setSaving(false);
@@ -175,7 +176,7 @@ function ApiSettings() {
         text: `Updated ${results.success} of ${results.total} holdings. ${results.failed > 0 ? `${results.failed} failed.` : ''}`,
       });
     } catch (error) {
-      console.error('Failed to refresh prices:', error);
+      logger.error('Failed to refresh prices:', error);
       setMessage({ type: 'error', text: 'Failed to refresh prices' });
     } finally {
       setRefreshing(false);

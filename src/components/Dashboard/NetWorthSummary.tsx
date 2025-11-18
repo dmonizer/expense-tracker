@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
 import { calculateAccountBalance, getDisplayBalance } from '../../services/journalEntryManager';
@@ -62,7 +63,7 @@ function NetWorthSummary() {
               if (rate !== null) {
                 balanceInBaseCurrency = displayBal * rate;
               } else {
-                console.warn(`No exchange rate found for ${balanceResult.currency} to ${baseCurrency}`);
+                logger.warn(`No exchange rate found for ${balanceResult.currency} to ${baseCurrency}`);
               }
             }
 
@@ -75,7 +76,7 @@ function NetWorthSummary() {
               totalLiabilityAmount += Math.abs(balanceInBaseCurrency);
             }
           } catch (error) {
-            console.error(`Failed to calculate balance for ${account.name}:`, error);
+            logger.error(`Failed to calculate balance for ${account.name}:`, error);
           }
         }
 
@@ -84,7 +85,7 @@ function NetWorthSummary() {
         setTotalAssets(totalAssetAmount);
         setTotalLiabilities(totalLiabilityAmount);
       } catch (error) {
-        console.error('Failed to calculate net worth:', error);
+        logger.error('Failed to calculate net worth:', error);
       } finally {
         setLoading(false);
       }

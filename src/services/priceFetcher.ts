@@ -1,5 +1,6 @@
 import { db } from './db';
 import type { PriceApiProviderType } from '../types';
+import { logger } from '../utils';
 
 /**
  * Price fetching service - supports multiple API providers
@@ -27,19 +28,19 @@ async function fetchPriceFromTwelveData(
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`Twelve Data API error: ${response.status}`);
+      logger.error(`Twelve Data API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
 
     if (data.status === 'error') {
-      console.error(`Twelve Data error: ${data.message}`);
+      logger.error(`Twelve Data error: ${data.message}`);
       return null;
     }
 
     if (!data.price) {
-      console.error(`No price data for ${symbol}`);
+      logger.error(`No price data for ${symbol}`);
       return null;
     }
 
@@ -51,7 +52,7 @@ async function fetchPriceFromTwelveData(
       source: 'twelvedata',
     };
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
+    logger.error(`Error fetching price for ${symbol}:`, error);
     return null;
   }
 }
@@ -69,20 +70,20 @@ async function fetchPriceFromAlphaVantage(
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`Alpha Vantage API error: ${response.status}`);
+      logger.error(`Alpha Vantage API error: ${response.status}`);
       return null;
     }
 
     const data = await response.json();
 
     if (data['Error Message']) {
-      console.error(`Alpha Vantage error: ${data['Error Message']}`);
+      logger.error(`Alpha Vantage error: ${data['Error Message']}`);
       return null;
     }
 
     const quote = data['Global Quote'];
     if (!quote || !quote['05. price']) {
-      console.error(`No price data for ${symbol}`);
+      logger.error(`No price data for ${symbol}`);
       return null;
     }
 
@@ -94,7 +95,7 @@ async function fetchPriceFromAlphaVantage(
       source: 'alphavantage',
     };
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
+    logger.error(`Error fetching price for ${symbol}:`, error);
     return null;
   }
 }
@@ -125,7 +126,7 @@ async function fetchPriceFromYahoo(
     const response = await fetch(proxiedUrl);
 
     if (!response.ok) {
-      console.error(`Yahoo Finance API error: ${response.status}`);
+      logger.error(`Yahoo Finance API error: ${response.status}`);
       return null;
     }
 
@@ -133,13 +134,13 @@ async function fetchPriceFromYahoo(
 
     // Check for errors in response
     if (data.chart?.error) {
-      console.error(`Yahoo Finance error: ${data.chart.error.description}`);
+      logger.error(`Yahoo Finance error: ${data.chart.error.description}`);
       return null;
     }
 
     const result = data.chart?.result?.[0];
     if (!result) {
-      console.error(`No data found for ${symbol}`);
+      logger.error(`No data found for ${symbol}`);
       return null;
     }
 
@@ -148,7 +149,7 @@ async function fetchPriceFromYahoo(
     const currency = result.meta?.currency || 'USD';
 
     if (!price) {
-      console.error(`No price data for ${symbol}`);
+      logger.error(`No price data for ${symbol}`);
       return null;
     }
 
@@ -160,7 +161,7 @@ async function fetchPriceFromYahoo(
       source: 'yahoo',
     };
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
+    logger.error(`Error fetching price for ${symbol}:`, error);
     return null;
   }
 }
@@ -182,7 +183,7 @@ export async function fetchPrice(
     const settings = await db.settings.get('default');
 
     if (!settings) {
-      console.log('No settings found');
+      logger.info('No settings found');
       return null;
     }
 
@@ -200,7 +201,7 @@ export async function fetchPrice(
     }
 
     if (providers.length === 0) {
-      console.log('No API providers configured');
+      logger.info('No API providers configured');
       return null;
     }
 
@@ -211,7 +212,7 @@ export async function fetchPrice(
     if (preferredProvider) {
       const preferred = providers.find(p => p.type === preferredProvider);
       if (preferred) {
-        console.log(`[FetchPrice] Trying preferred provider ${preferredProvider} for ${symbol}`);
+        logger.info(`[FetchPrice] Trying preferred provider ${preferredProvider} for ${symbol}`);
         const quote = await fetchPriceFromProvider(symbol, preferred.type, preferred.apiKey);
         if (quote) {
           return quote;
@@ -223,18 +224,18 @@ export async function fetchPrice(
 
     // Try each provider in priority order
     for (const provider of providers) {
-      console.log(`[FetchPrice] Trying ${provider.type} for ${symbol}`);
+      logger.info(`[FetchPrice] Trying ${provider.type} for ${symbol}`);
       const quote = await fetchPriceFromProvider(symbol, provider.type, provider.apiKey);
       if (quote) {
-        console.log(`[FetchPrice] Successfully fetched ${symbol} from ${provider.type}`);
+        logger.info(`[FetchPrice] Successfully fetched ${symbol} from ${provider.type}`);
         return quote;
       }
     }
 
-    console.log(`[FetchPrice] All providers failed for ${symbol}`);
+    logger.info(`[FetchPrice] All providers failed for ${symbol}`);
     return null;
   } catch (error) {
-    console.error(`Error in fetchPrice for ${symbol}:`, error);
+    logger.error(`Error in fetchPrice for ${symbol}:`, error);
     return null;
   }
 }
@@ -251,14 +252,14 @@ async function fetchPriceFromProvider(
     switch (providerType) {
       case 'twelvedata':
         if (!apiKey) {
-          console.error('Twelve Data API key not configured');
+          logger.error('Twelve Data API key not configured');
           return null;
         }
         return await fetchPriceFromTwelveData(symbol, apiKey);
 
       case 'alphavantage':
         if (!apiKey) {
-          console.error('Alpha Vantage API key not configured');
+          logger.error('Alpha Vantage API key not configured');
           return null;
         }
         return await fetchPriceFromAlphaVantage(symbol, apiKey);
@@ -267,11 +268,11 @@ async function fetchPriceFromProvider(
         return await fetchPriceFromYahoo(symbol);
 
       default:
-        console.error(`Unknown API provider: ${providerType}`);
+        logger.error(`Unknown API provider: ${providerType}`);
         return null;
     }
   } catch (error) {
-    console.error(`Error fetching from ${providerType}:`, error);
+    logger.error(`Error fetching from ${providerType}:`, error);
     return null;
   }
 }
@@ -284,7 +285,7 @@ export async function updateHoldingPrice(holdingId: string): Promise<boolean> {
   try {
     const holding = await db.holdings.get(holdingId);
     if (!holding) {
-      console.error(`Holding ${holdingId} not found`);
+      logger.error(`Holding ${holdingId} not found`);
       return false;
     }
 
@@ -305,7 +306,7 @@ export async function updateHoldingPrice(holdingId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error(`Error updating price for holding ${holdingId}:`, error);
+    logger.error(`Error updating price for holding ${holdingId}:`, error);
     return false;
   }
 }
@@ -346,7 +347,7 @@ export async function refreshAllPrices(): Promise<{
 
     return results;
   } catch (error) {
-    console.error('Error refreshing all prices:', error);
+    logger.error('Error refreshing all prices:', error);
     throw error;
   }
 }
@@ -385,7 +386,7 @@ export async function refreshAccountPrices(accountId: string): Promise<{
 
     return results;
   } catch (error) {
-    console.error(`Error refreshing prices for account ${accountId}:`, error);
+    logger.error(`Error refreshing prices for account ${accountId}:`, error);
     throw error;
   }
 }

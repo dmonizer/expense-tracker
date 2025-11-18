@@ -1,4 +1,5 @@
 import type {TooltipItem} from 'chart.js';
+import { logger } from '../../../utils';
 import {ArcElement, Chart as ChartJS, Legend, Tooltip} from 'chart.js';
 import {Pie} from 'react-chartjs-2';
 import type {Transaction, TransactionFilters} from '../../../types';
@@ -155,7 +156,7 @@ function CategoryPieChart({transactions, filters}: Readonly<CategoryPieChartProp
                     });
                 }
             } catch (error) {
-                console.error('Error loading chart data:', error);
+                logger.error('Error loading chart data:', error);
                 setChartData(null);
             } finally {
                 setIsLoading(false);
@@ -166,7 +167,7 @@ function CategoryPieChart({transactions, filters}: Readonly<CategoryPieChartProp
     }, [transactions, filters, drilldownView, selectedGroupId]);
 
     const handleChartClick = (_event: unknown, elements: unknown[]) => {
-        console.log('Chart clicked:', elements);
+        logger.info('Chart clicked:', elements);
         if (!elements || !Array.isArray(elements) || elements.length === 0) {
             return;
         }

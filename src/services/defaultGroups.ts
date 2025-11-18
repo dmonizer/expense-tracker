@@ -1,13 +1,13 @@
 import type {CategoryGroup} from "../types";
 import {DEFAULT_GROUP_COLORS} from "../utils/colorUtils.ts";
-import {UNCATEGORIZED_GROUP_ID} from "../constants.ts";
 import {
+    UNCATEGORIZED_GROUP_ID,
     GROUP_ID_CRITICAL,
     GROUP_ID_IMPORTANT,
-    GROUP_ID_INCOME,
     GROUP_ID_OPTIONAL,
-    GROUP_ID_SAVINGS
-} from "./seedData.ts";
+    GROUP_ID_SAVINGS,
+    GROUP_ID_INCOME
+} from "../constants.ts";
 
 /**
  * Default category groups to be initialized on first app launch

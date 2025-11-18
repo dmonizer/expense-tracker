@@ -6,6 +6,7 @@ import {
 } from '../../services/exchangeRateManager';
 import { COMMON_CURRENCIES } from '../../utils/currencyUtils';
 import LoadingSpinner from '../UI/LoadingSpinner';
+import { logger } from '../../utils';
 
 function ExchangeRateManager() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
@@ -41,7 +42,7 @@ function ExchangeRateManager() {
       
       setRates(allRates);
     } catch (err) {
-      console.error('Failed to load exchange rates:', err);
+      logger.error('Failed to load exchange rates:', err);
       setError(err instanceof Error ? err.message : 'Failed to load exchange rates');
     } finally {
       setLoading(false);
@@ -73,7 +74,7 @@ function ExchangeRateManager() {
       // Reload data
       await loadData();
     } catch (err) {
-      console.error('Failed to add exchange rate:', err);
+      logger.error('Failed to add exchange rate:', err);
       setError(err instanceof Error ? err.message : 'Failed to add exchange rate');
     } finally {
       setSaving(false);
@@ -89,7 +90,7 @@ function ExchangeRateManager() {
       await deleteExchangeRate(rateId);
       await loadData();
     } catch (err) {
-      console.error('Failed to delete exchange rate:', err);
+      logger.error('Failed to delete exchange rate:', err);
       setError(err instanceof Error ? err.message : 'Failed to delete exchange rate');
     }
   };

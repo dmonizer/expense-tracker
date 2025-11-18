@@ -22,3 +22,10 @@ export const CATEGORIZATION = {
 
 // Special IDs
 export const UNCATEGORIZED_GROUP_ID = 'uncategorized';
+
+// Default Group IDs
+export const GROUP_ID_CRITICAL = 'group-critical';
+export const GROUP_ID_IMPORTANT = 'group-important';
+export const GROUP_ID_OPTIONAL = 'group-optional';
+export const GROUP_ID_SAVINGS = 'group-savings';
+export const GROUP_ID_INCOME = 'group-income';

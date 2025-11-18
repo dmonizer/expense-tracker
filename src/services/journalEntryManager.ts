@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
 import type { Transaction, JournalEntry, Split, Account, CategoryRule } from '../types';
+import { logger } from '../utils';
 import {
   ensureExpenseAccountForCategory,
   getOrCreateBankAccount,
@@ -173,7 +174,7 @@ export async function createJournalEntryFromTransaction(
 
   // Validate balance (in original currency)
   if (!validateJournalEntryBalance(splits)) {
-    console.warn('Journal entry does not balance, but continuing (multi-currency)');
+    logger.warn('Journal entry does not balance, but continuing (multi-currency)');
   }
 
   // Create journal entry

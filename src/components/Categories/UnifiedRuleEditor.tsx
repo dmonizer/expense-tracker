@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../../utils';
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { CategoryRule, Transaction, Pattern } from '../../types';
 import { db } from '../../services/db';
@@ -17,7 +18,7 @@ interface UnifiedRuleEditorProps {
   onCancel: () => void;
 }
 
-function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCancel }: UnifiedRuleEditorProps) {
+function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCancel }: Readonly<UnifiedRuleEditorProps>) {
   const [rule, setRule] = useState<CategoryRule>(initialRule);
   const [expandedPatternIndex, setExpandedPatternIndex] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -127,7 +128,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
       setNewCategoryGroupId('');
       alert(`Category "${trimmedName}" created successfully!`);
     } catch (error) {
-      console.error('Failed to create category:', error);
+      logger.error('Failed to create category:', error);
       alert('Failed to create category. Please try again.');
     }
   };
@@ -139,7 +140,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
         // Quick mode: Update transaction and optionally add patterns
         if (rule.patterns.length > 0) {
           // Find or create the category rule
-          let categoryRule = await db.categoryRules
+          const categoryRule = await db.categoryRules
             .filter(r => r.name === selectedCategory)
             .first();
 
@@ -179,7 +180,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
       onCancel(); // Close the editor
     } catch (error) {
-      console.error('Failed to save:', error);
+      logger.error('Failed to save:', error);
       alert('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);

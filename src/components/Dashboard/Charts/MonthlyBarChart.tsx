@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { logger } from '../../../utils';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -386,7 +387,7 @@ function MonthlyBarChart({ transactions, filters }: Readonly<MonthlyBarChartProp
 
         setChartData(data);
       } catch (error) {
-        console.error('Error loading monthly summary:', error);
+        logger.error('Error loading monthly summary:', error);
         setChartData(null);
       } finally {
         setIsLoading(false);

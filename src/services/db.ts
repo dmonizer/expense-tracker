@@ -1,4 +1,5 @@
 import Dexie, {type Table} from 'dexie';
+import { logger } from '../utils';
 import type {
     Transaction,
     CategoryRule,
@@ -208,7 +209,7 @@ class ExpenseTrackerDatabase extends Dexie {
                     priceApiProviders: providers,
                 });
 
-                console.log('[Migration v9] Converted legacy API provider to multi-provider format');
+                logger.info('[Migration v9] Converted legacy API provider to multi-provider format');
             }
         });
 

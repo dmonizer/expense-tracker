@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import type { ImportFormatDefinition, TransactionField } from '../types';
 import { getAllFormats, getDefaultFormat } from './formatManager';
+import { logger } from '../utils';
 
 /**
  * Detection score for a format
@@ -56,12 +57,12 @@ export async function detectFormat(file: File): Promise<ImportFormatDefinition |
   const bestMatch = scores[0];
   
   if (bestMatch && bestMatch.score >= DETECTION_THRESHOLD) {
-    console.log(`[FormatDetector] Detected format: ${bestMatch.format.name} (score: ${bestMatch.score}, criteria: ${bestMatch.matchedCriteria.join(', ')})`);
+    logger.info(`[FormatDetector] Detected format: ${bestMatch.format.name} (score: ${bestMatch.score}, criteria: ${bestMatch.matchedCriteria.join(', ')})`);
     return bestMatch.format;
   }
 
   // No confident match, return default
-  console.log('[FormatDetector] No confident match found, using default format');
+  logger.info('[FormatDetector] No confident match found, using default format');
   return await getDefaultFormat() || null;
 }
 
@@ -118,7 +119,7 @@ function scoreFormat(
         matchedCriteria.push('filename');
       }
     } catch (error) {
-      console.warn('Invalid filename pattern regex:', error);
+      logger.warn('Invalid filename pattern regex:', error);
     }
   }
 

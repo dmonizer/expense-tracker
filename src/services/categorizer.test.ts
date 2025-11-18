@@ -391,11 +391,9 @@ describe('categorizer', () => {
                     regexFlags: '',
                 });
 
-                const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
-                });
+                // Logger now handles errors, no need to spy on it for this test
                 expect(matchesPattern(transaction, pattern)).toBe(false);
-                expect(consoleSpy).toHaveBeenCalled();
-                consoleSpy.mockRestore();
+                // Just verify it returns false for invalid regex
             });
 
             it('should handle empty regex pattern', () => {

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import {useCallback, useEffect, useState} from 'react';
+import {logger} from '../../utils';
 import {db} from '../../services/db';
 import type {Account, JournalEntry, Split} from '../../types';
 import {formatCurrency} from '../../utils/currencyUtils';
@@ -58,7 +59,7 @@ function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
 
             setSplits(splitsWithJE);
         } catch (err) {
-            console.error('Failed to load account details:', err);
+            logger.error('Failed to load account details:', err);
             setError(err instanceof Error ? err.message : 'Failed to load account details');
         } finally {
             setLoading(false);

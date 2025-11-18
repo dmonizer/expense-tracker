@@ -4,15 +4,23 @@ import {initializeDefaultAccounts} from './accountManager';
 import {initializeDefaultExchangeRates} from './exchangeRateManager';
 import {defaultGroups} from "./defaultGroups.ts";
 import {defaultRules} from "./defaultRules.ts";
+import { logger } from '../utils';
+import {
+    GROUP_ID_CRITICAL,
+    GROUP_ID_IMPORTANT,
+    GROUP_ID_OPTIONAL,
+    GROUP_ID_SAVINGS,
+    GROUP_ID_INCOME
+} from '../constants';
 
-/**
- * Predefined group IDs for default category groups
- */
-export const GROUP_ID_CRITICAL = 'group-critical';
-export const GROUP_ID_IMPORTANT = 'group-important';
-export const GROUP_ID_OPTIONAL = 'group-optional';
-export const GROUP_ID_SAVINGS = 'group-savings';
-export const GROUP_ID_INCOME = 'group-income';
+// Re-export for backwards compatibility
+export {
+    GROUP_ID_CRITICAL,
+    GROUP_ID_IMPORTANT,
+    GROUP_ID_OPTIONAL,
+    GROUP_ID_SAVINGS,
+    GROUP_ID_INCOME
+};
 
 /**
  * Initialize default category rules in the database
@@ -60,7 +68,7 @@ export async function initializeDefaultRules(): Promise<{
             message: `Successfully initialized ${rulesToAdd.length} new category rules. Total: ${existingRules.length + rulesToAdd.length}.`,
         };
     } catch (error) {
-        console.error('Failed to initialize default rules:', error);
+        logger.error('Failed to initialize default rules:', error);
         return {
             success: false,
             message: `Failed to initialize default rules: ${error instanceof Error ? error.message : String(error)}`,
@@ -114,7 +122,7 @@ export async function initializeDefaultGroups(): Promise<{
             message: `Successfully initialized ${groupsToAdd.length} new category groups. Total: ${existingGroups.length + groupsToAdd.length}.`,
         };
     } catch (error) {
-        console.error('Failed to initialize default groups:', error);
+        logger.error('Failed to initialize default groups:', error);
         return {
             success: false,
             message: `Failed to initialize default groups: ${error instanceof Error ? error.message : String(error)}`,
@@ -156,7 +164,7 @@ export async function initializeDefaults(): Promise<{
             message,
         };
     } catch (error) {
-        console.error('Failed to initialize defaults:', error);
+        logger.error('Failed to initialize defaults:', error);
         return {
             success: false,
             message: `Failed to initialize defaults: ${error instanceof Error ? error.message : String(error)}`,
@@ -195,7 +203,7 @@ async function cleanupDuplicates(): Promise<void> {
                 // Keep first, delete rest
                 const toDelete = rules.slice(1).map(r => r.id);
                 await db.categoryRules.bulkDelete(toDelete);
-                console.log(`Cleaned up ${toDelete.length} duplicate rules for category: ${name}`);
+                logger.info(`Cleaned up ${toDelete.length} duplicate rules for category: ${name}`);
             }
         }
 
@@ -224,11 +232,11 @@ async function cleanupDuplicates(): Promise<void> {
                 // Keep first, delete rest
                 const toDelete = groups.slice(1).map(g => g.id);
                 await db.categoryGroups.bulkDelete(toDelete);
-                console.log(`Cleaned up ${toDelete.length} duplicate groups: ${name}`);
+                logger.info(`Cleaned up ${toDelete.length} duplicate groups: ${name}`);
             }
         }
     } catch (error) {
-        console.error('Error cleaning up duplicates:', error);
+        logger.error('Error cleaning up duplicates:', error);
         // Don't throw - initialization should continue even if cleanup fails
     }
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '../../../utils';
 import type { 
   FieldMapping, 
   CSVSettings, 
@@ -89,7 +90,7 @@ export default function Step4SaveFormat({
         onComplete(newFormat);
       }
     } catch (err) {
-      console.error('Save error:', err);
+      logger.error('Save error:', err);
       setError(err instanceof Error ? err.message : 'Failed to save format');
       setIsSaving(false);
     }

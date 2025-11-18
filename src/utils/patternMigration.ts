@@ -1,4 +1,5 @@
 import type { Pattern } from '../types';
+import { logger } from '../utils';
 import { db } from '../services/db';
 
 /**
@@ -60,16 +61,16 @@ export async function migrateAllPatterns(): Promise<{
         }
       } catch (error) {
         const errorMsg = `Failed to migrate rule ${rule.id} (${rule.name}): ${error}`;
-        console.error(errorMsg);
+        logger.error(errorMsg);
         errors.push(errorMsg);
       }
     }
 
-    console.log(`Pattern migration complete: ${migrated}/${total} rules migrated`);
+    logger.info(`Pattern migration complete: ${migrated}/${total} rules migrated`);
     return { migrated, total, errors };
   } catch (error) {
     const errorMsg = `Failed to migrate patterns: ${error}`;
-    console.error(errorMsg);
+    logger.error(errorMsg);
     errors.push(errorMsg);
     return { migrated, total, errors };
   }
@@ -99,7 +100,7 @@ export async function validateMigration(): Promise<{
       unmigrated,
     };
   } catch (error) {
-    console.error('Failed to validate migration:', error);
+    logger.error('Failed to validate migration:', error);
     return {
       valid: false,
       unmigrated: ['Error during validation'],

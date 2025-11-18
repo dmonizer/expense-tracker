@@ -2,6 +2,8 @@
  * Error handling utilities for consistent error management across the application
  */
 
+import { logger } from '../utils';
+
 export interface AppError {
     message: string;
     code?: string;
@@ -53,10 +55,13 @@ export function normalizeError(error: unknown): AppError {
 export function logError(error: unknown, context?: string): void {
     const normalizedError = normalizeError(error);
 
-    console.error(
-        `[${normalizedError.timestamp.toISOString()}]${context ? ` ${context}:` : ''}`,
+    logger.error(
         normalizedError.message,
-        normalizedError.details
+        {
+            context,
+            data: normalizedError.details,
+            error: error instanceof Error ? error : undefined,
+        }
     );
 }
 

@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import { logger } from '../../utils';
 import {useLiveQuery} from 'dexie-react-hooks';
 import {db} from '../../services/db';
 import type {CategoryGroup} from '../../types';
@@ -43,7 +44,7 @@ function CategoryGroupManager() {
       setEditingGroup(null);
       setIsCreating(false);
     } catch (error) {
-      console.error('Failed to save group:', error);
+      logger.error('Failed to save group:', error);
       alert('Failed to save group. Please try again.');
     }
   };
@@ -72,7 +73,7 @@ function CategoryGroupManager() {
       // Delete the group
       await db.categoryGroups.delete(group.id);
     } catch (error) {
-      console.error('Failed to delete group:', error);
+      logger.error('Failed to delete group:', error);
       alert('Failed to delete group. Please try again.');
     }
   };

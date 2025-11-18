@@ -1,6 +1,7 @@
 import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
 import { db } from './db';
-import type { Account, CategoryRule } from '../types';
+import type { Account, AccountSubtype, CategoryRule } from '../types';
+import { logger } from '../utils';
 
 /**
  * Account Manager - Handles account creation and management for double-entry accounting
@@ -298,5 +299,78 @@ export async function updateAccountOpeningBalance(
     updateData.openingBalanceDate = openingBalanceDate;
   }
 
+  await db.accounts.update(accountId, updateData);
+}
+
+/**
+ * Update account details
+ * Allows editing of description, color, institution, subtype, isActive, and accountNumber
+ * Has validations to prevent breaking changes
+ */
+export async function updateAccount(
+  accountId: string,
+  updates: {
+    name?: string;
+    description?: string;
+    color?: string;
+    institution?: string;
+    subtype?: AccountSubtype;
+    isActive?: boolean;
+    accountNumber?: string;
+    supportedCurrencies?: string[];
+  }
+): Promise<void> {
+  // Get the account
+  const account = await db.accounts.get(accountId);
+  if (!account) {
+    throw new Error(`Account ${accountId} not found`);
+  }
+
+  // Check if account has transactions (splits)
+  const splitCount = await db.splits.where('accountId').equals(accountId).count();
+  const hasTransactions = splitCount > 0;
+
+  // Get holdings if investment account
+  const holdings = account.subtype === 'investment' 
+    ? await db.holdings.where('accountId').equals(accountId).toArray()
+    : [];
+  const hasHoldings = holdings.length > 0;
+
+  // Validate: Cannot change accountNumber if it has transactions (warns in UI)
+  // We allow it but it's risky
+  if (updates.accountNumber !== undefined && updates.accountNumber !== account.accountNumber && hasTransactions) {
+    logger.warn(`Changing account number for account with ${splitCount} transactions. This may affect CSV imports.`);
+  }
+
+  // Validate: Cannot change subtype away from investment if holdings exist
+  if (updates.subtype !== undefined && account.subtype === 'investment' && updates.subtype !== 'investment' && hasHoldings) {
+    throw new Error(`Cannot change subtype from investment while account has ${hasHoldings} holdings. Please remove holdings first.`);
+  }
+
+  // Validate: System accounts have limited editing (only description, color, isActive)
+  if (account.isSystem) {
+    const allowedFields: (keyof typeof updates)[] = ['description', 'color', 'isActive'];
+    const attemptedFields = Object.keys(updates) as (keyof typeof updates)[];
+    const disallowedFields = attemptedFields.filter(field => !allowedFields.includes(field) && updates[field] !== undefined);
+    
+    if (disallowedFields.length > 0) {
+      throw new Error(`System accounts can only edit: description, color, isActive. Attempted to edit: ${disallowedFields.join(', ')}`);
+    }
+  }
+
+  // Validate: supportedCurrencies must include primary currency
+  if (updates.supportedCurrencies !== undefined) {
+    if (!updates.supportedCurrencies.includes(account.currency)) {
+      throw new Error(`Supported currencies must include the account's primary currency (${account.currency})`);
+    }
+  }
+
+  // Build update data
+  const updateData: Partial<Account> = {
+    ...updates,
+    updatedAt: new Date(),
+  };
+
+  // Apply updates
   await db.accounts.update(accountId, updateData);
 }

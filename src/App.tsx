@@ -8,6 +8,7 @@ import AccountViewer from './components/Accounts/AccountViewer';
 import JournalView from './components/Journal/JournalView';
 import ExchangeRateManager from './components/Settings/ExchangeRateManager';
 import AllApiSettings from './components/Settings/AllApiSettings';
+import LogViewer from './components/Logs/LogViewer';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/UI/LoadingSpinner';
 import { initializeDefaults } from './services/seedData';
@@ -16,8 +17,9 @@ import { db } from './services/db';
 import { refreshAllPrices } from './services/priceFetcher';
 import { refreshCommonExchangeRates } from './services/exchangeRateManager';
 import { migrateAllPatterns } from './utils/patternMigration';
+import { logger } from './utils';
 
-type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import';
+type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import' | 'logs';
 
 interface Tab {
   id: TabType;
@@ -34,6 +36,7 @@ const tabs: Tab[] = [
   { id: 'rates', label: 'Exchange Rates', icon: '💱' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
   { id: 'import', label: 'Import', icon: '📁' },
+  { id: 'logs', label: 'Logs', icon: '📋' },
 ];
 
 function App() {
@@ -51,7 +54,7 @@ function App() {
         // Initialize default categories/groups
         const result = await initializeDefaults();
         if (!result.success) {
-          console.warn('Failed to initialize defaults:', result.message);
+          logger.warn('Failed to initialize defaults:', result.message);
           setInitError(result.message);
         }
 
@@ -60,12 +63,12 @@ function App() {
 
         // Run pattern migration to update legacy patterns to new multi-field format
         const migrationResult = await migrateAllPatterns();
-        console.log(`Pattern migration: ${migrationResult.migrated}/${migrationResult.total} patterns migrated`);
+        logger.info(`Pattern migration: ${migrationResult.migrated}/${migrationResult.total} patterns migrated`);
         if (migrationResult.errors.length > 0) {
-          console.warn('Pattern migration had errors:', migrationResult.errors);
+          logger.warn('Pattern migration had errors:', migrationResult.errors);
         }
       } catch (error) {
-        console.error('Error during initialization:', error);
+        logger.error('Error during initialization:', error);
         setInitError(error instanceof Error ? error.message : 'Unknown error');
       } finally {
         setIsInitialized(true);
@@ -86,26 +89,26 @@ function App() {
     if (settings.priceApiAutoRefresh && hasEnabledProviders) {
       const intervalMs = (settings.priceApiRefreshInterval || 60) * 60 * 1000;
 
-      console.log(`[Auto-Refresh] Setting up automatic price refresh every ${settings.priceApiRefreshInterval} minutes`);
+      logger.info(`[Auto-Refresh] Setting up automatic price refresh every ${settings.priceApiRefreshInterval} minutes`);
 
       // Set up interval for automatic refresh
       const intervalId = setInterval(async () => {
         try {
-          console.log('[Auto-Refresh] Running automatic price refresh...');
+          logger.info('[Auto-Refresh] Running automatic price refresh...');
           const results = await refreshAllPrices();
-          console.log(`[Auto-Refresh] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
+          logger.info(`[Auto-Refresh] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
         } catch (error) {
-          console.error('[Auto-Refresh] Failed:', error);
+          logger.error('[Auto-Refresh] Failed:', error);
         }
       }, intervalMs);
 
       // Clean up interval on unmount or when settings change
       return () => {
-        console.log('[Auto-Refresh] Cleaning up automatic price refresh interval');
+        logger.info('[Auto-Refresh] Cleaning up automatic price refresh interval');
         clearInterval(intervalId);
       };
     } else {
-      console.log('[Auto-Refresh] Auto-refresh is disabled or not configured');
+      logger.info('[Auto-Refresh] Auto-refresh is disabled or not configured');
     }
   }, [isInitialized, settings?.priceApiAutoRefresh, settings?.priceApiProviders, settings?.priceApiRefreshInterval]);
 
@@ -119,26 +122,26 @@ function App() {
     if (settings.exchangeRateAutoRefresh && hasEnabledProviders) {
       const intervalMs = (settings.exchangeRateRefreshInterval || 1440) * 60 * 1000;
 
-      console.log(`[Auto-Refresh-Rates] Setting up automatic exchange rate refresh every ${settings.exchangeRateRefreshInterval} minutes`);
+      logger.info(`[Auto-Refresh-Rates] Setting up automatic exchange rate refresh every ${settings.exchangeRateRefreshInterval} minutes`);
 
       // Set up interval for automatic refresh
       const intervalId = setInterval(async () => {
         try {
-          console.log('[Auto-Refresh-Rates] Running automatic exchange rate refresh...');
+          logger.info('[Auto-Refresh-Rates] Running automatic exchange rate refresh...');
           const results = await refreshCommonExchangeRates();
-          console.log(`[Auto-Refresh-Rates] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
+          logger.info(`[Auto-Refresh-Rates] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
         } catch (error) {
-          console.error('[Auto-Refresh-Rates] Failed:', error);
+          logger.error('[Auto-Refresh-Rates] Failed:', error);
         }
       }, intervalMs);
 
       // Clean up interval on unmount or when settings change
       return () => {
-        console.log('[Auto-Refresh-Rates] Cleaning up automatic exchange rate refresh interval');
+        logger.info('[Auto-Refresh-Rates] Cleaning up automatic exchange rate refresh interval');
         clearInterval(intervalId);
       };
     } else {
-      console.log('[Auto-Refresh-Rates] Auto-refresh is disabled or not configured');
+      logger.info('[Auto-Refresh-Rates] Auto-refresh is disabled or not configured');
     }
   }, [isInitialized, settings?.exchangeRateAutoRefresh, settings?.exchangeRateApiProviders, settings?.exchangeRateRefreshInterval]);
 
@@ -160,6 +163,8 @@ function App() {
         return <AllApiSettings />;
       case 'import':
         return <FileUpload />;
+      case 'logs':
+        return <LogViewer />;
       default:
         return <Overview />;
     }
