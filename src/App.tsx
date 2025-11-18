@@ -110,7 +110,7 @@ function App() {
     } else {
       logger.info('[Auto-Refresh] Auto-refresh is disabled or not configured');
     }
-  }, [isInitialized, settings?.priceApiAutoRefresh, settings?.priceApiProviders, settings?.priceApiRefreshInterval]);
+  }, [isInitialized, settings]);
 
   // Automatic exchange rate refresh scheduler (runs in background, reacts to settings changes)
   useEffect(() => {
@@ -143,7 +143,7 @@ function App() {
     } else {
       logger.info('[Auto-Refresh-Rates] Auto-refresh is disabled or not configured');
     }
-  }, [isInitialized, settings?.exchangeRateAutoRefresh, settings?.exchangeRateApiProviders, settings?.exchangeRateRefreshInterval]);
+  }, [isInitialized, settings]);
 
   const renderContent = () => {
     switch (activeTab) {

@@ -248,28 +248,28 @@ export async function initializeDefaultAccounts(): Promise<void> {
  * Get account by ID
  */
 export async function getAccount(accountId: string): Promise<Account | undefined> {
-  return await db.accounts.get(accountId);
+  return db.accounts.get(accountId);
 }
 
 /**
  * Get all bank accounts (asset type)
  */
 export async function getBankAccounts(): Promise<Account[]> {
-  return await db.accounts.where('type').equals('asset').toArray();
+  return db.accounts.where('type').equals('asset').toArray();
 }
 
 /**
  * Get all expense accounts
  */
 export async function getExpenseAccounts(): Promise<Account[]> {
-  return await db.accounts.where('type').equals('expense').toArray();
+  return db.accounts.where('type').equals('expense').toArray();
 }
 
 /**
  * Get all income accounts
  */
 export async function getIncomeAccounts(): Promise<Account[]> {
-  return await db.accounts.where('type').equals('income').toArray();
+  return db.accounts.where('type').equals('income').toArray();
 }
 
 /**

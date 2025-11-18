@@ -24,7 +24,7 @@ export default function FormatSelector({
 
   useEffect(() => {
     initializeFormats();
-  }, [file]);
+  }, []);
 
   const initializeFormats = async () => {
     setIsDetecting(true);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Account, AccountSubtype } from '../../types';
 import { type AccountType } from '../../utils/accountTypeHelpers';
 import { getDisplayBalance } from '../../services/journalEntryManager';
+import * as React from "react";
 
 interface BaseModalProps {
   isOpen: boolean;

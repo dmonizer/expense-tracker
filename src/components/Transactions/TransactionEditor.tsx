@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from '../../utils';
 import { extractPatternSuggestions, calculatePatternWeight } from '../../utils/patternExtractor';
 import { detectPatternConflicts, matchesPattern, recategorizeAll } from '../../services/categorizer';
 import type { Pattern, CategoryRule } from '../../types';
+import * as React from "react";
 
 interface TransactionEditorProps {
   transaction: Transaction;
@@ -135,7 +136,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
   };
 
   const handleSave = async () => {
-    if (selectedCategory === transaction.category && !addPatternEnabled && isIgnored === (transaction.ignored || false)) {
+    if (selectedCategory === transaction.category && !addPatternEnabled && isIgnored === transaction.ignored) {
       onClose();
       return;
     }

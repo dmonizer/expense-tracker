@@ -236,11 +236,9 @@ export function applyAllFilters(
   }
 
   // Search query filter
-  if (!matchesSearchQuery(transaction, filters.searchQuery)) {
-    return false;
-  }
+  return matchesSearchQuery(transaction, filters.searchQuery);
 
-  return true;
+
 }
 
 /**

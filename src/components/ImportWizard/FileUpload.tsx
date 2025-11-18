@@ -8,6 +8,7 @@ import PreviewTable from './PreviewTable';
 import ImportSummary from './ImportSummary';
 import FormatSelector from './FormatSelector';
 import { FILE_UPLOAD } from '../../constants';
+import * as React from "react";
 
 function FileUpload() {
   const [step, setStep] = useState<'upload' | 'formatSelect' | 'preview' | 'summary'>('upload');

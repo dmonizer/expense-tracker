@@ -1,7 +1,7 @@
-import { v4 as uuidv4 } from 'uuid';
-import { db } from './db';
-import type { ImportFormatDefinition } from '../types';
-import { logger } from '../utils';
+import {v4 as uuidv4} from 'uuid';
+import {db} from './db';
+import type {ImportFormatDefinition} from '../types';
+import {logger} from '../utils';
 
 /**
  * Format Manager Service
@@ -309,16 +309,14 @@ export async function importFormatFromJSON(jsonString: string): Promise<string> 
   }
 
   // Create new format from imported data
-  const formatId = await saveFormat({
-    name: data.name,
-    description: data.description,
-    fileType: data.fileType,
-    csvSettings: data.csvSettings,
-    fieldMappings: data.fieldMappings,
-    detectionPattern: data.detectionPattern,
-    isBuiltIn: false,
-    isDefault: false,
+    return await saveFormat({
+      name: data.name,
+      description: data.description,
+      fileType: data.fileType,
+      csvSettings: data.csvSettings,
+      fieldMappings: data.fieldMappings,
+      detectionPattern: data.detectionPattern,
+      isBuiltIn: false,
+      isDefault: false,
   });
-
-  return formatId;
 }

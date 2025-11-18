@@ -289,9 +289,9 @@ export async function getSplitsForAccount(
       if (!je) return false;
       
       if (startDate && je.date < startDate) return false;
-      if (endDate && je.date > endDate) return false;
+      return !(endDate && je.date > endDate);
       
-      return true;
+
     });
   }
   

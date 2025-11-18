@@ -25,7 +25,8 @@ async function fetchPriceFromTwelveData(
 ): Promise<PriceQuote | null> {
   try {
     const url = `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbol)}&apikey=${apiKey}`;
-    const response = await fetch(url);
+    const proxiedUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const response = await fetch(proxiedUrl);
 
     if (!response.ok) {
       logger.error(`Twelve Data API error: ${response.status}`);

@@ -1,6 +1,5 @@
 import {useEffect, useState} from 'react';
-import { logger } from '../../utils';
-import {isValidPattern} from '../../utils';
+import {isValidPattern, logger} from '../../utils';
 import type {CategoryGroup, CategoryRule, Pattern} from '../../types';
 import {db} from '../../services/db';
 import {getCategoryColor} from '../../utils/colorUtils';
@@ -120,12 +119,9 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
         onSave(updatedRule);
     };
 
-    const isValid =
-        rule.name.trim().length > 0 &&
+    const canSave = rule.name.trim().length > 0 &&
         rule.patterns.length > 0 &&
         rule.patterns.every(pattern => isValidPattern(pattern));
-
-    const canSave = isValid;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

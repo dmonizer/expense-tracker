@@ -44,10 +44,8 @@ function CategoryManager() {
             }
           }
           // Filter by search query
-          if (searchQuery && !rule.name.toLowerCase().includes(searchQuery.toLowerCase())) {
-            return false;
-          }
-          return true;
+          return !(searchQuery && !rule.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
         })
         .sort((a, b) => {
           let comparison = 0;

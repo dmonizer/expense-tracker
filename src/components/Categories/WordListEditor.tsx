@@ -1,12 +1,13 @@
 import {useState} from 'react';
-import type {Pattern} from '../../types';
+import type {Pattern, PatternWord} from '../../types';
+import * as React from "react";
 
 interface WordListEditorProps {
     pattern: Pattern;
     onChange: (pattern: Pattern) => void;
 }
 
-function WordLabel(props: Readonly<{ word: any, onClick: () => void, onClick1: () => void }>) {
+function WordLabel(props: Readonly<{ word: PatternWord, onClick: () => void, onClick1: () => void }>) {
     return <div
 
         className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${

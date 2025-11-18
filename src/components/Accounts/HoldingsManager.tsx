@@ -24,7 +24,7 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
 
   useEffect(() => {
     loadHoldings();
-  }, [account.id]);
+  },[]);
 
   const loadHoldings = async () => {
     try {

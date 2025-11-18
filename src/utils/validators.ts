@@ -164,11 +164,9 @@ function isValidWordlistPattern(pattern: Partial<Pattern>): boolean {
     return false;
   }
 
-  if (pattern.caseSensitive !== undefined && !isValidBoolean(pattern.caseSensitive)) {
-    return false;
-  }
+  return !(pattern.caseSensitive !== undefined && !isValidBoolean(pattern.caseSensitive));
 
-  return true;
+
 }
 
 /**
@@ -183,11 +181,9 @@ function isValidRegexPattern(pattern: Partial<Pattern>): boolean {
     return false;
   }
 
-  if (pattern.regexFlags !== undefined && typeof pattern.regexFlags !== 'string') {
-    return false;
-  }
+  return !(pattern.regexFlags !== undefined && typeof pattern.regexFlags !== 'string');
 
-  return true;
+
 }
 
 /**

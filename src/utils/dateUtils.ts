@@ -39,11 +39,9 @@ export function isDateInRange(date: Date, from?: Date, to?: Date): boolean {
     return false;
   }
 
-  if (to && date > endOfDay(to)) {
-    return false;
-  }
+  return !(to && date > endOfDay(to));
 
-  return true;
+
 }
 
 /**

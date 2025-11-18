@@ -3,17 +3,17 @@ import {v4 as uuidv4} from 'uuid';
 import {parse} from 'date-fns';
 import {db} from './db';
 import type {
-    Transaction,
-    SwedBankCSVRow,
-    ImportRecord,
     CategoryRule,
-    ImportFormatDefinition,
     FieldMapping,
     FieldTransform,
+    ImportFormatDefinition,
+    ImportRecord,
+    SwedBankCSVRow,
+    Transaction,
 } from '../types';
 import {createJournalEntryFromTransaction} from './journalEntryManager';
 import {initializeDefaultAccounts} from './accountManager';
-import { logger } from '../utils';
+import {logger} from '../utils';
 
 /**
  * Detailed error information for CSV parsing
@@ -220,7 +220,6 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         // Security note: This is dangerous in production, consider removing or sandboxing
         if (transform.customExpression) {
             try {
-                // eslint-disable-next-line @typescript-eslint/no-implied-eval
                 const fn = new Function('value', `return ${transform.customExpression}`);
                 return fn(value);
             } catch (error) {
@@ -330,9 +329,8 @@ function applyStaticMapping(
   }
 
   try {
-    const transformed = applyTransform(mapping.staticValue, mapping.transform);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (transaction as any)[mapping.targetField] = transformed;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (transaction as any)[mapping.targetField] = applyTransform(mapping.staticValue, mapping.transform);
   } catch (error) {
     throw new Error(
       `Static field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`

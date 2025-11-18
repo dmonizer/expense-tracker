@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Pattern, Transaction } from '../../types';
-import { isValidPattern } from '../../utils/validators';
+import { isValidPattern } from '../../utils';
 import { extractPatternSuggestions } from '../../utils/patternExtractor';
 import { detectPatternConflicts, matchesPattern } from '../../services/categorizer';
 import { db } from '../../services/db';

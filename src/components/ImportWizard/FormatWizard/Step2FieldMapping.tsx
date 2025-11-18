@@ -62,14 +62,14 @@ export default function Step2FieldMapping({
                 setMappings(columnMappings);
             }
         }
-    }, []);
+    },[]);
 
     const [selectedMapping, setSelectedMapping] = useState<number | null>(null);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     useEffect(() => {
         validateMappings();
-    }, [mappings]);
+    },[]);
 
     function autoDetectMappings(headers: string[]): FieldMapping[] {
         const detected: FieldMapping[] = [];

@@ -11,7 +11,6 @@ import { filterTransactions } from '../utils/transactionFilters';
  * 
  * @param transactions - Array of transactions to filter
  * @param filters - Filter criteria to apply
- * @param categoryRules - Optional category rules for group filtering
  * @returns Filtered array of transactions
  * @deprecated Use filterTransactions from utils/transactionFilters instead
  */

@@ -2,7 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState, useMemo } from 'react';
 import { db } from '../../services/db';
 // No need to import JournalEntry - we fetch it from DB directly
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency } from '../../utils';
 
 interface JournalFilters {
   startDate: string;

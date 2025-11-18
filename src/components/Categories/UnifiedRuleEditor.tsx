@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../utils';
-import { useLiveQuery } from 'dexie-react-hooks';
-import type { CategoryRule, Transaction, Pattern } from '../../types';
-import { db } from '../../services/db';
-import { formatCurrency, formatDate } from '../../utils';
-import { isValidPattern } from '../../utils/validators';
-import { getCategoryColor } from '../../utils/colorUtils';
-import { recategorizeAll } from '../../services/categorizer';
+import {useEffect, useState} from 'react';
+import {formatCurrency, formatDate, isValidPattern, logger} from '../../utils';
+import {useLiveQuery} from 'dexie-react-hooks';
+import type {CategoryRule, Pattern, Transaction} from '../../types';
+import {db} from '../../services/db';
+import {getCategoryColor} from '../../utils/colorUtils';
+import {recategorizeAll} from '../../services/categorizer';
 import PatternList from './PatternList';
 import RulePreview from './RulePreview';
+import * as React from "react";
 
 interface UnifiedRuleEditorProps {
   mode: 'quick' | 'full';

@@ -28,12 +28,12 @@ export default function Step1FileAnalysis({
   // Auto-detect delimiter on first load
   useEffect(() => {
     detectDelimiter();
-  }, [file]);
+  });
 
   // Re-parse when settings change
   useEffect(() => {
     parsePreview();
-  }, [csvSettings]);
+  },[]);
 
   const detectDelimiter = async () => {
     setIsLoading(true);

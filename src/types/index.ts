@@ -44,11 +44,13 @@ export interface CategoryGroup {
     updatedAt: Date;
 }
 
+export type PatternWord = { text: string, negated: boolean };
+
 export interface Pattern {
     fields?: string[]; // Array of fields to match against (e.g., ['payee', 'description'])
     matchType: 'wordlist' | 'regex';
     // For wordlist mode
-    words?: Array<{ text: string, negated: boolean }>; // [{text: "MCDONALDS", negated: false}, {text: "LIDL", negated: true}]
+    words?: Array<PatternWord>; // [{text: "MCDONALDS", negated: false}, {text: "LIDL", negated: true}]
     caseSensitive?: boolean;
     // For regex mode
     regex?: string; // Raw regex string (stored, not RegExp object)
