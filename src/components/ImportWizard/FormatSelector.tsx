@@ -4,6 +4,7 @@ import type { ImportFormatDefinition } from '../../types';
 import { getAllFormats } from '../../services/formatManager';
 import { detectFormat } from '../../services/formatDetector';
 import FormatWizardMain from './FormatWizard/FormatWizardMain';
+import { Label } from '@/components/ui/label';
 
 interface FormatSelectorProps {
   file: File;
@@ -150,9 +151,9 @@ export default function FormatSelector({
         {/* Format Selection */}
         {!isDetecting && allFormats.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
               Choose Import Format
-            </label>
+            </Label>
             <select
               value={selectedFormatId}
               onChange={(e) => setSelectedFormatId(e.target.value)}

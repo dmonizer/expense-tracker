@@ -1,10 +1,10 @@
-import {useCallback, useEffect, useState} from 'react';
-import {logger} from '../../utils';
-import {db} from '../../services/db';
-import type {Account, JournalEntry, Split} from '../../types';
-import {formatCurrency} from '../../utils/currencyUtils';
-import {getDisplayBalance} from '../../services/journalEntryManager';
-import LoadingSpinner from '../UI/LoadingSpinner';
+import { useCallback, useEffect, useState } from 'react';
+import { logger } from '../../utils';
+import { db } from '../../services/db';
+import type { Account, JournalEntry, Split } from '../../types';
+import { formatCurrency } from '../../utils/currencyUtils';
+import { getDisplayBalance } from '../../services/journalEntryManager';
+import LoadingSpinner from '../ui/LoadingSpinner';
 
 interface AccountDetailViewProps {
     accountId: string;
@@ -14,7 +14,7 @@ interface SplitWithJournalEntry extends Split {
     journalEntry: JournalEntry;
 }
 
-function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
+function AccountDetailView({ accountId }: Readonly<AccountDetailViewProps>) {
     const [account, setAccount] = useState<Account | null>(null);
     const [splits, setSplits] = useState<SplitWithJournalEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -71,7 +71,7 @@ function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
     }, [loadAccountDetails]);
 
     if (loading) {
-        return <LoadingSpinner text="Loading account details..."/>;
+        return <LoadingSpinner text="Loading account details..." />;
     }
 
     if (error || !account) {
@@ -86,7 +86,7 @@ function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
     let runningBalance = account.openingBalance;
     const splitsWithBalance = splits.reverse().map(split => {
         runningBalance += split.amount;
-        return {...split, runningBalance};
+        return { ...split, runningBalance };
     }).reverse();
 
     // For display purposes, flip sign for income/liability accounts
@@ -113,9 +113,9 @@ function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
             {/* Account header */}
             <div className="mb-6">
                 <div className="flex items-center gap-3 mb-2">
-          <span className="text-3xl">{
-              getAccountTypeIcon(account)
-          }</span>
+                    <span className="text-3xl">{
+                        getAccountTypeIcon(account)
+                    }</span>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">{account.name}</h2>
                         <p className="text-sm text-gray-600">
@@ -168,12 +168,12 @@ function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-gray-900">
-                        {new Date(split.journalEntry.date).toLocaleDateString()}
-                      </span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {new Date(split.journalEntry.date).toLocaleDateString()}
+                                            </span>
                                             <span className="text-sm text-gray-600">
-                        {split.journalEntry.description}
-                      </span>
+                                                {split.journalEntry.description}
+                                            </span>
                                         </div>
 
                                         {split.memo && split.memo !== split.journalEntry.description && (
@@ -198,9 +198,8 @@ function AccountDetailView({accountId}: Readonly<AccountDetailViewProps>) {
                                     </div>
 
                                     <div className="text-right ml-4">
-                                        <div className={`text-lg font-bold ${
-                                            split.amount >= 0 ? 'text-green-600' : 'text-red-600'
-                                        }`}>
+                                        <div className={`text-lg font-bold ${split.amount >= 0 ? 'text-green-600' : 'text-red-600'
+                                            }`}>
                                             {split.amount >= 0 ? '+' : ''}
                                             {formatCurrency(split.amount, split.currency)}
                                         </div>

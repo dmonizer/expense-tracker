@@ -3,6 +3,7 @@
  */
 
 import { logger } from '../utils';
+import { toast } from "@/hooks/use-toast";
 
 export interface AppError {
     message: string;
@@ -133,7 +134,7 @@ export function handleError(
         rethrow?: boolean;
     }
 ): string {
-    const {showAlert = false, rethrow = false} = options || {};
+    const { showAlert = false, rethrow = false } = options || {};
 
     // Log the error
     logError(error, context);
@@ -141,9 +142,17 @@ export function handleError(
     // Get user-friendly message
     const userMessage = getUserMessage(error);
 
-    // Optionally show alert
+
+
+    // ...
+
+    // Optionally show alert (now toast)
     if (showAlert) {
-        alert(userMessage);
+        toast({
+            title: "Error",
+            description: userMessage,
+            variant: "destructive",
+        });
     }
 
     // Optionally rethrow

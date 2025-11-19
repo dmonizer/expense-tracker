@@ -3,6 +3,7 @@ import { logger } from '../../utils';
 import { db } from '../../services/db';
 import type { UserSettings, PriceApiProvider, PriceApiProviderType } from '../../types';
 import { refreshAllPrices } from '../../services/priceFetcher';
+import { Label } from '@/components/ui/label';
 
 const PROVIDER_INFO: Record<PriceApiProviderType, { name: string; url: string; limits: string }> = {
   twelvedata: {
@@ -233,7 +234,7 @@ function ApiSettings() {
               <h4 className="text-sm font-medium text-gray-700 mb-3">Add New Provider</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Provider</label>
+                  <Label className="block text-sm text-gray-600 mb-1">Provider</Label>
                   <select
                     value={newProvider.type}
                     onChange={(e) => setNewProvider({ ...newProvider, type: e.target.value as PriceApiProviderType })}
@@ -245,9 +246,9 @@ function ApiSettings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">
+                  <Label className="block text-sm text-gray-600 mb-1">
                     API Key {newProvider.type === 'yahoo' && <span className="text-gray-400">(Not required)</span>}
-                  </label>
+                  </Label>
                   <input
                     type="password"
                     value={newProvider.apiKey}
@@ -336,7 +337,7 @@ function ApiSettings() {
                       {/* Actions */}
                       <div className="flex items-center gap-2">
                         {/* Enable/Disable Toggle */}
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <Label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={provider.enabled}
@@ -346,7 +347,7 @@ function ApiSettings() {
                           <span className="text-sm text-gray-700">
                             {provider.enabled ? 'Enabled' : 'Disabled'}
                           </span>
-                        </label>
+                        </Label>
 
                         {/* Remove Button */}
                         <button
@@ -378,7 +379,7 @@ function ApiSettings() {
 
           <div className="space-y-4">
             <div>
-              <label className="flex items-center space-x-2">
+              <Label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={autoRefresh}
@@ -388,7 +389,7 @@ function ApiSettings() {
                 <span className="text-sm font-medium text-gray-700">
                   Enable Automatic Price Refresh
                 </span>
-              </label>
+              </Label>
               <p className="text-xs text-gray-500 mt-1 ml-6">
                 Automatically update prices in the background
               </p>
@@ -396,9 +397,9 @@ function ApiSettings() {
 
             {autoRefresh && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Label className="block text-sm font-medium text-gray-700 mb-2">
                   Refresh Interval (minutes)
-                </label>
+                </Label>
                 <input
                   type="number"
                   min="15"

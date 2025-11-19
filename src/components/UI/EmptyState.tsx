@@ -1,4 +1,6 @@
 import { type ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
   icon?: ReactNode;
@@ -16,19 +18,23 @@ export default function EmptyState({
   className = ''
 }: Readonly<EmptyStateProps>) {
   return (
-    <div className={`flex items-center justify-center h-full ${className}`}>
-      <div className="text-center max-w-md">
-        {icon && (
-          <div className="mx-auto h-12 w-12 text-gray-400">
-            {icon}
+    <div className={cn('flex items-center justify-center h-full', className)}>
+      <Card className="border-dashed max-w-md">
+        <CardContent className="pt-6">
+          <div className="text-center">
+            {icon && (
+              <div className="mx-auto h-12 w-12 text-muted-foreground">
+                {icon}
+              </div>
+            )}
+            <h3 className="mt-2 text-lg font-semibold">{title}</h3>
+            {description && (
+              <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            )}
+            {action && <div className="mt-6">{action}</div>}
           </div>
-        )}
-        <h3 className="mt-2 text-lg font-semibold text-gray-900">{title}</h3>
-        {description && (
-          <p className="mt-1 text-sm text-gray-500">{description}</p>
-        )}
-        {action && <div className="mt-6">{action}</div>}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -37,7 +43,7 @@ export default function EmptyState({
 export function DocumentIcon() {
   return (
     <svg
-      className="mx-auto h-12 w-12 text-gray-400"
+      className="mx-auto h-12 w-12 text-muted-foreground"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"

@@ -5,6 +5,7 @@ import {db} from '../../services/db';
 import {getCategoryColor} from '../../utils/colorUtils';
 import PatternEditor from './PatternEditor';
 import RulePreview from './RulePreview';
+import { Label } from '@/components/ui/label';
 
 interface RuleEditorProps {
     rule: CategoryRule;
@@ -142,9 +143,9 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
 
                             {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <Label className="block text-sm font-medium text-gray-700 mb-1">
                                     Rule Name <span className="text-red-500">*</span>
-                                </label>
+                                </Label>
                                 <input
                                     type="text"
                                     value={rule.name}
@@ -156,9 +157,9 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
 
                             {/* Type */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <Label className="block text-sm font-medium text-gray-700 mb-2">
                                     Type <span className="text-red-500">*</span>
-                                </label>
+                                </Label>
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => handleTypeChange('expense')}
@@ -185,11 +186,11 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
 
                             {/* Pattern Logic */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <Label className="block text-sm font-medium text-gray-700 mb-2">
                                     Pattern Matching Logic
-                                </label>
+                                </Label>
                                 <div className="flex gap-4">
-                                    <label
+                                    <Label
                                         className="flex items-start cursor-pointer flex-1 p-3 border-2 rounded-lg transition-colors hover:bg-gray-50">
                                         <input
                                             type="radio"
@@ -208,9 +209,9 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
                                                 Example: "RIMI" OR "SELVER" → matches either store
                                             </p>
                                         </div>
-                                    </label>
+                                    </Label>
 
-                                    <label
+                                    <Label
                                         className="flex items-start cursor-pointer flex-1 p-3 border-2 rounded-lg transition-colors hover:bg-gray-50">
                                         <input
                                             type="radio"
@@ -229,18 +230,18 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
                                                 Example: "RIMI" AND "amount &gt; 50" → large grocery purchases
                                             </p>
                                         </div>
-                                    </label>
+                                    </Label>
                                 </div>
                             </div>
 
                             {/* Priority */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <Label className="block text-sm font-medium text-gray-700 mb-1">
                                     Priority: {rule.priority}
                                     <span className="text-gray-500 font-normal ml-2">
                     (Higher priority wins conflicts)
                   </span>
-                                </label>
+                                </Label>
                                 <input
                                     type="range"
                                     min="1"
@@ -263,9 +264,9 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
 
                             {/* Category Group */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <Label className="block text-sm font-medium text-gray-700 mb-1">
                                     Category Group <span className="text-gray-500 font-normal ml-2">(Determines color and spending priority)</span>
-                                </label>
+                                </Label>
                                 {loadingGroups ? (
                                     <div
                                         className="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
@@ -322,11 +323,11 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
 
                             {/* Field Selection for new patterns */}
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <Label className="block text-sm font-medium text-gray-700 mb-2">
                                     New patterns will match against:
-                                </label>
+                                </Label>
                                 <div className="flex gap-4">
-                                    <label className="flex items-center cursor-pointer">
+                                    <Label className="flex items-center cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={selectedFields.has('payee')}
@@ -334,8 +335,8 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                                         />
                                         <span className="text-sm font-medium text-gray-900">Payee</span>
-                                    </label>
-                                    <label className="flex items-center cursor-pointer">
+                                    </Label>
+                                    <Label className="flex items-center cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={selectedFields.has('description')}
@@ -343,7 +344,7 @@ function RuleEditor({rule: initialRule, onSave, onCancel}: RuleEditorProps) {
                                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                                         />
                                         <span className="text-sm font-medium text-gray-900">Description</span>
-                                    </label>
+                                    </Label>
                                 </div>
                                 <p className="mt-2 text-xs text-gray-600">
                                     {selectedFields.size === 2

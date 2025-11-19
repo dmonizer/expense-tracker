@@ -160,8 +160,8 @@ export function matchesSearchQuery(
   }
 
   const query = searchQuery.toLowerCase();
-  const payeeMatch = transaction.payee.toLowerCase().includes(query);
-  const descMatch = transaction.description.toLowerCase().includes(query);
+  const payeeMatch = (transaction.payee || '').toLowerCase().includes(query);
+  const descMatch = (transaction.description || '').toLowerCase().includes(query);
 
   return payeeMatch || descMatch;
 }
@@ -283,13 +283,13 @@ export function sortTransactions(
         compareValue = Math.abs(a.amount) - Math.abs(b.amount);
         break;
       case 'payee':
-        compareValue = a.payee.localeCompare(b.payee);
+        compareValue = (a.payee || '').localeCompare(b.payee || '');
         break;
       case 'category':
         compareValue = (a.category || '').localeCompare(b.category || '');
         break;
       case 'description':
-        compareValue = a.description.localeCompare(b.description);
+        compareValue = (a.description || '').localeCompare(b.description || '');
         break;
     }
 

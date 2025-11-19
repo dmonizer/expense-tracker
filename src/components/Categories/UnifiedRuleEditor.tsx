@@ -1,13 +1,22 @@
-import {useEffect, useState} from 'react';
-import {formatCurrency, formatDate, isValidPattern, logger} from '../../utils';
-import {useLiveQuery} from 'dexie-react-hooks';
-import type {CategoryRule, Pattern, Transaction} from '../../types';
-import {db} from '../../services/db';
-import {getCategoryColor} from '../../utils/colorUtils';
-import {recategorizeAll} from '../../services/categorizer';
+import { useEffect, useState } from 'react';
+import { formatCurrency, formatDate, isValidPattern, logger } from '../../utils';
+import { useLiveQuery } from 'dexie-react-hooks';
+import type { CategoryRule, Pattern, Transaction } from '../../types';
+import { db } from '../../services/db';
+import { getCategoryColor } from '../../utils/colorUtils';
+import { recategorizeAll } from '../../services/categorizer';
 import PatternList from './PatternList';
 import RulePreview from './RulePreview';
-import * as React from "react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from '@/components/ui/label';
 
 interface UnifiedRuleEditorProps {
   mode: 'quick' | 'full';
@@ -34,6 +43,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
   const categoryGroups = useLiveQuery(() => db.categoryGroups.orderBy('sortOrder').toArray(), []);
   const allRules = useLiveQuery(() => db.categoryRules.orderBy('name').toArray(), []);
+  const { toast } = useToast();
 
   useEffect(() => {
     setRule(initialRule);
@@ -85,13 +95,13 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
   const handleCreateCategory = async () => {
     const trimmedName = newCategoryName.trim();
     if (!trimmedName) {
-      alert('Please enter a category name');
+      toast({ title: "Error", description: "Please enter a category name", variant: "destructive" });
       return;
     }
 
     const existing = allRules?.find(r => r.name.toLowerCase() === trimmedName.toLowerCase());
     if (existing) {
-      alert('A category with this name already exists');
+      toast({ title: "Error", description: "A category with this name already exists", variant: "destructive" });
       return;
     }
 
@@ -125,10 +135,10 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
       setIsCreatingNew(false);
       setNewCategoryName('');
       setNewCategoryGroupId('');
-      alert(`Category "${trimmedName}" created successfully!`);
+      toast({ title: "Success", description: `Category "${trimmedName}" created successfully!` });
     } catch (error) {
       logger.error('Failed to create category:', error);
-      alert('Failed to create category. Please try again.');
+      toast({ title: "Error", description: "Failed to create category. Please try again.", variant: "destructive" });
     }
   };
 
@@ -180,17 +190,13 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
       onCancel(); // Close the editor
     } catch (error) {
       logger.error('Failed to save:', error);
-      alert('Failed to save. Please try again.');
+      toast({ title: "Error", description: "Failed to save. Please try again.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onCancel();
-    }
-  };
+
 
   const isValid =
     rule.name.trim().length > 0 &&
@@ -200,24 +206,20 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
   const canSave = mode === 'full' ? isValid : true; // Quick mode is more lenient
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800">
+    <Dialog open={true} onOpenChange={(open) => !open && onCancel()}>
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto flex flex-col">
+        <DialogHeader>
+          <DialogTitle>
             {mode === 'quick'
               ? 'Edit Transaction Category'
               : rule.id && rule.name
                 ? `Edit Rule: ${rule.name}`
                 : 'Create New Rule'}
-          </h2>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto py-4">
           <div className="space-y-6">
             {/* Transaction Preview (Quick Mode Only) */}
             {mode === 'quick' && transaction && (
@@ -233,9 +235,8 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                   <div>
                     <span className="text-gray-600">Amount:</span>
                     <span
-                      className={`ml-2 font-semibold ${
-                        transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                      }`}
+                      className={`ml-2 font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+                        }`}
                     >
                       {transaction.type === 'credit' ? '+' : '-'}
                       {formatCurrency(Math.abs(transaction.amount), transaction.currency)}
@@ -257,9 +258,9 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
             {mode === 'quick' && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <Label className="block text-sm font-medium text-gray-700">
                     Select Category
-                  </label>
+                  </Label>
                   <button
                     type="button"
                     onClick={() => setIsCreatingNew(!isCreatingNew)}
@@ -287,9 +288,9 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                 ) : (
                   <div className="space-y-3 p-4 bg-gray-50 rounded-md border border-gray-200">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Label className="block text-sm font-medium text-gray-700 mb-1">
                         Category Name
-                      </label>
+                      </Label>
                       <input
                         type="text"
                         value={newCategoryName}
@@ -300,9 +301,9 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                      <Label className="block text-sm font-medium text-gray-700 mb-1">Type</Label>
                       <div className="flex gap-3">
-                        <label className="flex items-center">
+                        <Label className="flex items-center">
                           <input
                             type="radio"
                             value="expense"
@@ -311,8 +312,8 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                             className="mr-2"
                           />
                           <span className="text-sm">Expense</span>
-                        </label>
-                        <label className="flex items-center">
+                        </Label>
+                        <Label className="flex items-center">
                           <input
                             type="radio"
                             value="income"
@@ -321,13 +322,13 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                             className="mr-2"
                           />
                           <span className="text-sm">Income</span>
-                        </label>
+                        </Label>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Label className="block text-sm font-medium text-gray-700 mb-1">
                         Category Group (Optional)
-                      </label>
+                      </Label>
                       <select
                         value={newCategoryGroupId}
                         onChange={(e) => setNewCategoryGroupId(e.target.value)}
@@ -368,7 +369,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
                 {/* Ignore checkbox */}
                 <div className="mt-4">
-                  <label className="flex items-center gap-2">
+                  <Label className="flex items-center gap-2">
                     <input
                       type="checkbox"
                       checked={isIgnored}
@@ -379,7 +380,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                     <span className="text-sm font-medium text-gray-900">
                       Ignore this transaction in calculations
                     </span>
-                  </label>
+                  </Label>
                 </div>
               </div>
             )}
@@ -391,9 +392,9 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label className="block text-sm font-medium text-gray-700 mb-1">
                     Rule Name <span className="text-red-500">*</span>
-                  </label>
+                  </Label>
                   <input
                     type="text"
                     value={rule.name}
@@ -405,27 +406,25 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
                 {/* Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     Type <span className="text-red-500">*</span>
-                  </label>
+                  </Label>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setRule({ ...rule, type: 'expense' })}
-                      className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                        rule.type === 'expense'
-                          ? 'bg-red-500 text-white'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${rule.type === 'expense'
+                        ? 'bg-red-500 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
                       Expense
                     </button>
                     <button
                       onClick={() => setRule({ ...rule, type: 'income' })}
-                      className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                        rule.type === 'income'
-                          ? 'bg-green-500 text-white'
-                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${rule.type === 'income'
+                        ? 'bg-green-500 text-white'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
                       Income
                     </button>
@@ -434,11 +433,11 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
                 {/* Pattern Logic */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     Pattern Matching Logic
-                  </label>
+                  </Label>
                   <div className="flex gap-4">
-                    <label className="flex items-start cursor-pointer flex-1 p-3 border-2 rounded-lg transition-colors hover:bg-gray-50">
+                    <Label className="flex items-start cursor-pointer flex-1 p-3 border-2 rounded-lg transition-colors hover:bg-gray-50">
                       <input
                         type="radio"
                         value="OR"
@@ -454,9 +453,9 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                           Rule matches if at least one pattern matches.
                         </p>
                       </div>
-                    </label>
+                    </Label>
 
-                    <label className="flex items-start cursor-pointer flex-1 p-3 border-2 rounded-lg transition-colors hover:bg-gray-50">
+                    <Label className="flex items-start cursor-pointer flex-1 p-3 border-2 rounded-lg transition-colors hover:bg-gray-50">
                       <input
                         type="radio"
                         value="AND"
@@ -472,16 +471,16 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                           Rule matches only if all patterns match.
                         </p>
                       </div>
-                    </label>
+                    </Label>
                   </div>
                 </div>
 
                 {/* Priority */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label className="block text-sm font-medium text-gray-700 mb-1">
                     Priority: {rule.priority}
                     <span className="text-gray-500 font-normal ml-2">(Higher priority wins conflicts)</span>
-                  </label>
+                  </Label>
                   <input
                     type="range"
                     min="1"
@@ -499,10 +498,10 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
                 {/* Category Group */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Label className="block text-sm font-medium text-gray-700 mb-1">
                     Category Group
                     <span className="text-gray-500 font-normal ml-2">(Determines color and spending priority)</span>
-                  </label>
+                  </Label>
                   <select
                     value={rule.groupId || ''}
                     onChange={(e) => handleGroupChange(e.target.value)}
@@ -561,12 +560,12 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
 
                 {/* Field Selection Hint */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     New patterns will match against:
-                  </label>
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     {['payee', 'description', 'accountNumber', 'transactionType', 'currency', 'archiveId'].map(field => (
-                      <label key={field} className="flex items-center cursor-pointer">
+                      <Label key={field} className="flex items-center cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedFields.includes(field)}
@@ -581,7 +580,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                         />
                         <span className="text-sm font-medium text-gray-900 capitalize">{field}</span>
-                      </label>
+                      </Label>
                     ))}
                   </div>
                 </div>
@@ -623,7 +622,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+        <DialogFooter className="flex items-center justify-between sm:justify-between">
           <div>
             {!canSave && mode === 'full' && (
               <p className="text-sm text-red-600">
@@ -632,24 +631,19 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
             )}
           </div>
           <div className="flex gap-3">
-            <button
-              onClick={onCancel}
-              disabled={isSaving}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <Button variant="outline" onClick={onCancel} disabled={isSaving}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSave}
               disabled={!canSave || isSaving}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               {isSaving ? 'Saving...' : 'Save'}
-            </button>
+            </Button>
           </div>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import type {Pattern, PatternWord} from '../../types';
 import * as React from "react";
+import { Label } from '@/components/ui/label';
 
 interface WordListEditorProps {
     pattern: Pattern;
@@ -132,7 +133,7 @@ function WordListEditor({pattern, onChange}: Readonly<WordListEditorProps>) {
             </div>
 
             {/* Case sensitive checkbox */}
-            <label className="flex items-center gap-2 cursor-pointer">
+            <Label className="flex items-center gap-2 cursor-pointer">
                 <input
                     type="checkbox"
                     checked={caseSensitive}
@@ -140,7 +141,7 @@ function WordListEditor({pattern, onChange}: Readonly<WordListEditorProps>) {
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700">Case sensitive</span>
-            </label>
+            </Label>
 
             {/* Word list */}
             {words.length === 0 ? (

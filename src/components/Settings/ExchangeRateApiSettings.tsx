@@ -3,6 +3,7 @@ import { logger } from '../../utils';
 import { db } from '../../services/db';
 import type { UserSettings, ExchangeRateApiProvider, ExchangeRateApiProviderType } from '../../types';
 import { refreshCommonExchangeRates } from '../../services/exchangeRateManager';
+import { Label } from '@/components/ui/label';
 
 const PROVIDER_INFO: Record<ExchangeRateApiProviderType, { name: string; url: string; limits: string; requiresKey: boolean }> = {
   'exchangerate-api': {
@@ -243,7 +244,7 @@ function ExchangeRateApiSettings() {
               <h4 className="text-sm font-medium text-gray-700 mb-3">Add New Provider</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">Provider</label>
+                  <Label className="block text-sm text-gray-600 mb-1">Provider</Label>
                   <select
                     value={newProvider.type}
                     onChange={(e) => setNewProvider({ ...newProvider, type: e.target.value as ExchangeRateApiProviderType })}
@@ -256,9 +257,9 @@ function ExchangeRateApiSettings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">
+                  <Label className="block text-sm text-gray-600 mb-1">
                     API Key {!PROVIDER_INFO[newProvider.type].requiresKey && '(Optional)'}
-                  </label>
+                  </Label>
                   <input
                     type="password"
                     value={newProvider.apiKey}
@@ -354,7 +355,7 @@ function ExchangeRateApiSettings() {
                       {/* Actions */}
                       <div className="flex items-center gap-2">
                         {/* Enable/Disable Toggle */}
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <Label className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={provider.enabled}
@@ -364,7 +365,7 @@ function ExchangeRateApiSettings() {
                           <span className="text-sm text-gray-700">
                             {provider.enabled ? 'Enabled' : 'Disabled'}
                           </span>
-                        </label>
+                        </Label>
 
                         {/* Remove Button */}
                         <button
@@ -396,7 +397,7 @@ function ExchangeRateApiSettings() {
 
           <div className="space-y-4">
             <div>
-              <label className="flex items-center space-x-2">
+              <Label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={autoRefresh}
@@ -406,7 +407,7 @@ function ExchangeRateApiSettings() {
                 <span className="text-sm font-medium text-gray-700">
                   Enable Automatic Exchange Rate Refresh
                 </span>
-              </label>
+              </Label>
               <p className="text-xs text-gray-500 mt-1 ml-6">
                 Automatically update currency rates in the background
               </p>
@@ -414,9 +415,9 @@ function ExchangeRateApiSettings() {
 
             {autoRefresh && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Label className="block text-sm font-medium text-gray-700 mb-2">
                   Refresh Interval (minutes)
-                </label>
+                </Label>
                 <input
                   type="number"
                   min="60"

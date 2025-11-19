@@ -3,6 +3,7 @@ import { logger } from '../../../utils';
 import Papa from 'papaparse';
 import type { CSVSettings } from '../../../types';
 import type { WizardState } from './FormatWizardMain';
+import { Label } from '@/components/ui/label';
 
 interface Step1Props {
   file: File;
@@ -28,7 +29,7 @@ export default function Step1FileAnalysis({
   // Auto-detect delimiter on first load
   useEffect(() => {
     detectDelimiter();
-  });
+  },[]);
 
   // Re-parse when settings change
   useEffect(() => {
@@ -135,9 +136,9 @@ export default function Step1FileAnalysis({
         <div className="grid grid-cols-2 gap-4">
           {/* Delimiter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 mb-1">
               Delimiter
-            </label>
+            </Label>
             <select
               value={csvSettings.delimiter}
               onChange={(e) => setCSVSettings(prev => ({ ...prev, delimiter: e.target.value }))}
@@ -152,9 +153,9 @@ export default function Step1FileAnalysis({
 
           {/* Encoding */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 mb-1">
               Encoding
-            </label>
+            </Label>
             <select
               value={csvSettings.encoding}
               onChange={(e) => setCSVSettings(prev => ({ ...prev, encoding: e.target.value }))}
@@ -168,9 +169,9 @@ export default function Step1FileAnalysis({
 
           {/* Skip Rows */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <Label className="block text-sm font-medium text-gray-700 mb-1">
               Skip Rows (from top)
-            </label>
+            </Label>
             <input
               type="number"
               min="0"
@@ -184,7 +185,7 @@ export default function Step1FileAnalysis({
 
         {/* Checkboxes */}
         <div className="space-y-2">
-          <label className="flex items-center">
+          <Label className="flex items-center">
             <input
               type="checkbox"
               checked={csvSettings.hasHeader}
@@ -192,9 +193,9 @@ export default function Step1FileAnalysis({
               className="mr-2"
             />
             <span className="text-sm text-gray-700">First row contains headers</span>
-          </label>
+          </Label>
           
-          <label className="flex items-center">
+          <Label className="flex items-center">
             <input
               type="checkbox"
               checked={csvSettings.skipEmptyLines}
@@ -202,7 +203,7 @@ export default function Step1FileAnalysis({
               className="mr-2"
             />
             <span className="text-sm text-gray-700">Skip empty lines</span>
-          </label>
+          </Label>
         </div>
       </div>
 

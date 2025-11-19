@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { db } from '../../services/db';
 // No need to import JournalEntry - we fetch it from DB directly
 import { formatCurrency } from '../../utils';
+import { Label } from '@/components/ui/label';
 
 interface JournalFilters {
   startDate: string;
@@ -138,7 +139,7 @@ function JournalView() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Search</label>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">Search</Label>
             <input
               type="text"
               placeholder="Description, account..."
@@ -150,7 +151,7 @@ function JournalView() {
 
           {/* Start Date */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Start Date</label>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">Start Date</Label>
             <input
               type="date"
               value={filters.startDate}
@@ -161,7 +162,7 @@ function JournalView() {
 
           {/* End Date */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">End Date</label>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">End Date</Label>
             <input
               type="date"
               value={filters.endDate}
@@ -172,7 +173,7 @@ function JournalView() {
 
           {/* Account Filter */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Account</label>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">Account</Label>
             <select
               value={filters.accountId}
               onChange={e => setFilters({ ...filters, accountId: e.target.value })}
@@ -189,7 +190,7 @@ function JournalView() {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+            <Label className="block text-xs font-medium text-gray-700 mb-1">Status</Label>
             <select
               value={filters.status}
               onChange={e => setFilters({ ...filters, status: e.target.value as JournalFilters['status'] })}

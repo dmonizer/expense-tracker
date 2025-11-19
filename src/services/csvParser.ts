@@ -1,7 +1,7 @@
 import Papa from 'papaparse';
-import {v4 as uuidv4} from 'uuid';
-import {parse} from 'date-fns';
-import {db} from './db';
+import { v4 as uuidv4 } from 'uuid';
+import { parse } from 'date-fns';
+import { db } from './db';
 import type {
     CategoryRule,
     FieldMapping,
@@ -11,9 +11,9 @@ import type {
     SwedBankCSVRow,
     Transaction,
 } from '../types';
-import {createJournalEntryFromTransaction} from './journalEntryManager';
-import {initializeDefaultAccounts} from './accountManager';
-import {logger} from '../utils';
+import { createJournalEntryFromTransaction } from './journalEntryManager';
+import { initializeDefaultAccounts } from './accountManager';
+import { logger } from '../utils';
 
 /**
  * Detailed error information for CSV parsing
@@ -169,7 +169,7 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         return value;
     }
 
-    function transformDate(dateFormat?:string) {
+    function transformDate(dateFormat?: string) {
 
         if (!dateFormat) {
             throw new Error('Date transform requires dateFormat');
@@ -185,7 +185,7 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         }
     }
 
-    function transformNumber(transform:FieldTransform) {
+    function transformNumber(transform: FieldTransform) {
         let cleaned = value;
 
         // Remove thousands separator if present
@@ -205,7 +205,7 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         return parsed;
     }
 
-    function transformCreditDebit(transform:FieldTransform) {
+    function transformCreditDebit(transform: FieldTransform) {
         if (value === transform.debitValue) {
             return 'debit';
         } else if (value === transform.creditValue) {
@@ -215,7 +215,7 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
         }
     }
 
-    function transformCustom(transform:FieldTransform) {
+    function transformCustom(transform: FieldTransform) {
         // Execute custom JavaScript expression
         // Security note: This is dangerous in production, consider removing or sandboxing
         if (transform.customExpression) {
@@ -266,99 +266,99 @@ function applyTransform(value: string, transform?: FieldTransform): string | num
  * Get value from a CSV row using column identifier (name or index)
  */
 function getRowValue(row: unknown, sourceColumn: string | number): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (row as any)[sourceColumn];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (row as any)[sourceColumn];
 }
 
 /**
  * Apply a single field mapping from a column to a transaction
  */
 function applyColumnMapping(
-  transaction: Partial<Transaction>,
-  row: unknown,
-  mapping: FieldMapping
+    transaction: Partial<Transaction>,
+    row: unknown,
+    mapping: FieldMapping
 ): void {
-  if (mapping.targetField === 'ignore' || mapping.sourceColumn === undefined) {
-    return;
-  }
-
-  // Get value from source column
-  let value = getRowValue(row, mapping.sourceColumn);
-
-  // Use default value if missing
-  if (value === undefined || value === null || value === '') {
-    if (mapping.defaultValue !== undefined) {
-      value = mapping.defaultValue;
-    } else if (mapping.required) {
-      throw new Error(`Required field "${mapping.targetField}" is missing`);
-    } else {
-      return;
+    if (mapping.targetField === 'ignore' || mapping.sourceColumn === undefined) {
+        return;
     }
-  }
 
-  // Apply transformation
-  try {
-    const transformed = applyTransform(value, mapping.transform);
+    // Get value from source column
+    let value = getRowValue(row, mapping.sourceColumn);
 
-    // Handle fields that can be summed (e.g., multiple fee columns)
-    if (mapping.targetField === 'fee') {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existing = (transaction as any)[mapping.targetField] || 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (transaction as any)[mapping.targetField] = existing + (typeof transformed === 'number' ? transformed : 0);
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (transaction as any)[mapping.targetField] = transformed;
+    // Use default value if missing
+    if (value === undefined || value === null || value === '') {
+        if (mapping.defaultValue !== undefined) {
+            value = mapping.defaultValue;
+        } else if (mapping.required) {
+            throw new Error(`Required field "${mapping.targetField}" is missing`);
+        } else {
+            return;
+        }
     }
-  } catch (error) {
-    throw new Error(
-      `Field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
-    );
-  }
+
+    // Apply transformation
+    try {
+        const transformed = applyTransform(value, mapping.transform);
+
+        // Handle fields that can be summed (e.g., multiple fee columns)
+        if (mapping.targetField === 'fee') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const existing = (transaction as any)[mapping.targetField] || 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (transaction as any)[mapping.targetField] = existing + (typeof transformed === 'number' ? transformed : 0);
+        } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (transaction as any)[mapping.targetField] = transformed;
+        }
+    } catch (error) {
+        throw new Error(
+            `Field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
+        );
+    }
 }
 
 /**
  * Apply a static field mapping to a transaction
  */
 function applyStaticMapping(
-  transaction: Partial<Transaction>,
-  mapping: FieldMapping
+    transaction: Partial<Transaction>,
+    mapping: FieldMapping
 ): void {
-  if (mapping.targetField === 'ignore' || !mapping.staticValue) {
-    return;
-  }
+    if (mapping.targetField === 'ignore' || !mapping.staticValue) {
+        return;
+    }
 
-  try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (transaction as any)[mapping.targetField] = applyTransform(mapping.staticValue, mapping.transform);
-  } catch (error) {
-    throw new Error(
-      `Static field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
-    );
-  }
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (transaction as any)[mapping.targetField] = applyTransform(mapping.staticValue, mapping.transform);
+    } catch (error) {
+        throw new Error(
+            `Static field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
+        );
+    }
 }
 
 /**
  * Apply all field mappings to a transaction
  */
 function applyFieldMappings(
-  transaction: Partial<Transaction>,
-  row: unknown,
-  fieldMappings: FieldMapping[]
+    transaction: Partial<Transaction>,
+    row: unknown,
+    fieldMappings: FieldMapping[]
 ): void {
-  // Separate column mappings from static mappings
-  const columnMappings = fieldMappings.filter(m => !m.sourceType || m.sourceType === 'column');
-  const staticMappings = fieldMappings.filter(m => m.sourceType === 'static');
+    // Separate column mappings from static mappings
+    const columnMappings = fieldMappings.filter(m => !m.sourceType || m.sourceType === 'column');
+    const staticMappings = fieldMappings.filter(m => m.sourceType === 'static');
 
-  // Apply column field mappings
-  columnMappings.forEach(mapping => {
-    applyColumnMapping(transaction, row, mapping);
-  });
+    // Apply column field mappings
+    columnMappings.forEach(mapping => {
+        applyColumnMapping(transaction, row, mapping);
+    });
 
-  // Apply static field mappings
-  staticMappings.forEach(mapping => {
-    applyStaticMapping(transaction, mapping);
-  });
+    // Apply static field mappings
+    staticMappings.forEach(mapping => {
+        applyStaticMapping(transaction, mapping);
+    });
 }
 
 // ============================================
@@ -369,26 +369,26 @@ function applyFieldMappings(
  * Detect if a transaction is an investment transaction
  */
 function isInvestmentTransaction(transaction: Partial<Transaction>): boolean {
-  return transaction.quantity !== undefined ||
-    transaction.price !== undefined ||
-    transaction.symbol !== undefined;
+    return transaction.quantity !== undefined ||
+        transaction.price !== undefined ||
+        transaction.symbol !== undefined;
 }
 
 /**
  * Apply smart defaults for investment transactions
  */
 function applyInvestmentDefaults(transaction: Partial<Transaction>): void {
-  if (!transaction.currency) transaction.currency = 'EUR';
-  if (!transaction.type) transaction.type = 'debit';
-  if (!transaction.payee) {
-    transaction.payee = transaction.securityName || transaction.symbol || 'Investment';
-  }
-  if (!transaction.description) {
-    const desc = [];
-    if (transaction.quantity) desc.push(`${transaction.quantity} units`);
-    if (transaction.symbol) desc.push(transaction.symbol);
-    transaction.description = desc.length > 0 ? desc.join(' - ') : 'Investment transaction';
-  }
+    if (!transaction.currency) transaction.currency = 'EUR';
+    if (!transaction.type) transaction.type = 'debit';
+    if (!transaction.payee) {
+        transaction.payee = transaction.securityName || transaction.symbol || 'Investment';
+    }
+    if (!transaction.description) {
+        const desc = [];
+        if (transaction.quantity) desc.push(`${transaction.quantity} units`);
+        if (transaction.symbol) desc.push(transaction.symbol);
+        transaction.description = desc.length > 0 ? desc.join(' - ') : 'Investment transaction';
+    }
 }
 
 // ============================================
@@ -399,33 +399,33 @@ function applyInvestmentDefaults(transaction: Partial<Transaction>): void {
  * Validate required fields for a transaction
  */
 function validateRequiredFields(transaction: Partial<Transaction>, isInvestment: boolean): void {
-  // Common required fields
-  if (!transaction.date) throw new Error('Missing date');
-  if (transaction.amount === undefined) throw new Error('Missing amount');
+    // Common required fields
+    if (!transaction.date) throw new Error('Missing date');
+    if (transaction.amount === undefined) throw new Error('Missing amount');
 
-  // Investment transactions have relaxed requirements
-  if (isInvestment) {
-    return;
-  }
+    // Investment transactions have relaxed requirements
+    if (isInvestment) {
+        return;
+    }
 
-  // Regular transaction - all fields required
-  if (!transaction.currency) throw new Error('Missing currency');
-  if (!transaction.type) throw new Error('Missing type');
-  if (!transaction.payee) throw new Error('Missing payee');
-  if (!transaction.description) throw new Error('Missing description');
+    // Regular transaction - all fields required
+    if (!transaction.currency) throw new Error('Missing currency');
+    if (!transaction.type) throw new Error('Missing type');
+    if (!transaction.payee) throw new Error('Missing payee');
+    if (!transaction.description) throw new Error('Missing description');
 }
 
 /**
  * Apply default values for optional fields
  */
 function applyDefaultFields(transaction: Partial<Transaction>, isInvestment: boolean): void {
-  if (!transaction.accountNumber) transaction.accountNumber = 'Unknown';
-  if (!transaction.transactionType) {
-    transaction.transactionType = isInvestment ? 'Investment' : 'Unknown';
-  }
-  if (!transaction.archiveId) {
-    transaction.archiveId = `${transaction.date!.getTime()}-${transaction.amount}`;
-  }
+    if (!transaction.accountNumber) transaction.accountNumber = 'Unknown';
+    if (!transaction.transactionType) {
+        transaction.transactionType = isInvestment ? 'Investment' : 'Unknown';
+    }
+    if (!transaction.archiveId) {
+        transaction.archiveId = `${transaction.date!.getTime()}-${transaction.amount}`;
+    }
 }
 
 // ============================================
@@ -436,33 +436,33 @@ function applyDefaultFields(transaction: Partial<Transaction>, isInvestment: boo
  * Process a single CSV row into a transaction
  */
 function processRow(
-  row: unknown,
-  format: ImportFormatDefinition
+    row: unknown,
+    format: ImportFormatDefinition
 ): Transaction {
-  const transaction: Partial<Transaction> = {
-    id: uuidv4(),
-    imported: new Date(),
-    manuallyEdited: false,
-  };
+    const transaction: Partial<Transaction> = {
+        id: uuidv4(),
+        imported: new Date(),
+        manuallyEdited: false,
+    };
 
-  // Apply all field mappings
-  applyFieldMappings(transaction, row, format.fieldMappings);
+    // Apply all field mappings
+    applyFieldMappings(transaction, row, format.fieldMappings);
 
-  // Detect investment transaction
-  const isInvestment = isInvestmentTransaction(transaction);
+    // Detect investment transaction
+    const isInvestment = isInvestmentTransaction(transaction);
 
-  // Apply smart defaults for investment transactions
-  if (isInvestment) {
-    applyInvestmentDefaults(transaction);
-  }
+    // Apply smart defaults for investment transactions
+    if (isInvestment) {
+        applyInvestmentDefaults(transaction);
+    }
 
-  // Validate required fields
-  validateRequiredFields(transaction, isInvestment);
+    // Validate required fields
+    validateRequiredFields(transaction, isInvestment);
 
-  // Apply defaults for optional fields
-  applyDefaultFields(transaction, isInvestment);
+    // Apply defaults for optional fields
+    applyDefaultFields(transaction, isInvestment);
 
-  return transaction as Transaction;
+    return transaction as Transaction;
 }
 
 export async function parseWithCustomFormat(
@@ -640,7 +640,7 @@ export async function detectDuplicates(
 function createCompositeKey(transaction: Transaction): string {
     const dateStr = transaction.date.toISOString().split('T')[0]; // YYYY-MM-DD
     const amount = transaction.amount.toFixed(2);
-    const payee = transaction.payee.toLowerCase().trim();
+    const payee = (transaction.payee || '').toLowerCase().trim();
     return `${dateStr}_${amount}_${payee}`;
 }
 

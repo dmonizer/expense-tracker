@@ -3,6 +3,11 @@ import { logger } from '../../utils';
 import { db } from '../../services/db';
 import type { Account, Holding } from '../../types';
 import { formatCurrency } from '../../utils/currencyUtils';
+import { useConfirm } from "@/components/ui/confirm-provider";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface HoldingsManagerProps {
   account: Account;
@@ -11,6 +16,8 @@ interface HoldingsManagerProps {
 
 function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
   const [holdings, setHoldings] = useState<Holding[]>([]);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Holding | null>(null);
   const [form, setForm] = useState({
@@ -24,7 +31,7 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
 
   useEffect(() => {
     loadHoldings();
-  },[]);
+  }, []);
 
   const loadHoldings = async () => {
     try {
@@ -80,18 +87,28 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
       setEditing(null);
       setForm({ symbol: '', name: '', type: 'stock', quantity: '', purchasePrice: '', notes: '' });
       await loadHoldings();
+      toast({ title: "Success", description: editing ? "Holding updated successfully" : "Holding added successfully" });
     } catch (error) {
       logger.error('Failed to save holding:', error);
+      toast({ title: "Error", description: "Failed to save holding", variant: "destructive" });
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this holding?')) return;
-    try {
-      await db.holdings.delete(id);
-      await loadHoldings();
-    } catch (error) {
-      logger.error('Failed to delete holding:', error);
+    if (await confirm({
+      title: 'Delete Holding',
+      description: 'Are you sure you want to delete this holding?',
+      confirmText: 'Delete',
+      variant: 'destructive'
+    })) {
+      try {
+        await db.holdings.delete(id);
+        await loadHoldings();
+        toast({ title: "Success", description: "Holding deleted successfully" });
+      } catch (error) {
+        logger.error('Failed to delete holding:', error);
+        toast({ title: "Error", description: "Failed to delete holding", variant: "destructive" });
+      }
     }
   };
 
@@ -108,7 +125,7 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
             <h2 className="text-2xl font-bold text-gray-900">{account.name} - Holdings</h2>
             <p className="text-sm text-gray-600 mt-1">Manage your stocks, funds, and other investments</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-2xl">×</Button>
         </div>
 
         {/* Portfolio Summary */}
@@ -133,74 +150,69 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-gray-900 mb-3">{editing ? 'Edit' : 'Add'} Holding</h3>
           <div className="grid grid-cols-2 gap-3">
-            <input
+            <Input
               type="text"
               placeholder="Symbol (e.g., SWED-A, AAPL)"
               value={form.symbol}
               onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-              className="px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
             />
-            <input
+            <Input
               type="text"
               placeholder="Name (optional)"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="px-3 py-2 border rounded-md"
             />
-            <select
-              value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value as Holding['type'] })}
-              className="px-3 py-2 border rounded-md"
-            >
-              <option value="stock">Stock</option>
-              <option value="fund">Fund</option>
-              <option value="etf">ETF</option>
-              <option value="bond">Bond</option>
-              <option value="crypto">Crypto</option>
-              <option value="other">Other</option>
-            </select>
-            <input
+            <Select value={form.type} onValueChange={(value) => setForm({ ...form, type: value as Holding['type'] })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="stock">Stock</SelectItem>
+                <SelectItem value="fund">Fund</SelectItem>
+                <SelectItem value="etf">ETF</SelectItem>
+                <SelectItem value="bond">Bond</SelectItem>
+                <SelectItem value="crypto">Crypto</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
               type="number"
               step="0.001"
               placeholder="Quantity"
               value={form.quantity}
               onChange={(e) => setForm({ ...form, quantity: e.target.value })}
-              className="px-3 py-2 border rounded-md"
             />
-            <input
+            <Input
               type="number"
               step="0.01"
               placeholder={`Purchase Price (${account.currency})`}
               value={form.purchasePrice}
               onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })}
-              className="px-3 py-2 border rounded-md"
             />
-            <input
+            <Input
               type="text"
               placeholder="Notes"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="px-3 py-2 border rounded-md"
             />
           </div>
           <div className="flex gap-2 mt-3">
-            <button
+            <Button
               onClick={handleSave}
               disabled={!form.symbol.trim() || !form.quantity}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {editing ? 'Update' : 'Add'} Holding
-            </button>
+            </Button>
             {editing && (
-              <button
+              <Button
+                variant="outline"
                 onClick={() => {
                   setEditing(null);
                   setForm({ symbol: '', name: '', type: 'stock', quantity: '', purchasePrice: '', notes: '' });
                 }}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
               >
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -260,7 +272,9 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
                         {gain >= 0 ? '+' : ''}{formatCurrency(gain, holding.purchaseCurrency)} ({gainPercent.toFixed(2)}%)
                       </div>
                       <div className="flex gap-2 mt-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => {
                             setEditing(holding);
                             setForm({
@@ -272,16 +286,17 @@ function HoldingsManager({ account, onClose }: HoldingsManagerProps) {
                               notes: holding.notes || '',
                             });
                           }}
-                          className="text-sm text-blue-600 hover:text-blue-700"
                         >
                           Edit
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleDelete(holding.id)}
-                          className="text-sm text-red-600 hover:text-red-700"
+                          className="text-destructive hover:text-destructive"
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>

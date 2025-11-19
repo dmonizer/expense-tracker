@@ -1,11 +1,13 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import { logger } from '../../utils';
-import {useLiveQuery} from 'dexie-react-hooks';
-import {db} from '../../services/db';
-import {recategorizeAll} from '../../services/categorizer';
-import type {CategoryRule} from '../../types';
-import {getCategoryColor} from '../../utils/colorUtils';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../services/db';
+import { recategorizeAll } from '../../services/categorizer';
+import type { CategoryRule } from '../../types';
+import { getCategoryColor } from '../../utils/colorUtils';
 import UnifiedRuleEditor from './UnifiedRuleEditor';
+import { useConfirm } from "@/components/ui/confirm-provider";
+import { useToast } from "@/hooks/use-toast";
 
 type SortField = 'name' | 'type' | 'priority' | 'patternCount';
 type SortDirection = 'asc' | 'desc';
@@ -20,6 +22,8 @@ function CategoryManager() {
   const [editingRule, setEditingRule] = useState<CategoryRule | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isRecategorizing, setIsRecategorizing] = useState(false);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   // Fetch all rules, groups, and accounts with live updates
   const allRules = useLiveQuery(() => db.categoryRules.toArray(), []);
@@ -29,42 +33,42 @@ function CategoryManager() {
   // Apply filters and sorting
   const filteredRules = allRules
     ? allRules
-        .filter(rule => {
-          // Filter by type
-          if (filterType !== 'all' && rule.type !== filterType) {
+      .filter(rule => {
+        // Filter by type
+        if (filterType !== 'all' && rule.type !== filterType) {
+          return false;
+        }
+        // Filter by group
+        if (filterGroupId !== 'all') {
+          if (filterGroupId === 'none' && rule.groupId) {
             return false;
           }
-          // Filter by group
-          if (filterGroupId !== 'all') {
-            if (filterGroupId === 'none' && rule.groupId) {
-              return false;
-            }
-            if (filterGroupId !== 'none' && rule.groupId !== filterGroupId) {
-              return false;
-            }
+          if (filterGroupId !== 'none' && rule.groupId !== filterGroupId) {
+            return false;
           }
-          // Filter by search query
-          return !(searchQuery && !rule.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        }
+        // Filter by search query
+        return !(searchQuery && !rule.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-        })
-        .sort((a, b) => {
-          let comparison = 0;
-          switch (sortField) {
-            case 'name':
-              comparison = a.name.localeCompare(b.name);
-              break;
-            case 'type':
-              comparison = a.type.localeCompare(b.type);
-              break;
-            case 'priority':
-              comparison = a.priority - b.priority;
-              break;
-            case 'patternCount':
-              comparison = a.patterns.length - b.patterns.length;
-              break;
-          }
-          return sortDirection === 'asc' ? comparison : -comparison;
-        })
+      })
+      .sort((a, b) => {
+        let comparison = 0;
+        switch (sortField) {
+          case 'name':
+            comparison = a.name.localeCompare(b.name);
+            break;
+          case 'type':
+            comparison = a.type.localeCompare(b.type);
+            break;
+          case 'priority':
+            comparison = a.priority - b.priority;
+            break;
+          case 'patternCount':
+            comparison = a.patterns.length - b.patterns.length;
+            break;
+        }
+        return sortDirection === 'asc' ? comparison : -comparison;
+      })
     : [];
 
   const handleSort = (field: SortField) => {
@@ -77,26 +81,35 @@ function CategoryManager() {
   };
 
   const handleDelete = async (rule: CategoryRule) => {
-    if (globalThis.confirm(`Are you sure you want to delete the rule "${rule.name}"?`)) {
+    if (await confirm({
+      title: 'Delete Rule',
+      description: `Are you sure you want to delete the rule "${rule.name}"?`,
+      confirmText: 'Delete',
+      variant: 'destructive'
+    })) {
       try {
         await db.categoryRules.delete(rule.id);
 
         // Ask if user wants to re-categorize after deletion
-        if (globalThis.confirm('Rule deleted. Re-categorize all transactions with updated rules?')) {
+        if (await confirm({
+          title: 'Re-categorize',
+          description: 'Rule deleted. Re-categorize all transactions with updated rules?',
+          confirmText: 'Re-categorize'
+        })) {
           setIsRecategorizing(true);
           try {
             const count = await recategorizeAll();
-            alert(`Successfully re-categorized ${count} transactions.`);
+            toast({ title: "Success", description: `Successfully re-categorized ${count} transactions.` });
           } catch (error) {
             logger.error('Error re-categorizing:', error);
-            alert('Failed to re-categorize transactions. Please try again.');
+            toast({ title: "Error", description: "Failed to re-categorize transactions. Please try again.", variant: "destructive" });
           } finally {
             setIsRecategorizing(false);
           }
         }
       } catch (error) {
         logger.error('Error deleting rule:', error);
-        alert('Failed to delete rule. Please try again.');
+        toast({ title: "Error", description: "Failed to delete rule. Please try again.", variant: "destructive" });
       }
     }
   };
@@ -115,19 +128,23 @@ function CategoryManager() {
       setEditingRule(newRule);
     } catch (error) {
       logger.error('Error duplicating rule:', error);
-      alert('Failed to duplicate rule. Please try again.');
+      toast({ title: "Error", description: "Failed to duplicate rule. Please try again.", variant: "destructive" });
     }
   };
 
   const handleRecategorizeAll = async () => {
-    if (globalThis.confirm('This will re-categorize all transactions that have not been manually edited. Continue?')) {
+    if (await confirm({
+      title: 'Re-categorize All',
+      description: 'This will re-categorize all transactions that have not been manually edited. Continue?',
+      confirmText: 'Re-categorize'
+    })) {
       setIsRecategorizing(true);
       try {
         const count = await recategorizeAll();
-        alert(`Successfully re-categorized ${count} transactions.`);
+        toast({ title: "Success", description: `Successfully re-categorized ${count} transactions.` });
       } catch (error) {
         logger.error('Error re-categorizing:', error);
-        alert('Failed to re-categorize transactions. Please try again.');
+        toast({ title: "Error", description: "Failed to re-categorize transactions. Please try again.", variant: "destructive" });
       } finally {
         setIsRecategorizing(false);
       }
@@ -145,21 +162,25 @@ function CategoryManager() {
       setIsCreating(false);
 
       // Ask if user wants to re-categorize after saving
-      if (globalThis.confirm('Rule saved. Re-categorize all transactions with updated rules?')) {
+      if (await confirm({
+        title: 'Re-categorize',
+        description: 'Rule saved. Re-categorize all transactions with updated rules?',
+        confirmText: 'Re-categorize'
+      })) {
         setIsRecategorizing(true);
         try {
           const count = await recategorizeAll();
-          alert(`Successfully re-categorized ${count} transactions.`);
+          toast({ title: "Success", description: `Successfully re-categorized ${count} transactions.` });
         } catch (error) {
           logger.error('Error re-categorizing:', error);
-          alert('Failed to re-categorize transactions. Please try again.');
+          toast({ title: "Error", description: "Failed to re-categorize transactions. Please try again.", variant: "destructive" });
         } finally {
           setIsRecategorizing(false);
         }
       }
     } catch (error) {
       logger.error('Error saving rule:', error);
-      alert('Failed to save rule. Please try again.');
+      toast({ title: "Error", description: "Failed to save rule. Please try again.", variant: "destructive" });
     }
   };
 
@@ -180,9 +201,10 @@ function CategoryManager() {
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
+      toast({ title: "Success", description: "Rules exported successfully" });
     } catch (error) {
       logger.error('Error exporting rules:', error);
-      alert('Failed to export rules. Please try again.');
+      toast({ title: "Error", description: "Failed to export rules. Please try again.", variant: "destructive" });
     }
   };
 
@@ -205,9 +227,12 @@ function CategoryManager() {
         }
 
         // Ask user how to handle import
-        const mode = globalThis.confirm(
-          `Import ${importedRules.length} rules. Click OK to ADD to existing rules, or Cancel to REPLACE all rules.`
-        ) ? 'add' : 'replace';
+        const mode = await confirm({
+          title: 'Import Rules',
+          description: `Import ${importedRules.length} rules. Click Add to ADD to existing rules, or Replace to REPLACE all rules.`,
+          confirmText: 'Add',
+          cancelText: 'Replace'
+        }) ? 'add' : 'replace';
 
         if (mode === 'replace') {
           // Delete all existing rules
@@ -225,15 +250,23 @@ function CategoryManager() {
 
         await db.categoryRules.bulkAdd(rulesToAdd);
 
-        alert(`Successfully imported ${rulesToAdd.length} rules.`);
+        toast({ title: "Success", description: `Successfully imported ${rulesToAdd.length} rules.` });
 
         // Ask if user wants to re-categorize
-        if (globalThis.confirm('Re-categorize all transactions with the new rules?')) {
+        if (await confirm({
+          title: 'Re-categorize',
+          description: 'Re-categorize all transactions with the new rules?',
+          confirmText: 'Re-categorize'
+        })) {
           handleRecategorizeAll();
         }
       } catch (error) {
         logger.error('Error importing rules:', error);
-        alert(`Failed to import rules: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast({
+          title: "Error",
+          description: `Failed to import rules: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          variant: "destructive"
+        });
       }
     };
     input.click();
@@ -278,31 +311,28 @@ function CategoryManager() {
         <div className="flex gap-2">
           <button
             onClick={() => setFilterType('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterType === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterType === 'all'
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             All
           </button>
           <button
             onClick={() => setFilterType('expense')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterType === 'expense'
-                ? 'bg-red-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterType === 'expense'
+              ? 'bg-red-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             Expense
           </button>
           <button
             onClick={() => setFilterType('income')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterType === 'income'
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filterType === 'income'
+              ? 'bg-green-500 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             Income
           </button>
@@ -437,11 +467,10 @@ function CategoryManager() {
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${
-                        rule.type === 'income'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
+                      className={`px-2 py-1 text-xs font-medium rounded ${rule.type === 'income'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                        }`}
                     >
                       {rule.type}
                     </span>

@@ -1,14 +1,19 @@
-import {useState} from 'react';
+import { useState } from 'react';
 import { logger } from '../../utils';
-import {useLiveQuery} from 'dexie-react-hooks';
-import {db} from '../../services/db';
-import type {CategoryGroup} from '../../types';
-import {MAX_CATEGORY_GROUPS} from '../../types';
-import {getColorPalette} from '../../utils/colorUtils';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../services/db';
+import type { CategoryGroup } from '../../types';
+import { MAX_CATEGORY_GROUPS } from '../../types';
+import { getColorPalette } from '../../utils/colorUtils';
+import { useConfirm } from "@/components/ui/confirm-provider";
+import { useToast } from "@/hooks/use-toast";
+import { Label } from '@/components/ui/label';
 
 function CategoryGroupManager() {
   const [editingGroup, setEditingGroup] = useState<CategoryGroup | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   // Fetch all groups with live updates
   const allGroups = useLiveQuery(() => db.categoryGroups.orderBy('sortOrder').toArray(), []);
@@ -16,7 +21,7 @@ function CategoryGroupManager() {
   const handleCreate = () => {
     const nextSortOrder = allGroups ? Math.max(...allGroups.map(g => g.sortOrder), 0) + 1 : 1;
     const colorPalette = getColorPalette();
-    
+
     setIsCreating(true);
     setEditingGroup({
       id: crypto.randomUUID(),
@@ -43,38 +48,43 @@ function CategoryGroupManager() {
       }
       setEditingGroup(null);
       setIsCreating(false);
+      toast({ title: "Success", description: "Group saved successfully" });
     } catch (error) {
       logger.error('Failed to save group:', error);
-      alert('Failed to save group. Please try again.');
+      toast({ title: "Error", description: "Failed to save group. Please try again.", variant: "destructive" });
     }
   };
 
   const handleDelete = async (group: CategoryGroup) => {
     if (group.isDefault) {
-      alert('Cannot delete default groups.');
+      toast({ title: "Error", description: "Cannot delete default groups.", variant: "destructive" });
       return;
     }
 
-    if (!globalThis.confirm(`Are you sure you want to delete "${group.name}"? Categories in this group will become uncategorized.`)) {
-      return;
-    }
+    if (await confirm({
+      title: 'Delete Group',
+      description: `Are you sure you want to delete "${group.name}"? Categories in this group will become uncategorized.`,
+      confirmText: 'Delete',
+      variant: 'destructive'
+    })) {
+      try {
+        // Remove group reference from all rules
+        const rulesInGroup = await db.categoryRules.where('groupId').equals(group.id).toArray();
+        for (const rule of rulesInGroup) {
+          await db.categoryRules.update(rule.id, {
+            groupId: undefined,
+            colorVariant: 0,
+            updatedAt: new Date(),
+          });
+        }
 
-    try {
-      // Remove group reference from all rules
-      const rulesInGroup = await db.categoryRules.where('groupId').equals(group.id).toArray();
-      for (const rule of rulesInGroup) {
-        await db.categoryRules.update(rule.id, {
-          groupId: undefined,
-          colorVariant: 0,
-          updatedAt: new Date(),
-        });
+        // Delete the group
+        await db.categoryGroups.delete(group.id);
+        toast({ title: "Success", description: "Group deleted successfully" });
+      } catch (error) {
+        logger.error('Failed to delete group:', error);
+        toast({ title: "Error", description: "Failed to delete group. Please try again.", variant: "destructive" });
       }
-
-      // Delete the group
-      await db.categoryGroups.delete(group.id);
-    } catch (error) {
-      logger.error('Failed to delete group:', error);
-      alert('Failed to delete group. Please try again.');
     }
   };
 
@@ -227,9 +237,9 @@ function GroupEditorModal({ group: initialGroup, isCreating, onSave, onCancel }:
           <div className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 Group Name <span className="text-red-500">*</span>
-              </label>
+              </Label>
               <input
                 type="text"
                 value={group.name}
@@ -245,9 +255,9 @@ function GroupEditorModal({ group: initialGroup, isCreating, onSave, onCancel }:
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 Description <span className="text-red-500">*</span>
-              </label>
+              </Label>
               <textarea
                 value={group.description}
                 onChange={e => setGroup({ ...group, description: e.target.value })}
@@ -259,12 +269,12 @@ function GroupEditorModal({ group: initialGroup, isCreating, onSave, onCancel }:
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 Priority: {group.priority}
                 <span className="text-gray-500 font-normal ml-2">
                   (Lower = more critical, appears first)
                 </span>
-              </label>
+              </Label>
               <input
                 type="range"
                 min="0"
@@ -282,19 +292,18 @@ function GroupEditorModal({ group: initialGroup, isCreating, onSave, onCancel }:
 
             {/* Base Color */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Label className="block text-sm font-medium text-gray-700 mb-2">
                 Base Color <span className="text-red-500">*</span>
-              </label>
+              </Label>
               <div className="grid grid-cols-6 gap-2">
                 {colorPalette.map(color => (
                   <button
                     key={color}
                     onClick={() => setGroup({ ...group, baseColor: color })}
-                    className={`w-12 h-12 rounded border-2 transition-all ${
-                      group.baseColor === color
-                        ? 'border-blue-500 scale-110'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
+                    className={`w-12 h-12 rounded border-2 transition-all ${group.baseColor === color
+                      ? 'border-blue-500 scale-110'
+                      : 'border-gray-300 hover:border-gray-400'
+                      }`}
                     style={{ backgroundColor: color }}
                     title={color}
                   />

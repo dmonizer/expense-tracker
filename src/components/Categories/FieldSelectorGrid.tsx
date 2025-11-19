@@ -1,3 +1,5 @@
+import { Label } from '@/components/ui/label';
+
 interface FieldSelectorGridProps {
   selectedFields: string[];
   onChange: (fields: string[]) => void;
@@ -64,13 +66,12 @@ function FieldSelectorGrid({ selectedFields, onChange, availableFields, disabled
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {groupFields.map(field => (
-            <label
+            <Label
               key={field.id}
-              className={`flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${
-                selectedFields.includes(field.id)
+              className={`flex items-start p-3 border rounded-lg cursor-pointer transition-colors ${selectedFields.includes(field.id)
                   ? 'bg-blue-50 border-blue-500'
                   : 'bg-white border-gray-200 hover:bg-gray-50'
-              } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <input
                 type="checkbox"
@@ -83,7 +84,7 @@ function FieldSelectorGrid({ selectedFields, onChange, availableFields, disabled
                 <div className="text-sm font-medium text-gray-900">{field.label}</div>
                 <div className="text-xs text-gray-500">{field.description}</div>
               </div>
-            </label>
+            </Label>
           ))}
         </div>
       </div>
@@ -92,12 +93,12 @@ function FieldSelectorGrid({ selectedFields, onChange, availableFields, disabled
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-3">
+      <Label className="block text-sm font-medium text-gray-700 mb-3">
         Match against fields:
         <span className="ml-2 text-xs font-normal text-gray-500">
           (Pattern will match if ANY selected field matches)
         </span>
-      </label>
+      </Label>
       <div className="space-y-4">
         {renderGroup('Identity', groupedFields.identity)}
         {renderGroup('Financial', groupedFields.financial)}

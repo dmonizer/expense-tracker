@@ -10,7 +10,7 @@ import ExchangeRateManager from './components/Settings/ExchangeRateManager';
 import AllApiSettings from './components/Settings/AllApiSettings';
 import LogViewer from './components/Logs/LogViewer';
 import ErrorBoundary from './components/ErrorBoundary';
-import LoadingSpinner from './components/UI/LoadingSpinner';
+import LoadingSpinner from './components/ui/LoadingSpinner';
 import { initializeDefaults } from './services/seedData';
 import { initializeBuiltInFormats } from './services/formatManager';
 import { db } from './services/db';
@@ -18,6 +18,9 @@ import { refreshAllPrices } from './services/priceFetcher';
 import { refreshCommonExchangeRates } from './services/exchangeRateManager';
 import { migrateAllPatterns } from './utils/patternMigration';
 import { logger } from './utils';
+import { ConfirmProvider } from "@/components/ui/confirm-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { Button } from "@/components/ui/button";
 
 type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import' | 'logs';
 
@@ -183,64 +186,70 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Expense Tracker
-            </h1>
-            {initError && (
-              <div className="text-sm text-amber-600">
-                Warning: {initError}
-              </div>
-            )}
+
+
+    <ConfirmProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <h1 className="text-2xl font-bold text-gray-900">
+                Expense Tracker
+              </h1>
+              {initError && (
+                <div className="text-sm text-amber-600">
+                  Warning: {initError}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Navigation Tabs */}
-      <nav className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm
-                  transition-colors duration-200
-                  ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }
-                `}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
+        {/* Navigation Tabs */}
+        <nav className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex space-x-2">
+              {tabs.map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant="ghost"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center space-x-2 py-4 px-3 border-b-2 rounded-none font-medium text-sm
+                    transition-colors duration-200
+                    ${activeTab === tab.id
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted'
+                    }
+                  `}
+                >
+                  <span className="text-lg">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
-          <ErrorBoundary key={activeTab}>
-            {renderContent()}
-          </ErrorBoundary>
-        </div>
-      </main>
+        {/* Main Content Area */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[600px]">
+            <ErrorBoundary key={activeTab}>
+              {renderContent()}
+            </ErrorBoundary>
+          </div>
+        </main>
 
-      {/* Footer */}
-      <footer className="mt-auto py-6 text-center text-sm text-gray-500">
-        <p>Personal Expense Tracker - Manage your finances with ease</p>
-      </footer>
-    </div>
+        {/* Footer */}
+        <footer className="mt-auto py-6 text-center text-sm text-gray-500">
+          <p>Personal Expense Tracker - Manage your finances with ease</p>
+        </footer>
+        <Toaster />
+      </div>
+    </ConfirmProvider>
   );
 }
+
 
 export default App

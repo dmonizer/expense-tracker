@@ -2,6 +2,7 @@
 export interface Transaction {
     id: string; // UUID
     accountNumber: string; // "Kliendi konto"
+    payeeAccountNumber?: string; // "Saaja/maksja konto" - Payee/Recipient account number
     date: Date; // "Kuupäev"
     payee: string; // "Saaja/Maksja"
     description: string; // "Selgitus"
@@ -90,6 +91,7 @@ export interface ImportRecord {
 // Import Format Types
 export type TransactionField =
     | 'accountNumber'
+    | 'payeeAccountNumber'
     | 'date'
     | 'payee'
     | 'description'

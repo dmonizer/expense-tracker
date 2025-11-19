@@ -2,6 +2,7 @@ import {isValidPattern} from '../../utils';
 import type {Pattern} from '../../types';
 import WordListEditor from './WordListEditor';
 import RegexEditor from './RegexEditor';
+import { Label } from '@/components/ui/label';
 
 interface PatternEditorProps {
     pattern: Pattern;
@@ -64,7 +65,7 @@ function PatternEditor({pattern, onChange, onRemove, index}: Readonly<PatternEdi
             <div className="space-y-4">
                 {/* Field selector */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Match Field</label>
+                    <Label className="block text-sm font-medium text-gray-700 mb-1">Match Field</Label>
                     <div className="flex gap-2">
                         <button
                             onClick={() => handleFieldChange('payee')}
@@ -91,7 +92,7 @@ function PatternEditor({pattern, onChange, onRemove, index}: Readonly<PatternEdi
 
                 {/* Match type toggle */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Match Type</label>
+                    <Label className="block text-sm font-medium text-gray-700 mb-1">Match Type</Label>
                     <div className="flex gap-2">
                         <button
                             onClick={() => handleMatchTypeChange('wordlist')}
@@ -127,9 +128,9 @@ function PatternEditor({pattern, onChange, onRemove, index}: Readonly<PatternEdi
 
                 {/* Weight input */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Label className="block text-sm font-medium text-gray-700 mb-1">
                         Weight <span className="text-gray-500 font-normal ml-1">(Higher = more important)</span>
-                    </label>
+                    </Label>
                     <input
                         type="number"
                         min="1"

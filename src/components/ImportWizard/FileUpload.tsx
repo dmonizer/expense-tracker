@@ -9,6 +9,7 @@ import ImportSummary from './ImportSummary';
 import FormatSelector from './FormatSelector';
 import { FILE_UPLOAD } from '../../constants';
 import * as React from "react";
+import { Label } from '@/components/ui/label';
 
 function FileUpload() {
   const [step, setStep] = useState<'upload' | 'formatSelect' | 'preview' | 'summary'>('upload');
@@ -271,12 +272,12 @@ function FileUpload() {
               </div>
 
               <div>
-                <label
+                <Label
                   htmlFor="file-upload"
                   className="cursor-pointer text-blue-600 hover:text-blue-700 font-medium"
                 >
                   Choose a file
-                </label>
+                </Label>
                 <span className="text-gray-600"> or drag and drop</span>
               </div>
 

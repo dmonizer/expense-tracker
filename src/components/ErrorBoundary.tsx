@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { Button } from '@/components/ui/button';
 import { logger } from '../utils';
 import type { ErrorInfo, ReactNode } from 'react';
 
@@ -46,12 +47,12 @@ class ErrorBoundary extends Component<Props, State> {
                 </p>
               </div>
             )}
-            <button
-              onClick={() => globalThis.location.reload()}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
+            <Button
+              variant="outline"
+              onClick={() => this.setState({ hasError: false, error: null })}
             >
-              Reload Application
-            </button>
+              Try again
+            </Button>
           </div>
         </div>
       );

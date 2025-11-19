@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
 import type { ExchangeRate } from '../../types';
-import { 
+import {
   setExchangeRate,
   deleteExchangeRate,
 } from '../../services/exchangeRateManager';
 import { COMMON_CURRENCIES } from '../../utils/currencyUtils';
-import LoadingSpinner from '../UI/LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import { logger } from '../../utils';
+import { useConfirm } from "@/components/ui/confirm-provider";
+import { useToast } from "@/hooks/use-toast";
+import { Label } from '@/components/ui/label';
 
 function ExchangeRateManager() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
+
   // Form state
   const [showForm, setShowForm] = useState(false);
   const [fromCurrency, setFromCurrency] = useState('USD');
@@ -20,7 +25,7 @@ function ExchangeRateManager() {
   const [rate, setRate] = useState('');
   const [rateDate, setRateDate] = useState(new Date().toISOString().split('T')[0]);
   const [saving, setSaving] = useState(false);
-  
+
   // Filter state
   const [selectedPair, setSelectedPair] = useState<string>('all');
 
@@ -36,10 +41,10 @@ function ExchangeRateManager() {
       // Get all rates (we'll load them all for simplicity)
       const { db } = await import('../../services/db');
       const allRates = await db.exchangeRates.toArray();
-      
+
       // Sort by date (newest first)
       allRates.sort((a, b) => b.date.getTime() - a.date.getTime());
-      
+
       setRates(allRates);
     } catch (err) {
       logger.error('Failed to load exchange rates:', err);
@@ -73,25 +78,30 @@ function ExchangeRateManager() {
 
       // Reload data
       await loadData();
+      toast({ title: "Success", description: "Exchange rate added successfully" });
     } catch (err) {
       logger.error('Failed to add exchange rate:', err);
-      setError(err instanceof Error ? err.message : 'Failed to add exchange rate');
+      toast({ title: "Error", description: err instanceof Error ? err.message : 'Failed to add exchange rate', variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (rateId: string) => {
-    if (!confirm('Delete this exchange rate?')) {
-      return;
-    }
-
-    try {
-      await deleteExchangeRate(rateId);
-      await loadData();
-    } catch (err) {
-      logger.error('Failed to delete exchange rate:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete exchange rate');
+    if (await confirm({
+      title: 'Delete Exchange Rate',
+      description: 'Are you sure you want to delete this exchange rate?',
+      confirmText: 'Delete',
+      variant: 'destructive'
+    })) {
+      try {
+        await deleteExchangeRate(rateId);
+        await loadData();
+        toast({ title: "Success", description: "Exchange rate deleted successfully" });
+      } catch (err) {
+        logger.error('Failed to delete exchange rate:', err);
+        toast({ title: "Error", description: err instanceof Error ? err.message : 'Failed to delete exchange rate', variant: "destructive" });
+      }
     }
   };
 
@@ -106,9 +116,9 @@ function ExchangeRateManager() {
   }, {} as Record<string, ExchangeRate[]>);
 
   const pairs = Object.keys(ratesByPair).sort();
-  
-  const filteredRates = selectedPair === 'all' 
-    ? rates 
+
+  const filteredRates = selectedPair === 'all'
+    ? rates
     : ratesByPair[selectedPair] || [];
 
   if (loading) {
@@ -128,7 +138,7 @@ function ExchangeRateManager() {
               Manage currency conversion rates for multi-currency support
             </p>
           </div>
-          
+
           <button
             onClick={() => setShowForm(!showForm)}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -149,12 +159,12 @@ function ExchangeRateManager() {
       {showForm && (
         <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="font-semibold text-blue-900 mb-4">Add Exchange Rate</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 From Currency
-              </label>
+              </Label>
               <select
                 value={fromCurrency}
                 onChange={(e) => setFromCurrency(e.target.value)}
@@ -169,9 +179,9 @@ function ExchangeRateManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 To Currency
-              </label>
+              </Label>
               <select
                 value={toCurrency}
                 onChange={(e) => setToCurrency(e.target.value)}
@@ -186,9 +196,9 @@ function ExchangeRateManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 Rate
-              </label>
+              </Label>
               <input
                 type="number"
                 step="0.0001"
@@ -200,9 +210,9 @@ function ExchangeRateManager() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Label className="block text-sm font-medium text-gray-700 mb-1">
                 Date
-              </label>
+              </Label>
               <input
                 type="date"
                 value={rateDate}
@@ -272,21 +282,20 @@ function ExchangeRateManager() {
                     <span className="text-2xl font-bold text-blue-600">
                       {rate.rate.toFixed(4)}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${
-                      rate.source === 'manual' 
-                        ? 'bg-gray-100 text-gray-700'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded ${rate.source === 'manual'
+                      ? 'bg-gray-100 text-gray-700'
+                      : 'bg-blue-100 text-blue-700'
+                      }`}>
                       {rate.source}
                     </span>
                   </div>
-                  
+
                   <div className="text-sm text-gray-600">
                     <span>Date: {new Date(rate.date).toLocaleDateString()}</span>
                     <span className="mx-2">•</span>
                     <span>Added: {new Date(rate.createdAt).toLocaleDateString()}</span>
                   </div>
-                  
+
                   {/* Example conversion */}
                   <div className="mt-2 text-sm text-gray-500">
                     Example: 100 {rate.fromCurrency} = {(100 * rate.rate).toFixed(2)} {rate.toCurrency}

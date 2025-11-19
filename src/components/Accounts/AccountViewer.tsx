@@ -3,40 +3,43 @@ import { logger } from '../../utils';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../../services/db';
 import type { Account } from '../../types';
-import LoadingSpinner from '../UI/LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import { cleanupDuplicateAccounts, rebuildAccountingFromTransactions } from '../../services/databaseCleanup';
 import { getDisplayBalance } from '../../services/journalEntryManager';
 import { updateAccount, updateAccountOpeningBalance } from '../../services/accountManager';
 import { formatCurrency } from '../../utils/currencyUtils';
-import { 
-  getAccountTypeIcon, 
-  getAccountTypeLabel, 
+import {
+  getAccountTypeIcon,
+  getAccountTypeLabel,
   getAccountTypeBadgeColor,
-  type AccountType 
+  type AccountType
 } from '../../utils/accountTypeHelpers';
 import type { AccountSubtype } from '../../types';
 import { useAccounts, useAccountFiltering, type AccountWithDetails } from '../../hooks/useAccounts';
 import { EditAccountModal, OpeningBalanceModal, CreateAccountModal } from './AccountModals';
 import AccountDetailView from './AccountDetailView';
 import HoldingsManager from './HoldingsManager';
+import { useConfirm } from "@/components/ui/confirm-provider";
+import { useToast } from "@/hooks/use-toast";
 
 function AccountViewer() {
   // Custom hooks
   const { accounts, loading, error: loadError, reload } = useAccounts();
-  const { 
-    selectedType, 
-    setSelectedType, 
-    filteredAccounts, 
-    accountsByType, 
-    accountTypeStats 
+  const {
+    selectedType,
+    setSelectedType,
+    filteredAccounts,
+    accountsByType,
+    accountTypeStats
   } = useAccountFiltering(accounts);
+
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   // Local state
   const [error, setError] = useState<string | null>(null);
   const [cleanupRunning, setCleanupRunning] = useState(false);
-  const [cleanupResult, setCleanupResult] = useState<string | null>(null);
   const [rebuildRunning, setRebuildRunning] = useState(false);
-  const [rebuildResult, setRebuildResult] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [managingHoldingsAccount, setManagingHoldingsAccount] = useState<Account | null>(null);
 
@@ -52,62 +55,61 @@ function AccountViewer() {
    * Handle cleanup of duplicate accounts
    */
   const handleCleanup = useCallback(async () => {
-    if (!confirm('This will remove duplicate accounts and update all references. Continue?')) {
-      return;
+    if (await confirm({
+      title: 'Cleanup Duplicates',
+      description: 'This will remove duplicate accounts and update all references. Continue?',
+      confirmText: 'Cleanup'
+    })) {
+      try {
+        setCleanupRunning(true);
+        setError(null);
+
+        const result = await cleanupDuplicateAccounts();
+
+        toast({
+          title: "Cleanup Complete",
+          description: `Removed ${result.duplicatesRemoved} duplicates. Kept ${result.uniqueAccountsKept} unique accounts.`
+        });
+
+        await reload();
+      } catch (err) {
+        logger.error('Cleanup failed:', err);
+        toast({ title: "Error", description: err instanceof Error ? err.message : 'Cleanup failed', variant: "destructive" });
+      } finally {
+        setCleanupRunning(false);
+      }
     }
-
-    try {
-      setCleanupRunning(true);
-      setCleanupResult(null);
-      setError(null);
-
-      const result = await cleanupDuplicateAccounts();
-      
-      setCleanupResult(
-        `Cleanup complete! Removed ${result.duplicatesRemoved} duplicates. ` +
-        `Kept ${result.uniqueAccountsKept} unique accounts.`
-      );
-
-      await reload();
-    } catch (err) {
-      logger.error('Cleanup failed:', err);
-      setError(err instanceof Error ? err.message : 'Cleanup failed');
-    } finally {
-      setCleanupRunning(false);
-    }
-  }, [reload]);
+  }, [reload, confirm, toast]);
 
   /**
    * Handle rebuild of accounting system from transactions
    */
   const handleRebuild = useCallback(async () => {
-    if (!confirm(
-      'This will rebuild all accounts and journal entries from your transactions. ' +
-      'Your transactions and categories will be preserved. ' +
-      'This will fix categorization issues. Continue?\n'    )) {
-      return;
+    if (await confirm({
+      title: 'Rebuild Accounting',
+      description: 'This will rebuild all accounts and journal entries from your transactions. Your transactions and categories will be preserved. This will fix categorization issues. Continue?',
+      confirmText: 'Rebuild'
+    })) {
+      try {
+        setRebuildRunning(true);
+        setError(null);
+
+        const result = await rebuildAccountingFromTransactions();
+
+        toast({
+          title: "Rebuild Complete",
+          description: `Processed ${result.transactionsProcessed} transactions, created ${result.accountsCreated} accounts, and ${result.journalEntriesCreated} journal entries.`
+        });
+
+        await reload();
+      } catch (err) {
+        logger.error('Rebuild failed:', err);
+        toast({ title: "Error", description: err instanceof Error ? err.message : 'Rebuild failed', variant: "destructive" });
+      } finally {
+        setRebuildRunning(false);
+      }
     }
-
-    try {
-      setRebuildRunning(true);
-      setRebuildResult(null);
-      setError(null);
-
-      const result = await rebuildAccountingFromTransactions();
-      
-      setRebuildResult(
-        `Rebuild complete! Processed ${result.transactionsProcessed} transactions, ` +
-        `created ${result.accountsCreated} accounts, and ${result.journalEntriesCreated} journal entries.`
-      );
-
-      await reload();
-    } catch (err) {
-      logger.error('Rebuild failed:', err);
-      setError(err instanceof Error ? err.message : 'Rebuild failed');
-    } finally {
-      setRebuildRunning(false);
-    }
-  }, [reload]);
+  }, [reload, confirm, toast]);
 
   /**
    * Handle account edit
@@ -217,7 +219,7 @@ function AccountViewer() {
               Double-entry accounting system - All accounts and their details
             </p>
           </div>
-          
+
           {/* Action buttons */}
           <div className="flex gap-2">
             <button
@@ -265,35 +267,6 @@ function AccountViewer() {
             </button>
           </div>
         </div>
-        
-        {/* Result messages */}
-        {cleanupResult && (
-          <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4" role="alert">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl">✅</div>
-              <div>
-                <h3 className="font-semibold text-green-900">Cleanup Successful</h3>
-                <p className="text-sm text-green-800 mt-1">{cleanupResult}</p>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {rebuildResult && (
-          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4" role="alert">
-            <div className="flex items-start gap-3">
-              <div className="text-2xl">✅</div>
-              <div>
-                <h3 className="font-semibold text-blue-900">Rebuild Successful</h3>
-                <p className="text-sm text-blue-800 mt-1">{rebuildResult}</p>
-                <p className="text-sm text-blue-700 mt-2">
-                  All accounts and journal entries have been recreated from your transactions. 
-                  Categories should now be properly linked.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Stats Cards */}
@@ -301,11 +274,10 @@ function AccountViewer() {
         {accountTypeStats.map(({ type, count, totalSplits }) => (
           <button
             key={type}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${
-              selectedType === type
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}
+            className={`p-4 rounded-lg border-2 transition-all text-left ${selectedType === type
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
             onClick={() => setSelectedType(selectedType === type ? 'all' : type)}
             aria-label={`Filter by ${type} accounts`}
             aria-pressed={selectedType === type}
@@ -327,11 +299,10 @@ function AccountViewer() {
         <span className="text-sm font-medium text-gray-700">Filter:</span>
         <button
           onClick={() => setSelectedType('all')}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-            selectedType === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${selectedType === 'all'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
           aria-pressed={selectedType === 'all'}
         >
           All ({accounts.length})
@@ -340,11 +311,10 @@ function AccountViewer() {
           <button
             key={type}
             onClick={() => setSelectedType(type)}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-              selectedType === type
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${selectedType === type
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             aria-pressed={selectedType === type}
           >
             {getAccountTypeLabel(type)} ({accountsByType[type]?.length || 0})
@@ -353,7 +323,7 @@ function AccountViewer() {
       </div>
 
       {/* Accounts List */}
-        <div className="space-y-3">
+      <div className="space-y-3">
         {filteredAccounts.length === 0 && (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <div className="text-4xl mb-2">📭</div>
@@ -475,12 +445,12 @@ interface AccountCardProps {
   onManageHoldings: (account: Account) => void;
 }
 
-function AccountCard({ 
-  account, 
-  onViewTransactions, 
-  onEdit, 
-  onEditBalance, 
-  onManageHoldings 
+function AccountCard({
+  account,
+  onViewTransactions,
+  onEdit,
+  onEditBalance,
+  onManageHoldings
 }: Readonly<AccountCardProps>) {
   return (
     <article
@@ -593,17 +563,43 @@ function AccountCard({
         {/* Right side - Current balance */}
         <div className="text-right ml-4">
           <div className="text-xs text-gray-500 mb-1">Current Balance</div>
-          <div className={`text-xl font-bold ${
-            account.currentBalance === undefined
-                ? 'text-gray-900'
-                : account.currentBalance >= 0
-                    ? 'text-green-600'
-                    : 'text-red-600'
-          }`}>
-            {account.currentBalance === undefined
+
+          {/* Multi-currency display */}
+          {account.balances && Object.keys(account.balances).length > 0 ? (
+            <div className="flex flex-col items-end gap-1">
+              {/* Primary currency first */}
+              <div className={`text-xl font-bold ${(account.balances[account.currency] || 0) >= 0
+                ? 'text-green-600'
+                : 'text-red-600'
+                }`}>
+                {formatCurrency(account.balances[account.currency] || 0, account.currency)}
+              </div>
+
+              {/* Other currencies */}
+              {Object.entries(account.balances)
+                .filter(([currency]) => currency !== account.currency)
+                .map(([currency, amount]) => (
+                  <div key={currency} className={`text-sm font-medium ${amount >= 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                    {formatCurrency(amount, currency)}
+                  </div>
+                ))
+              }
+            </div>
+          ) : (
+            /* Fallback for backward compatibility */
+            <div className={`text-xl font-bold ${account.currentBalance === undefined
+              ? 'text-gray-900'
+              : account.currentBalance >= 0
+                ? 'text-green-600'
+                : 'text-red-600'
+              }`}>
+              {account.currentBalance === undefined
                 ? formatCurrency(account.openingBalance, account.currency)
                 : formatCurrency(account.currentBalance, account.balanceCurrency || account.currency)}
-          </div>
+            </div>
+          )}
+
           {account.openingBalance !== 0 && (
             <div className="text-xs text-gray-500 mt-1">
               Opening: {formatCurrency(getDisplayBalance(account.openingBalance, account.type), account.currency)}

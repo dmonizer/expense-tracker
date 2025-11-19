@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {isValidRegex} from '../../utils';
 import type {Pattern} from '../../types';
+import { Label } from '@/components/ui/label';
 
 interface RegexEditorProps {
     pattern: Pattern;
@@ -50,9 +51,9 @@ function RegexEditor({pattern, onChange}: Readonly<RegexEditorProps>) {
         <div className="space-y-3">
             {/* Regex input */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label className="block text-sm font-medium text-gray-700 mb-1">
                     Regular Expression Pattern
-                </label>
+                </Label>
                 <input
                     type="text"
                     value={regex}
@@ -109,9 +110,9 @@ function RegexEditor({pattern, onChange}: Readonly<RegexEditorProps>) {
 
             {/* Flags */}
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Flags</label>
+                <Label className="block text-sm font-medium text-gray-700 mb-2">Flags</Label>
                 <div className="flex flex-wrap gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <Label className="flex items-center gap-2 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={hasFlag('i')}
@@ -122,8 +123,8 @@ function RegexEditor({pattern, onChange}: Readonly<RegexEditorProps>) {
               <span className="font-mono font-medium">i</span>
               <span className="text-gray-600 ml-1">(case-insensitive)</span>
             </span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    </Label>
+                    <Label className="flex items-center gap-2 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={hasFlag('g')}
@@ -134,8 +135,8 @@ function RegexEditor({pattern, onChange}: Readonly<RegexEditorProps>) {
               <span className="font-mono font-medium">g</span>
               <span className="text-gray-600 ml-1">(global)</span>
             </span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    </Label>
+                    <Label className="flex items-center gap-2 cursor-pointer">
                         <input
                             type="checkbox"
                             checked={hasFlag('m')}
@@ -146,7 +147,7 @@ function RegexEditor({pattern, onChange}: Readonly<RegexEditorProps>) {
               <span className="font-mono font-medium">m</span>
               <span className="text-gray-600 ml-1">(multiline)</span>
             </span>
-                    </label>
+                    </Label>
                 </div>
             </div>
 

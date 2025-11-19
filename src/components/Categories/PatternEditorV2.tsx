@@ -7,6 +7,7 @@ import { db } from '../../services/db';
 import FieldSelectorGrid from './FieldSelectorGrid';
 import WordListEditor from './WordListEditor';
 import RegexEditor from './RegexEditor';
+import { Label } from '@/components/ui/label';
 
 interface PatternEditorV2Props {
   pattern: Pattern;
@@ -147,7 +148,7 @@ function PatternEditorV2({
 
         {/* Match Type Toggle */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Match Type</label>
+          <Label className="block text-sm font-medium text-gray-700 mb-2">Match Type</Label>
           <div className="flex gap-2">
             <button
               onClick={() => handleMatchTypeChange('wordlist')}
@@ -181,9 +182,9 @@ function PatternEditorV2({
 
               return (
                 <div key={field}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     Suggested from {field}:
-                  </label>
+                  </Label>
                   <div className="flex flex-wrap gap-2">
                     {fieldSuggestions.map((suggestion, idx) => {
                       const alreadyAdded = pattern.words?.some(w => w.text === suggestion);
@@ -217,12 +218,12 @@ function PatternEditorV2({
 
         {/* Weight Slider */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <Label className="block text-sm font-medium text-gray-700 mb-2">
             Weight: {pattern.weight}
             <span className="ml-2 text-xs font-normal text-gray-500">
               (Higher = more important)
             </span>
-          </label>
+          </Label>
           <input
             type="range"
             min="1"

@@ -1,4 +1,5 @@
 import type { Pattern } from '../../types';
+import { Button } from '@/components/ui/button';
 
 interface PatternCardProps {
   pattern: Pattern;
@@ -69,16 +70,17 @@ function PatternCard({ pattern, index, isExpanded, onToggleExpand, onDelete }: P
             )}
           </div>
           <div className="flex items-center gap-2 ml-3">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete();
               }}
-              className="text-xs text-red-600 hover:text-red-800 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
-              title="Delete pattern"
+              className="text-destructive hover:text-destructive"
             >
-              Delete
-            </button>
+              ✕
+            </Button>
             <span className="text-gray-400 text-sm">
               {isExpanded ? '▼' : '▶'}
             </span>

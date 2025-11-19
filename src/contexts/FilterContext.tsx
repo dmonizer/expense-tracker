@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useCallback, useMemo, type ReactNo
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import type { TransactionFilters } from '../types';
 
-export type DateRangePreset = 'thisMonth' | 'last3Months' | 'year' | 'custom';
+export type DateRangePreset = 'all' | 'thisMonth' | 'last3Months' | 'year' | 'custom';
 
 export type DrilldownView = 'groups' | 'group' | 'category';
 
@@ -24,6 +24,7 @@ interface FilterState {
 
   // Currency
   currencies: string[];
+  setCurrencies: (currencies: string[]) => void;
 }
 
 interface FilterContextValue extends FilterState {
@@ -54,6 +55,7 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
   const [drilldownView, setDrilldownView] = useState<DrilldownView>('groups');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [currencies, setCurrenciesState] = useState<string[]>([]);
 
   // Compute date range based on preset
   const { dateFrom, dateTo } = useMemo(() => {
@@ -61,6 +63,11 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     let to: Date | undefined;
 
     switch (dateRangePreset) {
+      case 'all':
+        // No date restrictions - show all transactions
+        from = undefined;
+        to = undefined;
+        break;
       case 'thisMonth':
         from = startOfMonth(new Date());
         to = endOfMonth(new Date());
@@ -152,13 +159,17 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     setDrilldownView('groups');
     setSelectedGroupId(null);
     setSelectedCategory(null);
+    setCurrenciesState([]);
   }, []);
 
   // Compute transaction filters based on current state
   const getTransactionFilters = useCallback((): TransactionFilters => {
-    const filters: TransactionFilters = {
-      currencies: ['EUR'], // Always filter to EUR
-    };
+    const filters: TransactionFilters = {};
+
+    // Add currency filter if specified
+    if (currencies.length > 0) {
+      filters.currencies = currencies;
+    }
 
     // Add date range
     if (dateFrom) {
@@ -179,7 +190,7 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     // If drilldownView === 'groups', no category/group filter applied
 
     return filters;
-  }, [dateFrom, dateTo, drilldownView, selectedGroupId, selectedCategory]);
+  }, [dateFrom, dateTo, drilldownView, selectedGroupId, selectedCategory, currencies]);
 
   const value: FilterContextValue = {
     // State
@@ -191,11 +202,12 @@ export function FilterProvider({ children }: Readonly<{ children: ReactNode }>) 
     drilldownView,
     selectedGroupId,
     selectedCategory,
-    currencies: ['EUR'],
+    currencies,
 
     // Actions
     setDateRangePreset,
     setCustomDateRange,
+    setCurrencies: setCurrenciesState,
     drillDownToGroup,
     drillDownToCategory,
     goBackToGroups,

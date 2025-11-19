@@ -10,6 +10,7 @@ export interface AccountWithDetails extends Account {
   splitCount?: number;
   currentBalance?: number;
   balanceCurrency?: string;
+  balances?: Record<string, number>;
 }
 
 export function useAccounts() {
@@ -40,24 +41,32 @@ export function useAccounts() {
           // Calculate current balance
           let currentBalance = account.openingBalance;
           let balanceCurrency = account.currency;
+          let balances: Record<string, number> = { [account.currency]: account.openingBalance };
 
           try {
             const balanceResult = await calculateAccountBalance(account.id, new Date());
             // Use display balance (flips sign for income/liability accounts)
             currentBalance = getDisplayBalance(balanceResult.balance, account.type);
             balanceCurrency = balanceResult.currency;
+
+            // Process multi-currency balances
+            balances = {};
+            Object.entries(balanceResult.balances).forEach(([currency, amount]) => {
+              balances[currency] = getDisplayBalance(amount, account.type);
+            });
           } catch (error) {
             logger.error(`Failed to calculate balance for ${account.name}:`, error);
           }
 
           return {
             ...account,
-            linkedCategoryRule: account.categoryRuleId 
+            linkedCategoryRule: account.categoryRuleId
               ? categoryRuleMap.get(account.categoryRuleId)
               : undefined,
             splitCount,
             currentBalance,
             balanceCurrency,
+            balances,
           };
         })
       );

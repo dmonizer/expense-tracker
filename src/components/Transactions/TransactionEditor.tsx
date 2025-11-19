@@ -7,7 +7,16 @@ import { formatCurrency, formatDate } from '../../utils';
 import { extractPatternSuggestions, calculatePatternWeight } from '../../utils/patternExtractor';
 import { detectPatternConflicts, matchesPattern, recategorizeAll } from '../../services/categorizer';
 import type { Pattern, CategoryRule } from '../../types';
-import * as React from "react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from '@/components/ui/label';
 
 interface TransactionEditorProps {
   transaction: Transaction;
@@ -41,6 +50,8 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
     () => db.categoryRules.orderBy('name').toArray(),
     []
   );
+
+  const { toast } = useToast();
 
   // Update selected category and ignored state when transaction changes
   useEffect(() => {
@@ -77,7 +88,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
           testPatterns.push({
             field,
             matchType: 'wordlist',
-            words: [{text: pattern, negated: false}],
+            words: [{ text: pattern, negated: false }],
             caseSensitive: false,
             weight: patternWeight,
           });
@@ -160,7 +171,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
             newPatterns.push({
               field,
               matchType: 'wordlist',
-              words: [{text: pattern, negated: false}],
+              words: [{ text: pattern, negated: false }],
               caseSensitive: false,
               weight: patternWeight,
             });
@@ -186,11 +197,11 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
         // Original behavior: manual edit without patterns
         await onSave(transaction.id, selectedCategory, isIgnored);
       }
-      
+
       onClose();
     } catch (error) {
       logger.error('Failed to save category:', error);
-      alert('Failed to save category. Please try again.');
+      toast({ title: "Error", description: "Failed to save category. Please try again.", variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
@@ -199,14 +210,14 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
   const handleCreateCategory = async () => {
     const trimmedName = newCategoryName.trim();
     if (!trimmedName) {
-      alert('Please enter a category name');
+      toast({ title: "Error", description: "Please enter a category name", variant: "destructive" });
       return;
     }
 
     // Check if category already exists
     const existing = categoryRules?.find(r => r.name.toLowerCase() === trimmedName.toLowerCase());
     if (existing) {
-      alert('A category with this name already exists');
+      toast({ title: "Error", description: "A category with this name already exists", variant: "destructive" });
       return;
     }
 
@@ -232,36 +243,26 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
       setNewCategoryName('');
 
       // Show success message
-      alert(`Category "${trimmedName}" created successfully! You can add patterns to it later in the Categories tab.`);
+      toast({ title: "Success", description: `Category "${trimmedName}" created successfully! You can add patterns to it later in the Categories tab.` });
     } catch (error) {
       logger.error('Failed to create category:', error);
-      alert('Failed to create category. Please try again.');
+      toast({ title: "Error", description: "Failed to create category. Please try again.", variant: "destructive" });
     }
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+
 
   const isIncome = transaction.type === 'credit';
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Edit Transaction Category
-          </h2>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Transaction Category</DialogTitle>
+        </DialogHeader>
 
         {/* Transaction Details */}
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="py-4 bg-gray-50 border-b border-gray-200 -mx-6 px-6 mb-4">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-gray-600">Date:</span>
@@ -272,9 +273,8 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
             <div>
               <span className="text-gray-600">Amount:</span>
               <span
-                className={`ml-2 font-semibold ${
-                  isIncome ? 'text-green-600' : 'text-red-600'
-                }`}
+                className={`ml-2 font-semibold ${isIncome ? 'text-green-600' : 'text-red-600'
+                  }`}
               >
                 {isIncome ? '+' : '-'}
                 {formatCurrency(Math.abs(transaction.amount), transaction.currency)}
@@ -302,12 +302,12 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {transaction.category}
                 </span>
-                {transaction.categoryConfidence !== undefined && 
-                 !transaction.manuallyEdited && (
-                  <span className="text-xs text-gray-600">
-                    (Confidence: {transaction.categoryConfidence}%)
-                  </span>
-                )}
+                {transaction.categoryConfidence !== undefined &&
+                  !transaction.manuallyEdited && (
+                    <span className="text-xs text-gray-600">
+                      (Confidence: {transaction.categoryConfidence}%)
+                    </span>
+                  )}
                 {transaction.manuallyEdited && (
                   <span className="text-xs text-purple-600">
                     (Manually edited)
@@ -319,14 +319,14 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
         </div>
 
         {/* Category Selector */}
-        <div className="px-6 py-4">
+        <div className="py-2">
           <div className="flex items-center justify-between mb-2">
-            <label
+            <Label
               htmlFor="category-select"
               className="block text-sm font-medium text-gray-700"
             >
               Select Category
-            </label>
+            </Label>
             <button
               type="button"
               onClick={() => setIsCreatingNew(!isCreatingNew)}
@@ -360,12 +360,12 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
           ) : (
             <div className="space-y-3 p-4 bg-gray-50 rounded-md border border-gray-200">
               <div>
-                <label
+                <Label
                   htmlFor="new-category-name"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Category Name
-                </label>
+                </Label>
                 <input
                   id="new-category-name"
                   type="text"
@@ -377,11 +377,11 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Label className="block text-sm font-medium text-gray-700 mb-1">
                   Type
-                </label>
+                </Label>
                 <div className="flex gap-3">
-                  <label className="flex items-center">
+                  <Label className="flex items-center">
                     <input
                       type="radio"
                       value="expense"
@@ -390,8 +390,8 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                       className="mr-2"
                     />
                     <span className="text-sm">Expense</span>
-                  </label>
-                  <label className="flex items-center">
+                  </Label>
+                  <Label className="flex items-center">
                     <input
                       type="radio"
                       value="income"
@@ -400,7 +400,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                       className="mr-2"
                     />
                     <span className="text-sm">Income</span>
-                  </label>
+                  </Label>
                 </div>
               </div>
               <button
@@ -419,8 +419,8 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
         </div>
 
         {/* Ignore Transaction */}
-        <div className="px-6 py-4 border-t border-gray-200">
-          <label className="flex items-center gap-2">
+        <div className="py-4 border-t border-gray-200">
+          <Label className="flex items-center gap-2">
             <input
               type="checkbox"
               checked={isIgnored}
@@ -431,7 +431,7 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
             <span className="text-sm font-medium text-gray-900">
               Ignore this transaction in calculations
             </span>
-          </label>
+          </Label>
           <p className="mt-1 ml-6 text-xs text-gray-500">
             When checked, this transaction will be excluded from all percentage and summary calculations
           </p>
@@ -439,8 +439,8 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
 
         {/* Pattern Configuration */}
         {!isCreatingNew && selectedCategory && (
-          <div className="px-6 py-4 border-t border-gray-200">
-            <label className="flex items-center gap-2 mb-3">
+          <div className="py-4 border-t border-gray-200">
+            <Label className="flex items-center gap-2 mb-3">
               <input
                 type="checkbox"
                 checked={addPatternEnabled}
@@ -451,17 +451,17 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
               <span className="text-sm font-medium text-gray-900">
                 Add pattern to auto-categorize similar transactions
               </span>
-            </label>
+            </Label>
 
             {addPatternEnabled && (
               <div className="ml-6 space-y-4 p-4 bg-gray-50 rounded-md border border-gray-200">
                 {/* Field Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     Match against fields:
-                  </label>
+                  </Label>
                   <div className="flex gap-4">
-                    <label className="flex items-center">
+                    <Label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={selectedFields.has('payee')}
@@ -469,8 +469,8 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                       />
                       <span className="text-sm">Payee</span>
-                    </label>
-                    <label className="flex items-center">
+                    </Label>
+                    <Label className="flex items-center">
                       <input
                         type="checkbox"
                         checked={selectedFields.has('description')}
@@ -478,16 +478,16 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
                       />
                       <span className="text-sm">Description</span>
-                    </label>
+                    </Label>
                   </div>
                 </div>
 
                 {/* Suggested Patterns from Payee */}
                 {selectedFields.has('payee') && payeeSuggestions.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Label className="block text-sm font-medium text-gray-700 mb-2">
                       Suggested patterns from Payee:
-                    </label>
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       {payeeSuggestions.map((suggestion, idx) => (
                         <button
@@ -507,9 +507,9 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                 {/* Suggested Patterns from Description */}
                 {selectedFields.has('description') && descriptionSuggestions.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Label className="block text-sm font-medium text-gray-700 mb-2">
                       Suggested patterns from Description:
-                    </label>
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       {descriptionSuggestions.map((suggestion, idx) => (
                         <button
@@ -528,9 +528,9 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
 
                 {/* Custom Pattern Input */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     Or enter custom pattern:
-                  </label>
+                  </Label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -554,9 +554,9 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
                 {/* Selected Patterns */}
                 {selectedPatterns.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Label className="block text-sm font-medium text-gray-700 mb-2">
                       Selected patterns:
-                    </label>
+                    </Label>
                     <div className="flex flex-wrap gap-2">
                       {selectedPatterns.map((pattern, idx) => (
                         <span
@@ -579,12 +579,12 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
 
                 {/* Weight Slider */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
                     Pattern weight: {patternWeight}
                     <span className="ml-1 text-xs text-gray-500">
                       (higher = more specific)
                     </span>
-                  </label>
+                  </Label>
                   <input
                     type="range"
                     min="1"
@@ -633,27 +633,19 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
           </div>
         )}
 
-        {/* Actions */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={isSaving || (selectedCategory === transaction.category && !(addPatternEnabled && selectedPatterns.length > 0) && isIgnored === (transaction.ignored || false))}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

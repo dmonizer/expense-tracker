@@ -9,6 +9,7 @@ import BalanceLine from './Charts/BalanceLine';
 import TransactionList from '../Transactions/TransactionList';
 import { FilterProvider, useFilters } from '../../contexts/FilterContext';
 import NetWorthSummary from './NetWorthSummary';
+import { Label } from '@/components/ui/label';
 
 function OverviewContent() {
   // Fetch all transactions using Dexie live query
@@ -49,10 +50,10 @@ function OverviewContent() {
 
     // Apply filters to transactions
     let filteredTransactions = [...transactions];
-    
+
     // Always exclude ignored transactions from calculations
     filteredTransactions = filteredTransactions.filter(t => !t.ignored);
-    
+
     if (filters.dateFrom) {
       filteredTransactions = filteredTransactions.filter(t => t.date >= filters.dateFrom!);
     }
@@ -94,46 +95,51 @@ function OverviewContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        
+
         {/* Date Range Filter */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setDateRangePreset('thisMonth')}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-              dateRangePreset === 'thisMonth'
+            onClick={() => setDateRangePreset('all')}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${dateRangePreset === 'all'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setDateRangePreset('thisMonth')}
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${dateRangePreset === 'thisMonth'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
           >
             This Month
           </button>
           <button
             onClick={() => setDateRangePreset('last3Months')}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-              dateRangePreset === 'last3Months'
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${dateRangePreset === 'last3Months'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Last 3 Months
           </button>
           <button
             onClick={() => setDateRangePreset('year')}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-              dateRangePreset === 'year'
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${dateRangePreset === 'year'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Year
           </button>
           <button
             onClick={() => setDateRangePreset('custom')}
-            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-              dateRangePreset === 'custom'
+            className={`px-3 py-1.5 text-sm rounded-md transition-colors ${dateRangePreset === 'custom'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Custom
           </button>
@@ -144,9 +150,9 @@ function OverviewContent() {
       {dateRangePreset === 'custom' && (
         <div className="flex flex-wrap items-center gap-3 bg-gray-50 p-4 rounded-lg">
           <div className="flex items-center gap-2">
-            <label htmlFor="dateFrom" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="dateFrom" className="text-sm font-medium text-gray-700">
               From:
-            </label>
+            </Label>
             <input
               type="date"
               id="dateFrom"
@@ -156,9 +162,9 @@ function OverviewContent() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <label htmlFor="dateTo" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="dateTo" className="text-sm font-medium text-gray-700">
               To:
-            </label>
+            </Label>
             <input
               type="date"
               id="dateTo"
@@ -230,25 +236,21 @@ function OverviewContent() {
         </div>
 
         {/* Net Balance Card */}
-        <div className={`bg-white rounded-lg shadow p-6 border-l-4 ${
-          netBalance >= 0 ? 'border-blue-500' : 'border-orange-500'
-        }`}>
+        <div className={`bg-white rounded-lg shadow p-6 border-l-4 ${netBalance >= 0 ? 'border-blue-500' : 'border-orange-500'
+          }`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Net Balance</p>
-              <p className={`text-2xl font-bold mt-1 ${
-                netBalance >= 0 ? 'text-blue-600' : 'text-orange-600'
-              }`}>
+              <p className={`text-2xl font-bold mt-1 ${netBalance >= 0 ? 'text-blue-600' : 'text-orange-600'
+                }`}>
                 {formatCurrency(netBalance, primaryCurrency)}
               </p>
             </div>
-            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
-              netBalance >= 0 ? 'bg-blue-100' : 'bg-orange-100'
-            }`}>
+            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${netBalance >= 0 ? 'bg-blue-100' : 'bg-orange-100'
+              }`}>
               <svg
-                className={`h-6 w-6 ${
-                  netBalance >= 0 ? 'text-blue-600' : 'text-orange-600'
-                }`}
+                className={`h-6 w-6 ${netBalance >= 0 ? 'text-blue-600' : 'text-orange-600'
+                  }`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -313,32 +315,31 @@ function OverviewContent() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Balance Over Time
             <button
-                type="button"
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-gray-500 hover:text-gray-700"
+              type="button"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-gray-500 hover:text-gray-700"
             >
-                <svg
-                    className={`w-5 h-5 transform transition-transform ${
-                        isExpanded ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                    />
-                </svg>
+              <svg
+                className={`w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''
+                  }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
             </button>
           </h2>
-            {isExpanded && (
-                <div className="h-80">
-            <BalanceLine transactions={transactions} filters={filters} />
-          </div>
-                )}
+          {isExpanded && (
+            <div className="h-80">
+              <BalanceLine transactions={transactions} filters={filters} />
+            </div>
+          )}
         </div>
       </div>
 

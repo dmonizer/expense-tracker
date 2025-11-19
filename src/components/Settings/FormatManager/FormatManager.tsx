@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { logger } from '../../../utils';
 import type { ImportFormatDefinition } from '../../../types';
-import { 
-  getAllFormats, 
-  deleteFormat, 
+import {
+  getAllFormats,
+  deleteFormat,
   duplicateFormat,
   renameFormat,
   setDefaultFormat,
@@ -11,20 +11,38 @@ import {
   importFormatFromJSON
 } from '../../../services/formatManager';
 import FormatWizardMain from '../../ImportWizard/FormatWizard/FormatWizardMain';
+import { useConfirm } from "@/components/ui/confirm-provider";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function FormatManager() {
   const [formats, setFormats] = useState<ImportFormatDefinition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Edit/Create state
   const [editingFormat, setEditingFormat] = useState<ImportFormatDefinition | null>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [wizardFile, setWizardFile] = useState<File | null>(null);
-  
+
   // Action states
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+
+  // Duplicate state
+  const [duplicateId, setDuplicateId] = useState<string | null>(null);
+  const [duplicateName, setDuplicateName] = useState('');
+
+  const { confirm } = useConfirm();
+  const { toast } = useToast();
 
   useEffect(() => {
     loadFormats();
@@ -45,29 +63,46 @@ export default function FormatManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this format?')) {
-      return;
-    }
-
-    try {
-      await deleteFormat(id);
-      await loadFormats();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete format');
+    if (await confirm({
+      title: 'Delete Format',
+      description: 'Are you sure you want to delete this format?',
+      confirmText: 'Delete',
+      variant: 'destructive'
+    })) {
+      try {
+        await deleteFormat(id);
+        await loadFormats();
+        toast({ title: "Success", description: "Format deleted successfully" });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: err instanceof Error ? err.message : 'Failed to delete format',
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const handleDuplicate = async (id: string) => {
+  const handleDuplicateClick = (id: string) => {
     const originalName = formats.find(f => f.id === id)?.name;
-    const newName = prompt('Enter name for duplicated format:', `${originalName} (Copy)`);
-    
-    if (!newName) return;
+    setDuplicateId(id);
+    setDuplicateName(`${originalName} (Copy)`);
+  };
+
+  const handleDuplicateSubmit = async () => {
+    if (!duplicateId || !duplicateName) return;
 
     try {
-      await duplicateFormat(id, newName);
+      await duplicateFormat(duplicateId, duplicateName);
       await loadFormats();
+      setDuplicateId(null);
+      toast({ title: "Success", description: "Format duplicated successfully" });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to duplicate format');
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Failed to duplicate format',
+        variant: "destructive"
+      });
     }
   };
 
@@ -86,8 +121,13 @@ export default function FormatManager() {
       await renameFormat(id, renameValue.trim());
       await loadFormats();
       setRenamingId(null);
+      toast({ title: "Success", description: "Format renamed successfully" });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to rename format');
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Failed to rename format',
+        variant: "destructive"
+      });
     }
   };
 
@@ -95,8 +135,13 @@ export default function FormatManager() {
     try {
       await setDefaultFormat(id);
       await loadFormats();
+      toast({ title: "Success", description: "Default format updated" });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to set default format');
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Failed to set default format',
+        variant: "destructive"
+      });
     }
   };
 
@@ -138,10 +183,15 @@ export default function FormatManager() {
       try {
         const text = await file.text();
         await importFormatFromJSON(text);
+        await importFormatFromJSON(text);
         await loadFormats();
-        alert('Format imported successfully!');
+        toast({ title: "Success", description: "Format imported successfully" });
       } catch (err) {
-        alert(err instanceof Error ? err.message : 'Failed to import format');
+        toast({
+          title: "Error",
+          description: err instanceof Error ? err.message : 'Failed to import format',
+          variant: "destructive"
+        });
       }
     };
     input.click();
@@ -178,7 +228,7 @@ export default function FormatManager() {
             Manage your custom CSV import formats
           </p>
         </div>
-        
+
         <button
           onClick={handleImport}
           className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100"
@@ -303,7 +353,7 @@ export default function FormatManager() {
                       </>
                     )}
                     <button
-                      onClick={() => handleDuplicate(format.id)}
+                      onClick={() => handleDuplicateClick(format.id)}
                       className="text-blue-600 hover:text-blue-800"
                       title="Duplicate"
                     >
@@ -351,6 +401,27 @@ export default function FormatManager() {
           </p>
         </div>
       )}
+
+      {/* Duplicate Dialog */}
+      <Dialog open={!!duplicateId} onOpenChange={(open) => !open && setDuplicateId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate Format</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={duplicateName}
+              onChange={(e) => setDuplicateName(e.target.value)}
+              placeholder="Format Name"
+              onKeyDown={(e) => e.key === 'Enter' && handleDuplicateSubmit()}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateId(null)}>Cancel</Button>
+            <Button onClick={handleDuplicateSubmit}>Duplicate</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

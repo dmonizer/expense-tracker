@@ -5,11 +5,12 @@ import { db } from '../../services/db';
 import TransactionRow from './TransactionRow';
 import UnifiedRuleEditor from '../Categories/UnifiedRuleEditor';
 import Filters from './Filters';
-import LoadingSpinner from '../UI/LoadingSpinner';
-import EmptyState, { DocumentIcon } from '../UI/EmptyState';
+import LoadingSpinner from '../ui/LoadingSpinner';
+import EmptyState, { DocumentIcon } from '../ui/EmptyState';
 import { useTransactionFilters } from '../../hooks/useTransactionFilters';
 import { usePagination } from '../../hooks/usePagination';
 import { PAGINATION } from '../../constants';
+import { Button } from '@/components/ui/button';
 
 interface TransactionListProps {
   initialFilters?: TransactionFilters;
@@ -138,7 +139,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th 
+                <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleSort('date')}
                 >
@@ -151,7 +152,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
                     )}
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleSort('payee')}
                 >
@@ -164,7 +165,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
                     )}
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleSort('description')}
                 >
@@ -177,7 +178,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
                     )}
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleSort('category')}
                 >
@@ -190,7 +191,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
                     )}
                   </div>
                 </th>
-                <th 
+                <th
                   className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleSort('amount')}
                 >
@@ -231,14 +232,14 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-4 py-3 mt-4">
           <div className="flex items-center justify-center gap-2">
             {/* Previous button */}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Previous
-            </button>
+            </Button>
 
             {/* Page numbers */}
             {getPageNumbers().map((page, index) => {
@@ -250,30 +251,26 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
                 );
               }
               return (
-                <button
+                <Button
                   key={page}
-                  type="button"
+                  variant={currentPage === page ? 'default' : 'outline'}
+                  size="sm"
                   onClick={() => handlePageChange(page as number)}
-                  className={`px-3 py-1 text-sm font-medium rounded-md ${
-                    currentPage === page
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                  }`}
                 >
                   {page}
-                </button>
+                </Button>
               );
             })}
 
             {/* Next button */}
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -294,7 +291,7 @@ function TransactionList({ initialFilters }: TransactionListProps = { initialFil
             updatedAt: new Date(),
           }}
           transaction={editingTransaction}
-          onSave={async () => {}} // Handled internally in quick mode
+          onSave={async () => { }} // Handled internally in quick mode
           onCancel={() => setEditingTransaction(null)}
         />
       )}

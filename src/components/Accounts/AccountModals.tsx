@@ -3,6 +3,19 @@ import type { Account, AccountSubtype } from '../../types';
 import { type AccountType } from '../../utils/accountTypeHelpers';
 import { getDisplayBalance } from '../../services/journalEntryManager';
 import * as React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -19,8 +32,6 @@ export function OpeningBalanceModal({ isOpen, account, onClose, onSave }: Readon
   const [balance, setBalance] = useState(displayBal.toString());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleSave = async () => {
     const parsedBalance = parseFloat(balance);
@@ -42,78 +53,59 @@ export function OpeningBalanceModal({ isOpen, account, onClose, onSave }: Readon
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !saving) handleSave();
-    if (e.key === 'Escape' && !saving) onClose();
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !saving) onClose();
-  };
-
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="balance-modal-title"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 id="balance-modal-title" className="text-lg font-semibold text-gray-900 mb-4">
-          Set Opening Balance
-        </h3>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Set Opening Balance</DialogTitle>
+          <DialogDescription>
+            {account.name} ({account.type})
+          </DialogDescription>
+        </DialogHeader>
+
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-800">
-            <strong>{account.name}</strong> ({account.type})
-          </p>
           <p className="text-xs text-blue-600 mt-1">
             {account.type === 'asset'
               ? 'Enter the amount you have in this account as a positive number. Example: 5000 for €5,000 in the bank.'
               : 'Enter the amount you owe as a positive number. Example: 1000 for €1,000 of debt. (Net worth will subtract this automatically)'}
           </p>
         </div>
-        <div className="mb-4">
-          <label htmlFor="opening-balance" className="block text-sm font-medium text-gray-700 mb-2">
-            Opening Balance ({account.currency})
-          </label>
-          <input
-            id="opening-balance"
-            type="number"
-            step="0.01"
-            value={balance}
-            onChange={(e) => {
-              setBalance(e.target.value);
-              setError(null);
-            }}
-            onKeyDown={handleKeyDown}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="0.00"
-            autoFocus
-            disabled={saving}
-          />
-          {error && (
-            <p className="text-sm text-red-600 mt-1">{error}</p>
-          )}
+
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="opening-balance">
+              Opening Balance ({account.currency})
+            </Label>
+            <Input
+              id="opening-balance"
+              type="number"
+              step="0.01"
+              value={balance}
+              onChange={(e) => {
+                setBalance(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSave()}
+              placeholder="0.00"
+              autoFocus
+              disabled={saving}
+            />
+            {error && (
+              <p className="text-sm text-red-600 mt-1">{error}</p>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2 justify-end">
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -142,8 +134,6 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const handleCreate = async () => {
     if (!formData.name.trim()) {
       setError('Account name is required');
@@ -171,26 +161,12 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && !creating) onClose();
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !creating) onClose();
-  };
-
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="create-modal-title"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-8">
-        <h3 id="create-modal-title" className="text-lg font-semibold text-gray-900 mb-4">
-          Create New Account
-        </h3>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create New Account</DialogTitle>
+        </DialogHeader>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -198,33 +174,31 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
           </div>
         )}
 
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-          <div>
-            <label htmlFor="create-name" className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="create-name">
               Account Name <span className="text-red-500">*</span>
-            </label>
-            <input
+            </Label>
+            <Input
               id="create-name"
-              type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               placeholder="e.g., Main Checking Account"
               autoFocus
               disabled={creating}
             />
           </div>
 
-          <div>
-            <label htmlFor="create-type" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="create-type">
               Account Type <span className="text-red-500">*</span>
-            </label>
+            </Label>
             <select
               id="create-type"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value as AccountType, subtype: '' })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={creating}
             >
               <option value="asset">Asset (Bank Account, Cash, Investments)</option>
@@ -236,15 +210,15 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
           </div>
 
           {(formData.type === 'asset' || formData.type === 'liability') && (
-            <div>
-              <label htmlFor="create-subtype" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid gap-2">
+              <Label htmlFor="create-subtype">
                 Account Subtype
-              </label>
+              </Label>
               <select
                 id="create-subtype"
                 value={formData.subtype}
                 onChange={(e) => setFormData({ ...formData, subtype: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={creating}
               >
                 <option value="">Select subtype</option>
@@ -268,15 +242,15 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
             </div>
           )}
 
-          <div>
-            <label htmlFor="create-currency" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="create-currency">
               Currency <span className="text-red-500">*</span>
-            </label>
+            </Label>
             <select
               id="create-currency"
               value={formData.currency}
               onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={creating}
             >
               <option value="EUR">EUR (€)</option>
@@ -288,55 +262,50 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
             </select>
           </div>
 
-          <div>
-            <label htmlFor="create-institution" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="create-institution">
               Institution / Provider
-            </label>
-            <input
+            </Label>
+            <Input
               id="create-institution"
-              type="text"
               value={formData.institution}
               onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               placeholder="e.g., Swedbank, ING, Nordnet"
               disabled={creating}
             />
           </div>
 
-          <div>
-            <label htmlFor="create-account-number" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="create-account-number">
               Account Number
-            </label>
-            <input
+            </Label>
+            <Input
               id="create-account-number"
-              type="text"
               value={formData.accountNumber}
               onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               placeholder="IBAN or account number"
               disabled={creating}
             />
           </div>
 
           {(formData.type === 'asset' || formData.type === 'liability') && (
-            <div>
-              <label htmlFor="create-opening-balance" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid gap-2">
+              <Label htmlFor="create-opening-balance">
                 Opening Balance
-              </label>
-              <input
+              </Label>
+              <Input
                 id="create-opening-balance"
                 type="number"
                 step="0.01"
                 value={formData.openingBalance}
                 onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
-                onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 placeholder="0.00"
                 disabled={creating}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500">
                 {formData.type === 'asset'
                   ? 'Enter the current balance in this account (positive number)'
                   : 'Enter the amount owed (positive number, will be recorded as liability)'}
@@ -345,24 +314,16 @@ export function CreateAccountModal({ isOpen, onClose, onCreate }: Readonly<Creat
           )}
         </div>
 
-        <div className="flex gap-2 justify-end mt-6 pt-4 border-t">
-          <button
-            onClick={onClose}
-            disabled={creating}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={creating}>
             Cancel
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={!formData.name.trim() || creating}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
+          </Button>
+          <Button onClick={handleCreate} disabled={!formData.name.trim() || creating}>
             {creating ? 'Creating...' : 'Create Account'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -402,8 +363,6 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
       setAccountNumberWarning(false);
     }
   }, [formData.accountNumber, account.accountNumber]);
-
-  if (!isOpen) return null;
 
   const handleSave = async () => {
     if (!formData.name.trim()) {
@@ -447,29 +406,15 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && !saving) onClose();
-  };
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !saving) onClose();
-  };
-
   const isSystemAccount = account.isSystem;
   const canEditStructural = !isSystemAccount;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-modal-title"
-      onClick={handleBackdropClick}
-    >
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 my-8">
-        <h3 id="edit-modal-title" className="text-lg font-semibold text-gray-900 mb-4">
-          Edit Account
-        </h3>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Account</DialogTitle>
+        </DialogHeader>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -485,8 +430,7 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
           </div>
         )}
 
-        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-          {/* Read-only fields for context */}
+        <div className="grid gap-4 py-4">
           <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
             <h4 className="text-sm font-semibold text-gray-700 mb-2">Account Information</h4>
             <dl className="grid grid-cols-2 gap-2 text-sm">
@@ -501,45 +445,38 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
             </dl>
           </div>
 
-          {/* Account Name */}
-          <div>
-            <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="edit-name">
               Account Name <span className="text-red-500">*</span>
-            </label>
-            <input
+            </Label>
+            <Input
               id="edit-name"
-              type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSave()}
               autoFocus
               disabled={saving}
             />
           </div>
 
-          {/* Description */}
-          <div>
-            <label htmlFor="edit-description" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="edit-description">
               Description
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id="edit-description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
               rows={2}
               disabled={saving}
               placeholder="Add notes or description about this account"
             />
           </div>
 
-          {/* Color */}
-          <div>
-            <label htmlFor="edit-color" className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="grid gap-2">
+            <Label htmlFor="edit-color">
               Color (for UI display)
-            </label>
+            </Label>
             <div className="flex gap-2 items-center">
               <input
                 id="edit-color"
@@ -549,71 +486,123 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
                 className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
                 disabled={saving}
               />
-              <input
-                type="text"
+              <Input
                 value={formData.color || '#3B82F6'}
                 onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                onKeyDown={handleKeyDown}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSave()}
+                className="flex-1 font-mono"
                 placeholder="#3B82F6"
                 disabled={saving}
               />
             </div>
           </div>
 
-          {/* Institution (non-system only) */}
           {canEditStructural && (
-            <div>
-              <label htmlFor="edit-institution" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-institution">
                 Institution / Provider
-              </label>
-              <input
+              </Label>
+              <Input
                 id="edit-institution"
-                type="text"
                 value={formData.institution}
                 onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSave()}
                 placeholder="e.g., Swedbank, ING, Nordnet"
                 disabled={saving}
               />
             </div>
           )}
 
-          {/* Account Number (non-system only) */}
           {canEditStructural && (
-            <div>
-              <label htmlFor="edit-account-number" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-account-number">
                 Account Number
-              </label>
-              <input
+              </Label>
+              <Input
                 id="edit-account-number"
-                type="text"
                 value={formData.accountNumber}
                 onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
-                onKeyDown={handleKeyDown}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e: React.KeyboardEvent) => e.key === 'Enter' && handleSave()}
                 disabled={saving}
               />
               {accountNumberWarning && (
-                <p className="text-xs text-orange-600 mt-1">
+                <p className="text-xs text-orange-600">
                   ⚠️ Changing the account number may affect CSV import matching for this account.
                 </p>
               )}
             </div>
           )}
 
-          {/* Subtype (non-system, asset/liability only) */}
+          {/* Multi-currency support */}
+          <div className="grid gap-2">
+            <Label>Supported Currencies</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {formData.supportedCurrencies.map(currency => (
+                <div key={currency} className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm">
+                  <span className="font-medium mr-1">{currency}</span>
+                  {currency !== account.currency && (
+                    <button
+                      onClick={() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          supportedCurrencies: prev.supportedCurrencies.filter(c => c !== currency)
+                        }));
+                      }}
+                      className="text-gray-500 hover:text-red-600 ml-1 focus:outline-none"
+                      aria-label={`Remove ${currency}`}
+                    >
+                      ×
+                    </button>
+                  )}
+                  {currency === account.currency && (
+                    <span className="text-xs text-gray-500 ml-1">(Primary)</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <Select
+                value=""
+                onValueChange={(value) => {
+                  if (value && !formData.supportedCurrencies.includes(value)) {
+                    setFormData(prev => ({
+                      ...prev,
+                      supportedCurrencies: [...prev.supportedCurrencies, value]
+                    }));
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Add currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['EUR', 'USD', 'GBP', 'SEK', 'NOK', 'DKK', 'CHF', 'AUD', 'CAD', 'JPY']
+                    .filter(c => !formData.supportedCurrencies.includes(c))
+                    .map(currency => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-gray-500">
+              Transactions in these currencies will be tracked separately.
+            </p>
+          </div>
+
           {canEditStructural && (account.type === 'asset' || account.type === 'liability') && (
-            <div>
-              <label htmlFor="edit-subtype" className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-subtype">
                 Account Subtype
-              </label>
+              </Label>
               <select
                 id="edit-subtype"
                 value={formData.subtype}
                 onChange={(e) => setFormData({ ...formData, subtype: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={saving}
               >
                 <option value="">Select subtype</option>
@@ -637,43 +626,33 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
             </div>
           )}
 
-          {/* Active Status */}
-          <div>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                disabled={saving}
-              />
-              <span className="text-sm font-medium text-gray-700">
-                Account is active
-              </span>
-            </label>
-            <p className="text-xs text-gray-500 mt-1 ml-6">
-              Inactive accounts are hidden from most views
-            </p>
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="edit-active"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              disabled={saving}
+            />
+            <Label htmlFor="edit-active" className="cursor-pointer font-medium">
+              Account is active
+            </Label>
           </div>
+          <p className="text-xs text-gray-500 ml-6">
+            Inactive accounts are hidden from most views
+          </p>
         </div>
 
-        <div className="flex gap-2 justify-end mt-6 pt-4 border-t">
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!formData.name.trim() || saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
+          </Button>
+          <Button onClick={handleSave} disabled={!formData.name.trim() || saving}>
             {saving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
