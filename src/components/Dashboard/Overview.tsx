@@ -40,7 +40,7 @@ function OverviewContent() {
 
   // Calculate summary stats
   useEffect(() => {
-    if (!transactions || !transactions.length) {
+    if (!transactions?.length) {
       setTotalIncome(0);
       setTotalExpenses(0);
       setNetBalance(0);
