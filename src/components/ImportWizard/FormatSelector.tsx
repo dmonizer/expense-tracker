@@ -1,4 +1,3 @@
-```
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils';
 import type { ImportFormatDefinition } from '../../types';
@@ -15,10 +14,10 @@ interface FormatSelectorProps {
   onCancel: () => void;
 }
 
-export default function FormatSelector({ 
-  file, 
-  onFormatSelected, 
-  onCancel 
+export default function FormatSelector({
+  file,
+  onFormatSelected,
+  onCancel
 }: Readonly<FormatSelectorProps>) {
   const [detectedFormat, setDetectedFormat] = useState<ImportFormatDefinition | null>(null);
   const [allFormats, setAllFormats] = useState<ImportFormatDefinition[]>([]);
@@ -34,7 +33,7 @@ export default function FormatSelector({
 
   const initializeFormats = async () => {
     setIsDetecting(true);
-    
+
     try {
       // Load all formats
       const formats = await getAllFormats();
@@ -43,7 +42,7 @@ export default function FormatSelector({
       // Attempt auto-detection
       const detected = await detectFormat(file);
       setDetectedFormat(detected);
-      
+
       if (detected) {
         setSelectedFormatId(detected.id);
       } else if (formats.length > 0) {
@@ -72,7 +71,7 @@ export default function FormatSelector({
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    
+
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
@@ -81,12 +80,12 @@ export default function FormatSelector({
       try {
         const text = await file.text();
         const formatId = await loadFormatFromJSON(text);
-        
+
         // Reload formats and select the new one
         const formats = await getAllFormats();
         setAllFormats(formats);
         setSelectedFormatId(formatId);
-        
+
         toast({
           title: 'Format imported',
           description: 'The format has been successfully imported',
@@ -102,7 +101,7 @@ export default function FormatSelector({
         setIsImporting(false);
       }
     };
-    
+
     input.click();
   };
 
@@ -153,15 +152,15 @@ export default function FormatSelector({
           <div className="bg-green-50 border border-green-300 rounded-lg p-4">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <svg 
-                  className="h-5 w-5 text-green-500" 
-                  fill="currentColor" 
+                <svg
+                  className="h-5 w-5 text-green-500"
+                  fill="currentColor"
                   viewBox="0 0 20 20"
                 >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                    clipRule="evenodd" 
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
                   />
                 </svg>
               </div>
@@ -210,14 +209,14 @@ export default function FormatSelector({
                 </option>
               ))}
             </select>
-            
+
             {/* Selected Format Details */}
             {selectedFormatId && (
               <div className="mt-2 p-3 bg-gray-50 rounded text-sm">
                 {(() => {
                   const format = allFormats.find(f => f.id === selectedFormatId);
                   if (!format) return null;
-                  
+
                   return (
                     <>
                       {format.description && (
@@ -231,8 +230,8 @@ export default function FormatSelector({
                           <div>
                             <span className="font-medium">Delimiter:</span>{' '}
                             {format.csvSettings.delimiter === ';' ? 'Semicolon' :
-                             format.csvSettings.delimiter === ',' ? 'Comma' :
-                             format.csvSettings.delimiter === '\t' ? 'Tab' : 'Other'}
+                              format.csvSettings.delimiter === ',' ? 'Comma' :
+                                format.csvSettings.delimiter === '\t' ? 'Tab' : 'Other'}
                           </div>
                         )}
                         <div>
@@ -298,4 +297,3 @@ export default function FormatSelector({
     </div>
   );
 }
-```
