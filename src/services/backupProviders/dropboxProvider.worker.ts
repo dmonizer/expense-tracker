@@ -2,8 +2,8 @@
 // This version only includes upload functionality for use in Web Workers
 // Authentication and listing/downloading must be done in the main thread
 
-import { logger } from '../../utils';
-import type { BackupMetadata } from '../../types/backupTypes';
+import {logger} from '@/utils';
+import type {BackupMetadata} from '@/types/backupTypes.ts';
 
 const DROPBOX_UPLOAD_URL = 'https://content.dropboxapi.com/2/files/upload';
 

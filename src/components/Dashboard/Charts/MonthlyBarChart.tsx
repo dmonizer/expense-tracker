@@ -1,25 +1,15 @@
-import { memo } from 'react';
-import { logger } from '../../../utils';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import type { TooltipItem } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
-import type { Transaction, TransactionFilters } from '../../../types';
-import { getMonthlySummary, getMonthlyGroupSummary } from '../../../services/analytics';
-import { formatCurrency } from '../../../utils';
-import { getCategoryColor } from '../../../utils/colorUtils';
-import { db } from '../../../services/db';
-import { format, parse, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
-import { useEffect, useState } from 'react';
-import { useFilters } from '../../../contexts/FilterContext';
-import { UNCATEGORIZED_GROUP_ID } from '../../../constants/technicalConstants.ts';
+import {memo, useEffect, useState} from 'react';
+import {formatCurrency, logger} from '@/utils';
+import type {TooltipItem} from 'chart.js';
+import {BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title, Tooltip,} from 'chart.js';
+import {Bar} from 'react-chartjs-2';
+import type {Transaction, TransactionFilters} from '@/types';
+import {getMonthlyGroupSummary, getMonthlySummary} from '@/services/analytics.ts';
+import {getCategoryColor} from '@/utils/colorUtils.ts';
+import {db} from '@/services/db.ts';
+import {eachMonthOfInterval, endOfMonth, format, parse, startOfMonth} from 'date-fns';
+import {useFilters} from '@/contexts/FilterContext.tsx';
+import {UNCATEGORIZED_GROUP_ID} from '@/constants';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 

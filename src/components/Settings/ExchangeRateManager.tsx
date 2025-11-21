@@ -1,15 +1,12 @@
-import { useState, useEffect } from 'react';
-import type { ExchangeRate } from '../../types';
-import {
-  setExchangeRate,
-  deleteExchangeRate,
-} from '../../services/exchangeRateManager';
-import { COMMON_CURRENCIES } from '../../utils/currencyUtils';
+import {useEffect, useState} from 'react';
+import type {ExchangeRate} from '@/types';
+import {deleteExchangeRate, setExchangeRate,} from '@/services/exchangeRateManager.ts';
+import {COMMON_CURRENCIES} from '@/utils/currencyUtils.ts';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { logger } from '../../utils';
-import { useConfirm } from "@/components/ui/confirm-provider";
-import { useToast } from "@/hooks/use-toast";
-import { Label } from '@/components/ui/label';
+import {logger} from '@/utils';
+import {useConfirm} from "@/components/ui/confirm-provider";
+import {useToast} from "@/hooks/use-toast";
+import {Label} from '@/components/ui/label';
 
 function ExchangeRateManager() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);

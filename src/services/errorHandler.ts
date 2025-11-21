@@ -2,8 +2,8 @@
  * Error handling utilities for consistent error management across the application
  */
 
-import { logger } from '../utils';
-import { toast } from "@/hooks/use-toast";
+import {logger} from '@/utils';
+import {toast} from "@/hooks/use-toast";
 
 export interface AppError {
     message: string;

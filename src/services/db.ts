@@ -1,20 +1,21 @@
-import Dexie, { type Table } from 'dexie';
-import { logger } from '../utils';
+import Dexie, {type Table} from 'dexie';
+import {logger} from '@/utils';
 import type {
-    Transaction,
-    CategoryRule,
-    CategoryGroup,
-    ImportRecord,
-    Pattern,
     Account,
-    ExchangeRate,
     AccountBalance,
-    ImportFormatDefinition, LogDefinition,
-} from '../types';
-import type { UserSettings } from "@/types/userSettingsTypes.ts";
-import type { Holding } from "@/types/holdingTypes.ts";
-import type { JournalEntry, Split } from "@/types/journalTypes.ts";
-import type { BackupRecord } from "@/types/backupTypes.ts";
+    CategoryGroup,
+    CategoryRule,
+    ExchangeRate,
+    ImportFormatDefinition,
+    ImportRecord,
+    LogDefinition,
+    Pattern,
+    Transaction,
+} from '@/types';
+import type {UserSettings} from "@/types/userSettingsTypes.ts";
+import type {Holding} from "@/types/holdingTypes.ts";
+import type {JournalEntry, Split} from "@/types/journalTypes.ts";
+import type {BackupRecord} from "@/types/backupTypes.ts";
 
 /**
  * Database class extending Dexie for IndexedDB operations

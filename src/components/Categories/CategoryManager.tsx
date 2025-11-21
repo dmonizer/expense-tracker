@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import { logger } from '../../utils';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import { recategorizeAll } from '../../services/categorizer';
-import type { CategoryRule } from '../../types';
-import { getCategoryColor } from '../../utils/colorUtils';
+import {useState} from 'react';
+import {logger} from '@/utils';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
+import {recategorizeAll} from '@/services/categorizer.ts';
+import type {CategoryRule} from '@/types';
+import {getCategoryColor} from '@/utils/colorUtils.ts';
 import UnifiedRuleEditor from './UnifiedRuleEditor';
-import { useConfirm } from "@/components/ui/confirm-provider";
-import { useToast } from "@/hooks/use-toast";
+import {useConfirm} from "@/components/ui/confirm-provider";
+import {useToast} from "@/hooks/use-toast";
 
 type SortField = 'name' | 'type' | 'priority' | 'patternCount';
 type SortDirection = 'asc' | 'desc';

@@ -1,4 +1,4 @@
-import type { Pattern, Transaction } from '../../types';
+import type {Pattern, Transaction} from '@/types';
 import PatternCard from './PatternCard';
 import PatternEditorV2 from './PatternEditorV2';
 

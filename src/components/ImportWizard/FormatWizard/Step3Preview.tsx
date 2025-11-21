@@ -1,15 +1,10 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../../utils';
-import { format as formatDate } from 'date-fns';
-import type { 
-  Transaction, 
-  FieldMapping, 
-  CSVSettings,
-  ImportFormatDefinition 
-} from '../../../types';
-import type { WizardState } from './FormatWizardMain';
-import { parseWithCustomFormat } from '../../../services/csvParser';
-import type { ParseError } from '../../../services/csvParser';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import {format as formatDate} from 'date-fns';
+import type {CSVSettings, FieldMapping, ImportFormatDefinition, Transaction} from '@/types';
+import type {WizardState} from './FormatWizardMain';
+import type {ParseError} from '@/services/csvParser';
+import {parseWithCustomFormat} from '@/services/csvParser';
 
 interface Step3Props {
   file: File;

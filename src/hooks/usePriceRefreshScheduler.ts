@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
-import { refreshAllPrices } from '../services/priceFetcher';
-import { logger } from '../utils';
-import { useScheduler } from './useScheduler';
-import type { UserSettings } from '../types';
+import {useCallback} from 'react';
+import {refreshAllPrices} from '../services/priceFetcher';
+import {logger} from '@/utils';
+import {useScheduler} from './useScheduler';
+import type {UserSettings} from '@/types';
 
 /**
  * Custom hook to manage automatic price refresh scheduling

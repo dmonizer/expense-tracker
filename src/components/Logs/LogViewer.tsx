@@ -1,12 +1,11 @@
-
-import { useEffect, useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import type { LogDefinition } from '../../types';
+import {useEffect, useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
+import type {LogDefinition} from '@/types';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { logger } from '../../utils';
-import { useConfirm } from "@/components/ui/confirm-provider";
-import { useToast } from "@/hooks/use-toast";
+import {logger} from '@/utils';
+import {useConfirm} from "@/components/ui/confirm-provider";
+import {useToast} from "@/hooks/use-toast";
 
 type LogLevel = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'ALL';
 
@@ -19,7 +18,7 @@ function LogViewer() {
 
   // Live query for logs
   const allLogs = useLiveQuery(async () => {
-    return await db.log.orderBy('timestamp').reverse().toArray();
+      return db.log.orderBy('timestamp').reverse().toArray();
   }, []);
 
   // Filter logs based on selected level and search query

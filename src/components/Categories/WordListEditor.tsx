@@ -1,7 +1,7 @@
+import * as React from 'react';
 import {useState} from 'react';
-import type {Pattern, PatternWord} from '../../types';
-import * as React from "react";
-import { Label } from '@/components/ui/label';
+import type {Pattern, PatternWord} from '@/types';
+import {Label} from '@/components/ui/label';
 
 interface WordListEditorProps {
     pattern: Pattern;

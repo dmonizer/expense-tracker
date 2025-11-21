@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { parseSwedBankCSV, detectDuplicates, importTransactions } from './csvParser';
-import { db } from './db';
-import { getOrCreateBankAccount } from './accountManager';
+import {beforeEach, describe, expect, it} from '@jest/globals';
+import {detectDuplicates, importTransactions, parseSwedBankCSV} from './csvParser';
+import {db} from './db';
+import {getOrCreateBankAccount} from './accountManager';
 import * as fs from 'fs';
 import * as path from 'path';
 

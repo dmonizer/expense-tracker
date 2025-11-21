@@ -1,5 +1,5 @@
-import { db } from '../services/db';
-import type { LogDefinition } from '../types';
+import {db} from '../services/db';
+import type {LogDefinition} from '@/types';
 
 interface LogOptions {
   source?: string;

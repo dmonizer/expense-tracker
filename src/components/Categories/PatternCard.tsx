@@ -1,5 +1,5 @@
-import type { Pattern } from '../../types';
-import { Button } from '@/components/ui/button';
+import type {Pattern} from '@/types';
+import {Button} from '@/components/ui/button.tsx';
 
 interface PatternCardProps {
   pattern: Pattern;
@@ -9,7 +9,7 @@ interface PatternCardProps {
   onDelete: () => void;
 }
 
-function PatternCard({ pattern, index, isExpanded, onToggleExpand, onDelete }: PatternCardProps) {
+function PatternCard({pattern, index, isExpanded, onToggleExpand, onDelete}: Readonly<PatternCardProps>) {
   // Support both new and legacy pattern format
   const fields = pattern.fields || (pattern.field ? [pattern.field] : ['payee']);
 

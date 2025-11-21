@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { createBackup } from '../../services/databaseBackup';
+import {useState} from 'react';
+import {Button} from '@/components/ui/button.tsx';
+import {useToast} from '@/hooks/use-toast';
+import {createBackup} from '@/services/databaseBackup.ts';
 import * as localProvider from '../../services/backupProviders/localBackupProvider';
 import * as googleDriveProvider from '../../services/backupProviders/googleDriveProvider';
 import * as dropboxProvider from '../../services/backupProviders/dropboxProvider';
-import { logger } from '../../utils';
-import { db } from '../../services/db';
-import type { BackupProvider } from '../../types/backupTypes';
-import type { UserSettings } from '../../types';
+import {logger} from '@/utils';
+import {db} from '@/services/db.ts';
+import type {BackupProvider} from '@/types/backupTypes.ts';
+import type {UserSettings} from '@/types';
 
 interface ManualBackupSectionProps {
     settings: UserSettings;
 }
 
-export function ManualBackupSection({ settings }: ManualBackupSectionProps) {
+export function ManualBackupSection({settings}: Readonly<ManualBackupSectionProps>) {
     const [isBackingUp, setIsBackingUp] = useState(false);
     const [manualProvider, setManualProvider] = useState<BackupProvider>('local');
     const [manualEncrypt, setManualEncrypt] = useState(false);

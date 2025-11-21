@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import * as React from "react";
-import type { Account } from '../../types';
-import { getDisplayBalance } from '../../services/journalEntryManager';
+import * as React from 'react';
+import {useState} from 'react';
+import type {Account} from '@/types';
+import {getDisplayBalance} from '@/services/journalEntryManager.ts';
 import {
     Dialog,
     DialogContent,
@@ -10,9 +10,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {Button} from "@/components/ui/button.tsx";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 
 interface OpeningBalanceModalProps {
     isOpen: boolean;

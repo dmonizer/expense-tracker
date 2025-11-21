@@ -1,8 +1,8 @@
 // Google Drive Backup Provider
 // Handles OAuth authentication and file operations with Google Drive API
 
-import { logger } from '../../utils';
-import type { BackupMetadata, CloudProviderConfig } from '../../types/backupTypes';
+import {logger} from '@/utils';
+import type {BackupMetadata, CloudProviderConfig} from '@/types/backupTypes.ts';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files';

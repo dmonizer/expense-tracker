@@ -1,26 +1,11 @@
-import type {CategoryGroup, CategoryRule} from '../types';
+import type {CategoryGroup, CategoryRule} from '@/types';
 import {db} from './db';
 import {initializeDefaultAccounts} from './accountManager';
 import {initializeDefaultExchangeRates} from './exchangeRateManager';
 import {defaultGroups} from "./defaultGroups.ts";
 import {defaultRules} from "./defaultRules.ts";
-import { logger } from '../utils';
-import {
-    GROUP_ID_CRITICAL,
-    GROUP_ID_IMPORTANT,
-    GROUP_ID_OPTIONAL,
-    GROUP_ID_SAVINGS,
-    GROUP_ID_INCOME
-} from '../constants/technicalConstants.ts';
+import {logger} from '@/utils';
 
-// Re-export for backwards compatibility
-export {
-    GROUP_ID_CRITICAL,
-    GROUP_ID_IMPORTANT,
-    GROUP_ID_OPTIONAL,
-    GROUP_ID_SAVINGS,
-    GROUP_ID_INCOME
-};
 
 /**
  * Initialize default category rules in the database

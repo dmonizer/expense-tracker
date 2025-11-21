@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { startBackupScheduler, stopBackupScheduler } from '../services/backupScheduler';
-import { logger } from '../utils';
-import type { UserSettings } from '../types';
+import {useEffect} from 'react';
+import {startBackupScheduler, stopBackupScheduler} from '../services/backupScheduler';
+import {logger} from '@/utils';
+import type {UserSettings} from '@/types';
 
 /**
  * Custom hook to manage automatic backup scheduling

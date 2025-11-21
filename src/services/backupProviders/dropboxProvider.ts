@@ -1,8 +1,8 @@
 // Dropbox Backup Provider
 // Handles OAuth authentication and file operations with Dropbox API
 
-import { logger } from '../../utils';
-import type { BackupMetadata, CloudProviderConfig } from '../../types/backupTypes';
+import {logger} from '@/utils';
+import type {BackupMetadata, CloudProviderConfig} from '@/types/backupTypes.ts';
 
 const DROPBOX_AUTH_URL = 'https://www.dropbox.com/oauth2/authorize';
 const DROPBOX_UPLOAD_URL = 'https://content.dropboxapi.com/2/files/upload';

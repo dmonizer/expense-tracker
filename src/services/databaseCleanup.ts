@@ -1,8 +1,8 @@
-import { db } from './db';
-import { createJournalEntryFromTransaction } from './journalEntryManager';
-import { initializeDefaultAccounts } from './accountManager';
-import type { CategoryRule } from '../types';
-import { logger } from '../utils';
+import {db} from './db';
+import {createJournalEntryFromTransaction} from './journalEntryManager';
+import {initializeDefaultAccounts} from './accountManager';
+import type {CategoryRule} from '@/types';
+import {logger} from '@/utils';
 
 /**
  * Database Cleanup Utilities

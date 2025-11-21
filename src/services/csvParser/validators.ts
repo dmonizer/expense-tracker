@@ -1,4 +1,4 @@
-import type { Transaction } from '../../types';
+import type {Transaction} from '@/types';
 
 /**
  * Detect if a transaction is an investment transaction

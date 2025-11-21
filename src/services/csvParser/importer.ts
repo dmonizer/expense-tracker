@@ -1,10 +1,10 @@
-import { v4 as uuidv4 } from 'uuid';
-import { db } from '../db';
-import type { CategoryRule, ImportRecord, Transaction } from '../../types';
-import type { ImportResult } from './types';
-import { createJournalEntryFromTransaction } from '../journalEntryManager';
-import { initializeDefaultAccounts } from '../accountManager';
-import { logger } from '../../utils';
+import {v4 as uuidv4} from 'uuid';
+import {db} from '../db';
+import type {CategoryRule, ImportRecord, Transaction} from '@/types';
+import type {ImportResult} from './types';
+import {createJournalEntryFromTransaction} from '../journalEntryManager';
+import {initializeDefaultAccounts} from '../accountManager';
+import {logger} from '@/utils';
 
 /**
  * Imports new transactions into the database

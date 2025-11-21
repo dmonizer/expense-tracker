@@ -11,10 +11,10 @@ export function parseHSL(hslString: string): { h: number; s: number; l: number; 
     throw new Error(`Invalid HSL color string: ${hslString}`);
   }
   return {
-    h: parseInt(match[1], 10),
-    s: parseInt(match[2], 10),
-    l: parseInt(match[3], 10),
-    a: match[4] ? parseFloat(match[4]) : undefined,
+      h: Number.parseInt(match[1], 10),
+      s: Number.parseInt(match[2], 10),
+      l: Number.parseInt(match[3], 10),
+      a: match[4] ? Number.parseFloat(match[4]) : undefined,
   };
 }
 

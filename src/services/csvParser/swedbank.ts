@@ -1,9 +1,9 @@
 import Papa from 'papaparse';
-import { v4 as uuidv4 } from 'uuid';
-import { parse } from 'date-fns';
-import type { SwedBankCSVRow, Transaction } from '../../types';
-import type { ParseResult } from './types';
-import { parseEstonianNumber } from './transformers';
+import {v4 as uuidv4} from 'uuid';
+import {parse} from 'date-fns';
+import type {SwedBankCSVRow, Transaction} from '@/types';
+import type {ParseResult} from './types';
+import {parseEstonianNumber} from './transformers';
 
 /**
  * Parses a Swedbank Estonia CSV bank statement file

@@ -1,6 +1,6 @@
-import type { Pattern } from '../types';
-import { logger } from '../utils';
-import { db } from '../services/db';
+import type {Pattern} from '@/types';
+import {logger} from '@/utils';
+import {db} from '@/services/db';
 
 /**
  * Checks if a pattern needs migration (has old 'field' property instead of 'fields')

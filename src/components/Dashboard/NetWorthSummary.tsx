@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../utils';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import { calculateAccountBalance, getDisplayBalance } from '../../services/journalEntryManager';
-import { formatCurrency } from '../../utils/currencyUtils';
-import type { Account } from '../../types';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
+import {calculateAccountBalance, getDisplayBalance} from '@/services/journalEntryManager.ts';
+import {formatCurrency} from '@/utils/currencyUtils.ts';
+import type {Account} from '@/types';
 
 interface AccountBalance {
   account: Account;

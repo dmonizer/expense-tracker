@@ -1,7 +1,7 @@
-import type { Transaction, CategoryRule, Pattern } from '../types';
-import { db } from './db';
-import { CATEGORIZATION } from '../constants/technicalConstants.ts';
-import { logger } from '../utils';
+import type {CategoryRule, Pattern, Transaction} from '@/types';
+import {db} from './db';
+import {CATEGORIZATION} from '@/constants';
+import {logger} from '@/utils';
 
 /**
  * Gets the value of a transaction field by name

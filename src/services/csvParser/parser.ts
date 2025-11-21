@@ -1,8 +1,8 @@
 import Papa from 'papaparse';
-import type { ImportFormatDefinition, Transaction } from '../../types';
-import type { ParseResult, ParseError } from './types';
-import { processRow } from './mappers';
-import { parseSwedBankCSV } from './swedbank';
+import type {ImportFormatDefinition, Transaction} from '@/types';
+import type {ParseError, ParseResult} from './types';
+import {processRow} from './mappers';
+import {parseSwedBankCSV} from './swedbank';
 
 /**
  * Parse CSV file using custom format definition

@@ -1,27 +1,21 @@
-import { useState, useEffect } from 'react';
-import { logger } from '@/utils';
-import type { ImportFormatDefinition } from '@/types';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import type {ImportFormatDefinition} from '@/types';
 import {
-  getAllFormats,
-  deleteFormat,
-  duplicateFormat,
-  renameFormat,
-  setDefaultFormat,
-  exportFormatAsJSON,
-  importFormatFromJSON
+    deleteFormat,
+    duplicateFormat,
+    exportFormatAsJSON,
+    getAllFormats,
+    importFormatFromJSON,
+    renameFormat,
+    setDefaultFormat
 } from '@/services/formatManager.ts';
 import FormatWizardMain from '../../ImportWizard/FormatWizard/FormatWizardMain';
-import { useConfirm } from "@/components/ui/confirm-provider";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {useConfirm} from "@/components/ui/confirm-provider";
+import {useToast} from "@/hooks/use-toast";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Input} from "@/components/ui/input";
+import {Button} from "@/components/ui/button.tsx";
 
 export default function FormatManager() {
   const [formats, setFormats] = useState<ImportFormatDefinition[]>([]);

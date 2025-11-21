@@ -1,23 +1,15 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../utils';
-import { useLiveQuery } from 'dexie-react-hooks';
-import type { Transaction } from '../../types';
-import { db } from '../../services/db';
-import { formatCurrency, formatDate } from '../../utils';
-import { extractPatternSuggestions, calculatePatternWeight } from '../../utils/patternExtractor';
-import { detectPatternConflicts, matchesPattern, recategorizeAll } from '../../services/categorizer';
-import { mergePatterns } from '../../utils/patternMerger';
-import type { Pattern, CategoryRule } from '../../types';
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from '@/components/ui/label';
+import {useEffect, useState} from 'react';
+import {formatCurrency, formatDate, logger} from '@/utils';
+import {useLiveQuery} from 'dexie-react-hooks';
+import type {CategoryRule, Pattern, Transaction} from '@/types';
+import {db} from '@/services/db.ts';
+import {calculatePatternWeight, extractPatternSuggestions} from '@/utils/patternExtractor.ts';
+import {detectPatternConflicts, matchesPattern, recategorizeAll} from '@/services/categorizer.ts';
+import {mergePatterns} from '@/utils/patternMerger.ts';
+import {useToast} from "@/hooks/use-toast";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button.tsx";
+import {Label} from '@/components/ui/label';
 
 interface TransactionEditorProps {
   transaction: Transaction;
@@ -29,7 +21,7 @@ interface TransactionEditorProps {
  * Modal editor for changing transaction category
  * Shows current category and confidence, allows selecting new category
  */
-function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorProps) {
+function TransactionEditor({transaction, onClose, onSave}: Readonly<TransactionEditorProps>) {
   const [selectedCategory, setSelectedCategory] = useState(transaction.category || '');
   const [isIgnored, setIsIgnored] = useState(transaction.ignored || false);
   const [isSaving, setIsSaving] = useState(false);

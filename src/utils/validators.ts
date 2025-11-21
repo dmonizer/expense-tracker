@@ -1,4 +1,4 @@
-import type { Transaction, CategoryRule, Pattern } from '../types';
+import type {CategoryRule, Pattern, Transaction} from '@/types';
 
 // Helper validation functions
 /**

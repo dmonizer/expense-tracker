@@ -1,7 +1,7 @@
-import { v4 as uuidv4, v5 as uuidv5 } from 'uuid';
-import { db } from './db';
-import type { Account, AccountSubtype, CategoryRule } from '../types';
-import { logger } from '../utils';
+import {v4 as uuidv4, v5 as uuidv5} from 'uuid';
+import {db} from './db';
+import type {Account, AccountSubtype, CategoryRule} from '@/types';
+import {logger} from '@/utils';
 
 /**
  * Account Manager - Handles account creation and management for double-entry accounting

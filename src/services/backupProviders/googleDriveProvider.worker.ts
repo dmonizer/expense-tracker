@@ -2,8 +2,8 @@
 // This version only includes upload functionality for use in Web Workers
 // Authentication and listing/downloading must be done in the main thread
 
-import { logger } from '../../utils';
-import type { BackupMetadata } from '../../types/backupTypes';
+import {logger} from '@/utils';
+import type {BackupMetadata} from '@/types/backupTypes.ts';
 
 const GOOGLE_DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files';
 

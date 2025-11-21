@@ -1,6 +1,6 @@
-import type { Transaction, ImportFormatDefinition } from '../../types';
-import { format } from 'date-fns';
-import { Label } from '@/components/ui/label';
+import type {ImportFormatDefinition, Transaction} from '@/types';
+import {format} from 'date-fns';
+import {Label} from '@/components/ui/label';
 
 interface PreviewTableProps {
   transactions: Transaction[];

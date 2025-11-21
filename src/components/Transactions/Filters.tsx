@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import type { TransactionFilters } from '../../types';
-import { db } from '../../services/db';
-import { formatDate } from '../../utils';
-import { Label } from '@/components/ui/label';
+import {useEffect, useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import type {TransactionFilters} from '@/types';
+import {db} from '@/services/db.ts';
+import {formatDate} from '@/utils';
+import {Label} from '@/components/ui/label';
 
 interface FiltersProps {
   filters: TransactionFilters;

@@ -1,6 +1,6 @@
-import { db } from './db';
-import type { PriceApiProviderType } from '../types';
-import { logger } from '../utils';
+import {db} from './db';
+import type {PriceApiProviderType} from '@/types';
+import {logger} from '@/utils';
 
 /**
  * Price fetching service - supports multiple API providers

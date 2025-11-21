@@ -1,4 +1,4 @@
-import { Label } from '@/components/ui/label';
+import {Label} from '@/components/ui/label';
 
 interface FieldSelectorGridProps {
   selectedFields: string[];
@@ -28,7 +28,7 @@ const ALL_FIELDS: FieldInfo[] = [
   { id: 'archiveId', label: 'Archive ID', description: 'Reference/archive ID', group: 'technical' },
 ];
 
-function FieldSelectorGrid({ selectedFields, onChange, availableFields, disabled }: FieldSelectorGridProps) {
+function FieldSelectorGrid({selectedFields, onChange, availableFields, disabled}: Readonly<FieldSelectorGridProps>) {
   const fields = availableFields
     ? ALL_FIELDS.filter(f => availableFields.includes(f.id))
     : ALL_FIELDS;

@@ -1,11 +1,11 @@
 // Database Backup and Restore Service
 // Handles exporting and importing the entire Dexie database
 
-import { db } from './db';
-import { logger } from '../utils';
-import type { BackupData, BackupMetadata, BackupProvider } from '../types/backupTypes';
-import { encryptData, decryptData } from './encryptionService';
-import { v4 as uuidv4 } from 'uuid';
+import {db} from './db';
+import {logger} from '@/utils';
+import type {BackupData, BackupMetadata, BackupProvider} from '../types/backupTypes';
+import {decryptData, encryptData} from './encryptionService';
+import {v4 as uuidv4} from 'uuid';
 
 /**
  * Export the entire database to a JSON string

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../utils';
-import { db } from '../../services/db';
-import type { PriceApiProvider, PriceApiProviderType } from '../../types';
-import { refreshAllPrices } from '../../services/priceFetcher';
-import { Label } from '@/components/ui/label';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import {db} from '@/services/db.ts';
+import type {PriceApiProvider, PriceApiProviderType} from '@/types';
+import {refreshAllPrices} from '@/services/priceFetcher.ts';
+import {Label} from '@/components/ui/label';
 import type {UserSettings} from "@/types/userSettingsTypes.ts";
 
 const PROVIDER_INFO: Record<PriceApiProviderType, { name: string; url: string; limits: string }> = {
@@ -406,7 +406,7 @@ function ApiSettings() {
                   min="15"
                   max="1440"
                   value={refreshInterval}
-                  onChange={(e) => setRefreshInterval(parseInt(e.target.value) || 60)}
+                  onChange={(e) => setRefreshInterval(Number.parseInt(e.target.value) || 60)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">

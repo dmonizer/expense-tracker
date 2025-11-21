@@ -1,8 +1,8 @@
-import { createJournalEntryFromTransaction, createJournalEntry } from './journalEntryManager';
-import { db } from './db';
-import { v4 as uuidv4 } from 'uuid';
-import type { Transaction } from '../types';
-import {Split} from "../types/journalTypes";
+import {createJournalEntry, createJournalEntryFromTransaction} from './journalEntryManager';
+import {db} from './db';
+import {v4 as uuidv4} from 'uuid';
+import type {Transaction} from '../types';
+import {Split} from "@/types";
 
 // Mock logger to avoid import.meta issues in Jest
 jest.mock('../utils', () => ({

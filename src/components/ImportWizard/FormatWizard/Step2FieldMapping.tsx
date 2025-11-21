@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import type {CSVSettings, FieldMapping, FieldTransform, TransactionField} from '../../../types';
+import type {CSVSettings, FieldMapping, FieldTransform, TransactionField} from '@/types';
 import type {WizardState} from './FormatWizardMain';
 import {autoDetectMappings, isIn} from "@/utils/fieldMappingDetection.ts";
 import {INVESTMENT_FIELDS, INVESTMENT_NONVALIDATED_FIELDS, TRANSACTION_FIELDS} from "@/constants";

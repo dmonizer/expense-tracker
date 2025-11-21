@@ -1,5 +1,5 @@
-import type { Transaction, CategoryRule, TransactionFilters } from '../types';
-import { UNCATEGORIZED_GROUP_ID } from '../constants/technicalConstants.ts';
+import type {CategoryRule, Transaction, TransactionFilters} from '@/types';
+import {UNCATEGORIZED_GROUP_ID} from '@/constants';
 
 /**
  * Checks if a transaction matches the group filter.

@@ -1,12 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
-import { db } from './db';
-import type { Transaction, Account, CategoryRule } from '../types';
-import { logger } from '../utils';
+import {v4 as uuidv4} from 'uuid';
+import {db} from './db';
+import type {Account, CategoryRule, Transaction} from '@/types';
+import {logger} from '@/utils';
 import {
-  ensureExpenseAccountForCategory,
-  getOrCreateBankAccount,
-  getUncategorizedExpenseAccount,
-  getUncategorizedIncomeAccount,
+    ensureExpenseAccountForCategory,
+    getOrCreateBankAccount,
+    getUncategorizedExpenseAccount,
+    getUncategorizedIncomeAccount,
 } from './accountManager';
 import type {JournalEntry, Split} from "@/types/journalTypes.ts";
 

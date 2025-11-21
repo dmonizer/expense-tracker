@@ -1,7 +1,7 @@
 import {v4 as uuidv4} from 'uuid';
 import {db} from './db';
-import type {ExchangeRate, ExchangeRateApiProviderType, ExchangeRateSource} from '../types';
-import {logger} from '../utils';
+import type {ExchangeRate, ExchangeRateApiProviderType, ExchangeRateSource} from '@/types';
+import {logger} from '@/utils';
 
 /**
  * Exchange Rate Manager - Handles currency conversion rates

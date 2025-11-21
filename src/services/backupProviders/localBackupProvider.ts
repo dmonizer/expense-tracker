@@ -1,8 +1,8 @@
 // Local Backup Provider
 // Handles downloading and uploading backup files using browser APIs
 
-import { logger } from '../../utils';
-import type { BackupMetadata } from '../../types/backupTypes';
+import {logger} from '@/utils';
+import type {BackupMetadata} from '@/types/backupTypes.ts';
 
 /**
  * Save backup to local file (download)

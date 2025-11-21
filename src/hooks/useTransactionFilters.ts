@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import type { Transaction, TransactionFilters, CategoryRule } from '../types';
-import { filterAndSortTransactions } from '../utils/transactionFilters';
+import {useMemo} from 'react';
+import type {CategoryRule, Transaction, TransactionFilters} from '@/types';
+import {filterAndSortTransactions} from '../utils/transactionFilters';
 
 export interface UseTransactionFiltersResult {
   filteredTransactions: Transaction[];

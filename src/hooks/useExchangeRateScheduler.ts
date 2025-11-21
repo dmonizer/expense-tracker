@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
-import { refreshCommonExchangeRates } from '../services/exchangeRateManager';
-import { logger } from '../utils';
-import { useScheduler } from './useScheduler';
-import type { UserSettings } from '../types';
+import {useCallback} from 'react';
+import {refreshCommonExchangeRates} from '../services/exchangeRateManager';
+import {logger} from '@/utils';
+import {useScheduler} from './useScheduler';
+import type {UserSettings} from '@/types';
 
 /**
  * Custom hook to manage automatic exchange rate refresh scheduling

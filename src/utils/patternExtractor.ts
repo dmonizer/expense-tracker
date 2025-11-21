@@ -3,7 +3,7 @@
  * Returns 3 levels: short, medium, long
  */
 export function extractPatternSuggestions(text: string): string[] {
-  if (!text || !text.trim()) {
+    if (!text?.trim()) {
     return [];
   }
 

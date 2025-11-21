@@ -1,13 +1,8 @@
-import { useState } from 'react';
-import { logger } from '../../../utils';
-import type { 
-  FieldMapping, 
-  CSVSettings, 
-  DetectionPattern,
-  ImportFormatDefinition 
-} from '../../../types';
-import { saveFormat, updateFormat } from '../../../services/formatManager';
-import { Label } from '@/components/ui/label';
+import {useState} from 'react';
+import {logger} from '@/utils';
+import type {CSVSettings, DetectionPattern, FieldMapping, ImportFormatDefinition} from '@/types';
+import {saveFormat, updateFormat} from '@/services/formatManager.ts';
+import {Label} from '@/components/ui/label';
 
 interface Step4Props {
   file: File;

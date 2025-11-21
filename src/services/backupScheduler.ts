@@ -1,8 +1,8 @@
 // Backup Scheduler Service
 // Main thread interface to the backup worker
 
-import { logger } from '../utils';
-import type { UserSettings } from '../types/userSettingsTypes';
+import {logger} from '@/utils';
+import type {UserSettings} from '@/types';
 
 let backupWorker: Worker | null = null;
 

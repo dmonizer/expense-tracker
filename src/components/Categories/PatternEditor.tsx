@@ -1,8 +1,8 @@
-import {isValidPattern} from '../../utils';
-import type {Pattern} from '../../types';
+import {isValidPattern} from '@/utils';
+import type {Pattern} from '@/types';
 import WordListEditor from './WordListEditor';
 import RegexEditor from './RegexEditor';
-import { Label } from '@/components/ui/label';
+import {Label} from '@/components/ui/label';
 
 interface PatternEditorProps {
     pattern: Pattern;

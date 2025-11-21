@@ -1,5 +1,5 @@
 import {memo, useEffect, useState} from 'react';
-import { logger } from '../../../utils';
+import {formatCurrency, formatDate, logger} from '@/utils';
 import type {TooltipItem} from 'chart.js';
 import {
     CategoryScale,
@@ -13,9 +13,8 @@ import {
     Tooltip,
 } from 'chart.js';
 import {Line} from 'react-chartjs-2';
-import type {Transaction, TransactionFilters} from '../../../types';
-import {getBalanceOverTime} from '../../../services/analytics';
-import {formatCurrency, formatDate} from '../../../utils';
+import type {Transaction, TransactionFilters} from '@/types';
+import {getBalanceOverTime} from '@/services/analytics.ts';
 
 ChartJS.register(
     CategoryScale,

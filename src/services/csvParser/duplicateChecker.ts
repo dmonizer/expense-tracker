@@ -1,6 +1,6 @@
-import { db } from '../db';
-import type { Transaction } from '../../types';
-import type { DuplicateCheckResult } from './types';
+import {db} from '../db';
+import type {Transaction} from '@/types';
+import type {DuplicateCheckResult} from './types';
 
 /**
  * Creates a composite key for duplicate detection

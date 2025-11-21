@@ -1,15 +1,9 @@
-import { useState } from 'react';
-import type { AccountType } from '../../utils/accountTypeHelpers';
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {useState} from 'react';
+import type {AccountType} from '@/utils/accountTypeHelpers.ts';
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button.tsx";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 
 interface CreateAccountModalProps {
     isOpen: boolean;

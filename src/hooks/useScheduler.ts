@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { logger } from '../utils';
+import {useEffect} from 'react';
+import {logger} from '@/utils';
 
 interface SchedulerConfig {
     enabled: boolean;

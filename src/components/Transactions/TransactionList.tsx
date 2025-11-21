@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import type { Transaction, TransactionFilters } from '../../types';
-import { db } from '../../services/db';
+import {useEffect, useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import type {Transaction, TransactionFilters} from '@/types';
+import {db} from '@/services/db.ts';
 import TransactionRow from './TransactionRow';
 import UnifiedRuleEditor from '../Categories/UnifiedRuleEditor';
 import Filters from './Filters';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import EmptyState, { DocumentIcon } from '../ui/EmptyState';
-import { useTransactionFilters } from '../../hooks/useTransactionFilters';
-import { usePagination } from '../../hooks/usePagination';
-import { PAGINATION } from '../../constants/technicalConstants.ts';
-import { Button } from '@/components/ui/button';
+import EmptyState, {DocumentIcon} from '../ui/EmptyState';
+import {useTransactionFilters} from '@/hooks/useTransactionFilters.ts';
+import {usePagination} from '@/hooks/usePagination.ts';
+import {PAGINATION} from '@/constants';
+import {Button} from '@/components/ui/button.tsx';
 
 interface TransactionListProps {
   initialFilters?: TransactionFilters;

@@ -1,5 +1,5 @@
-import { describe, it, expect } from '@jest/globals';
-import { detectFieldMapping } from './fieldMappingDetection';
+import {describe, expect, it} from '@jest/globals';
+import {detectFieldMapping} from './fieldMappingDetection';
 
 describe('detectFieldMapping', () => {
     it('returns date mapping for date-related headers', () => {

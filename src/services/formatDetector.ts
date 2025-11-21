@@ -1,7 +1,7 @@
 import Papa from 'papaparse';
-import type {ImportFormatDefinition, TransactionField} from '../types';
+import type {ImportFormatDefinition, TransactionField} from '@/types';
 import {getAllFormats, getDefaultFormat} from './formatManager';
-import {logger} from '../utils';
+import {logger} from '@/utils';
 
 /**
  * Detection score for a format

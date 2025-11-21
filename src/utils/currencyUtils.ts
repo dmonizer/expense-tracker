@@ -1,5 +1,5 @@
-import { convertCurrency } from '../services/exchangeRateManager';
-import { logger } from './logger';
+import {convertCurrency} from '../services/exchangeRateManager';
+import {logger} from './logger';
 
 /**
  * Currency utility functions

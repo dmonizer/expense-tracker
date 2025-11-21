@@ -3,12 +3,12 @@
 // This worker checks periodically if a backup is due and triggers it
 // Uses worker-compatible versions of cloud providers (no window/DOM APIs)
 
-import { db } from '../services/db';
-import { createBackup } from '../services/databaseBackup';
+import {db} from '../services/db';
+import {createBackup} from '../services/databaseBackup';
 import * as localProvider from '../services/backupProviders/localBackupProvider';
 import * as googleDriveProvider from '../services/backupProviders/googleDriveProvider.worker';
 import * as dropboxProvider from '../services/backupProviders/dropboxProvider.worker';
-import type { BackupProvider } from '../types/backupTypes';
+import type {BackupProvider} from '../types/backupTypes';
 
 const CHECK_INTERVAL = 60000; // Check every minute
 
@@ -28,7 +28,7 @@ async function checkAndBackup() {
         // Get settings from database
         const settings = await db.settings.get('default');
 
-        if (!settings || !settings.backupEnabled) {
+        if (!settings?.backupEnabled) {
             return;
         }
 

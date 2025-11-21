@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import type {CSVSettings, DetectionPattern, FieldMapping, ImportFormatDefinition} from '../../../types';
+import type {CSVSettings, DetectionPattern, FieldMapping, ImportFormatDefinition} from '@/types';
 import Step1FileAnalysis from './Step1FileAnalysis';
 import Step2FieldMapping from './Step2FieldMapping';
 import Step3Preview from './Step3Preview';

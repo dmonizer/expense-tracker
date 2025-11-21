@@ -1,6 +1,6 @@
-import { memo } from 'react';
-import type { Transaction } from '../../types';
-import { formatCurrency, formatDate } from '../../utils';
+import {memo} from 'react';
+import type {Transaction} from '@/types';
+import {formatCurrency, formatDate} from '@/utils';
 
 interface TransactionRowProps {
   transaction: Transaction;
@@ -12,7 +12,7 @@ interface TransactionRowProps {
  * Shows date, payee, description, category, and amount
  * Color codes income (green) vs expense (red)
  */
-function TransactionRow({ transaction, onEditCategory }: TransactionRowProps) {
+function TransactionRow({transaction, onEditCategory}: Readonly<TransactionRowProps>) {
   const isIncome = transaction.type === 'credit';
   const hasCategory = transaction.category && transaction.category !== 'Uncategorized';
 

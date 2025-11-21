@@ -1,12 +1,12 @@
-import {describe, it, expect, beforeEach, afterEach} from '@jest/globals';
-import type {Transaction, CategoryRule, Pattern} from '../types';
+import {afterEach, beforeEach, describe, expect, it} from '@jest/globals';
+import type {CategoryRule, Pattern, Transaction} from '@/types';
 import {
-    matchesPattern,
     calculateMatchScore,
-    categorizeTransaction,
     categorizeBatch,
-    recategorizeAll,
+    categorizeTransaction,
     detectPatternConflicts,
+    matchesPattern,
+    recategorizeAll,
 } from './categorizer';
 import {db} from './db';
 

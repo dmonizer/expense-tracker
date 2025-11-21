@@ -1,26 +1,25 @@
-import { useState, useCallback } from 'react';
-import { logger } from '../../utils';
-import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../services/db';
-import type { Account } from '../../types';
+import {useCallback, useState} from 'react';
+import {logger} from '@/utils';
+import {v4 as uuidv4} from 'uuid';
+import {db} from '@/services/db.ts';
+import type {Account, AccountSubtype} from '@/types';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { cleanupDuplicateAccounts, rebuildAccountingFromTransactions } from '../../services/databaseCleanup';
-import { getDisplayBalance } from '../../services/journalEntryManager';
-import { updateAccount, updateAccountOpeningBalance } from '../../services/accountManager';
-import { formatCurrency } from '../../utils/currencyUtils';
+import {cleanupDuplicateAccounts, rebuildAccountingFromTransactions} from '@/services/databaseCleanup.ts';
+import {getDisplayBalance} from '@/services/journalEntryManager.ts';
+import {updateAccount, updateAccountOpeningBalance} from '@/services/accountManager.ts';
+import {formatCurrency} from '@/utils/currencyUtils.ts';
 import {
-  getAccountTypeIcon,
-  getAccountTypeLabel,
-  getAccountTypeBadgeColor,
-  type AccountType
-} from '../../utils/accountTypeHelpers';
-import type { AccountSubtype } from '../../types';
-import { useAccounts, useAccountFiltering, type AccountWithDetails } from '../../hooks/useAccounts';
-import { EditAccountModal, OpeningBalanceModal, CreateAccountModal } from './AccountModals';
+    type AccountType,
+    getAccountTypeBadgeColor,
+    getAccountTypeIcon,
+    getAccountTypeLabel
+} from '@/utils/accountTypeHelpers.ts';
+import {type AccountWithDetails, useAccountFiltering, useAccounts} from '@/hooks/useAccounts.ts';
+import {CreateAccountModal, EditAccountModal, OpeningBalanceModal} from './AccountModals';
 import AccountDetailView from './AccountDetailView';
 import HoldingsManager from './HoldingsManager';
-import { useConfirm } from "@/components/ui/confirm-provider";
-import { useToast } from "@/hooks/use-toast";
+import {useConfirm} from "@/components/ui/confirm-provider";
+import {useToast} from "@/hooks/use-toast";
 
 function AccountViewer() {
   // Custom hooks

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { initializeDefaults } from '../services/seedData';
-import { initializeBuiltInFormats } from '../services/formatLoader';
-import { migrateAllPatterns } from '../utils/patternMigration';
-import { logger } from '../utils';
+import {useEffect, useState} from 'react';
+import {initializeDefaults} from '../services/seedData';
+import {initializeBuiltInFormats} from '../services/formatLoader';
+import {migrateAllPatterns} from '../utils/patternMigration';
+import {logger} from '@/utils';
 
 interface InitializationState {
     isInitialized: boolean;

@@ -1,5 +1,5 @@
-import type { FieldTransform } from '../../types';
-import { parse } from 'date-fns';
+import type {FieldTransform} from '@/types';
+import {parse} from 'date-fns';
 
 /**
  * Apply field transformation to a value

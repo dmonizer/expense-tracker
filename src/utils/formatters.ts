@@ -1,4 +1,4 @@
-import { format as dateFnsFormat } from 'date-fns';
+import {format as dateFnsFormat} from 'date-fns';
 
 /**
  * Formats a number as currency with proper locale formatting

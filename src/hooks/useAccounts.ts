@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { logger } from '../utils';
-import { db } from '../services/db';
-import type { Account, CategoryRule } from '../types';
-import { calculateAccountBalance, getDisplayBalance } from '../services/journalEntryManager';
-import { sortAccountsByTypeAndName, type AccountType } from '../utils/accountTypeHelpers';
+import {useCallback, useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import {db} from '../services/db';
+import type {Account, CategoryRule} from '@/types';
+import {calculateAccountBalance, getDisplayBalance} from '../services/journalEntryManager';
+import {type AccountType, sortAccountsByTypeAndName} from '../utils/accountTypeHelpers';
 
 export interface AccountWithDetails extends Account {
   linkedCategoryRule?: CategoryRule;

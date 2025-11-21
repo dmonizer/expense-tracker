@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
-import {isValidRegex} from '../../utils';
-import type {Pattern} from '../../types';
-import { Label } from '@/components/ui/label';
+import {isValidRegex} from '@/utils';
+import type {Pattern} from '@/types';
+import {Label} from '@/components/ui/label';
 
 interface RegexEditorProps {
     pattern: Pattern;

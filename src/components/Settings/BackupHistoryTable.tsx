@@ -1,5 +1,5 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
 
 export function BackupHistoryTable() {
     const backupHistory = useLiveQuery(() =>

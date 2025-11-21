@@ -1,15 +1,13 @@
 import type {TooltipItem} from 'chart.js';
-import { logger } from '../../../utils';
 import {ArcElement, Chart as ChartJS, Legend, Tooltip} from 'chart.js';
+import {formatCurrency, logger} from '@/utils';
 import {Pie} from 'react-chartjs-2';
-import type {Transaction, TransactionFilters} from '../../../types';
-
-import {getCategorySummary, getGroupSummary} from '../../../services/analytics';
-import {formatCurrency} from '../../../utils';
-import {DEFAULT_GROUP_COLORS, getCategoryColor} from '../../../utils/colorUtils';
-import {db} from '../../../services/db';
+import type {Transaction, TransactionFilters} from '@/types';
+import {getCategorySummary, getGroupSummary} from '@/services/analytics.ts';
+import {DEFAULT_GROUP_COLORS, getCategoryColor} from '@/utils/colorUtils.ts';
+import {db} from '@/services/db.ts';
 import {memo, useEffect, useRef, useState} from 'react';
-import {useFilters} from '../../../contexts/FilterContext';
+import {useFilters} from '@/contexts/FilterContext.tsx';
 import {UNCATEGORIZED_GROUP_ID} from "@/constants";
 
 ChartJS.register(ArcElement, Tooltip, Legend);

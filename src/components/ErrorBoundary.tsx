@@ -1,7 +1,7 @@
-import { Component } from 'react';
-import { Button } from '@/components/ui/button';
-import { logger } from '../utils';
-import type { ErrorInfo, ReactNode } from 'react';
+import type {ErrorInfo, ReactNode} from 'react';
+import {Component} from 'react';
+import {Button} from '@/components/ui/button.tsx';
+import {logger} from '@/utils';
 
 interface Props {
   children: ReactNode;

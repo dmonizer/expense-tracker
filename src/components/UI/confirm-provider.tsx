@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import {createContext, type ReactNode, useCallback, useContext, useState} from "react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,7 +24,7 @@ type ConfirmContextType = {
 
 const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined);
 
-export function ConfirmProvider({ children }: { children: ReactNode }) {
+export function ConfirmProvider({children}: Readonly<{ children: ReactNode }>) {
     const [open, setOpen] = useState(false);
     const [options, setOptions] = useState<ConfirmOptions>({});
     const [resolveRef, setResolveRef] = useState<((value: boolean) => void) | null>(null);

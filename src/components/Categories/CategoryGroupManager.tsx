@@ -1,9 +1,9 @@
 import {useState} from 'react';
-import {logger} from '../../utils';
+import {logger} from '@/utils';
 import {useLiveQuery} from 'dexie-react-hooks';
-import {db} from '../../services/db';
-import type {CategoryGroup} from '../../types';
-import {getColorPalette} from '../../utils/colorUtils';
+import {db} from '@/services/db.ts';
+import type {CategoryGroup} from '@/types';
+import {getColorPalette} from '@/utils/colorUtils.ts';
 import {useConfirm} from "@/components/ui/confirm-provider";
 import {useToast} from "@/hooks/use-toast";
 import {Label} from '@/components/ui/label';

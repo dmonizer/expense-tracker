@@ -1,4 +1,4 @@
-import type { Pattern, PatternWord } from '../types';
+import type {Pattern, PatternWord} from '@/types';
 
 /**
  * Check if two arrays contain the same elements (order-independent)

@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../utils';
-import type { Transaction, ImportFormatDefinition } from '../../types';
-import { parseWithCustomFormat, detectDuplicates, importTransactions } from '../../services/csvParser';
-import { categorizeBatch } from '../../services/categorizer';
-import { detectFormat } from '../../services/formatDetector';
-import { getAllFormats } from '../../services/formatManager';
+import * as React from 'react';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import type {ImportFormatDefinition, Transaction} from '@/types';
+import {detectDuplicates, importTransactions, parseWithCustomFormat} from '@/services/csvParser';
+import {categorizeBatch} from '@/services/categorizer.ts';
+import {detectFormat} from '@/services/formatDetector.ts';
+import {getAllFormats} from '@/services/formatManager.ts';
 import PreviewTable from './PreviewTable';
 import ImportSummary from './ImportSummary';
 import FormatSelector from './FormatSelector';
-import { FILE_UPLOAD } from '../../constants/technicalConstants.ts';
-import * as React from "react";
-import { Label } from '@/components/ui/label';
+import {FILE_UPLOAD} from '@/constants';
+import {Label} from '@/components/ui/label';
 
 function FileUpload() {
   const [step, setStep] = useState<'upload' | 'formatSelect' | 'preview' | 'summary'>('upload');

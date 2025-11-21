@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import type { Pattern, Transaction } from '../../types';
-import { isValidPattern } from '../../utils';
-import { extractPatternSuggestions } from '../../utils/patternExtractor';
-import { detectPatternConflicts, matchesPattern } from '../../services/categorizer';
-import { db } from '../../services/db';
+import {useEffect, useState} from 'react';
+import type {Pattern, Transaction} from '@/types';
+import {isValidPattern} from '@/utils';
+import {extractPatternSuggestions} from '@/utils/patternExtractor.ts';
+import {detectPatternConflicts, matchesPattern} from '@/services/categorizer.ts';
+import {db} from '@/services/db.ts';
 import FieldSelectorGrid from './FieldSelectorGrid';
 import WordListEditor from './WordListEditor';
 import RegexEditor from './RegexEditor';
-import { Label } from '@/components/ui/label';
+import {Label} from '@/components/ui/label';
 
 interface PatternEditorV2Props {
   pattern: Pattern;

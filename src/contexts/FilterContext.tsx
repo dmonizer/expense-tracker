@@ -1,9 +1,9 @@
-import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
+import {createContext, type ReactNode, useCallback, useContext, useMemo, useState} from 'react';
 /* eslint-disable react-refresh/only-export-components */
 // This file exports both the FilterProvider component and the useFilters hook
 // which is a standard React context pattern
-import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import type { TransactionFilters } from '../types';
+import {endOfMonth, startOfMonth, subMonths} from 'date-fns';
+import type {TransactionFilters} from '@/types';
 
 export type DateRangePreset = 'all' | 'thisMonth' | 'last3Months' | 'year' | 'custom';
 

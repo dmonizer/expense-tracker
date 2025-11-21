@@ -1,7 +1,7 @@
 // Encryption Service using Web Crypto API
 // Implements AES-GCM encryption for backup data
 
-import { logger } from '../utils';
+import {logger} from '@/utils';
 
 const PBKDF2_ITERATIONS = 100000;
 const KEY_LENGTH = 256;

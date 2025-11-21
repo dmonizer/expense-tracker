@@ -1,11 +1,5 @@
-import type {CategoryRule} from "../types";
-import {
-    GROUP_ID_CRITICAL,
-    GROUP_ID_IMPORTANT,
-    GROUP_ID_INCOME,
-    GROUP_ID_OPTIONAL,
-    GROUP_ID_SAVINGS
-} from "./seedData.ts";
+import type {CategoryRule} from "@/types";
+import {GROUP_ID_CRITICAL, GROUP_ID_IMPORTANT, GROUP_ID_INCOME, GROUP_ID_OPTIONAL, GROUP_ID_SAVINGS} from "@/constants";
 
 /**
  * Default category rules to be initialized on first app launch

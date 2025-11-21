@@ -1,20 +1,20 @@
 // Backup Settings Component
 // Comprehensive UI for configuring automatic backups, cloud providers, and manual backup/restore
 
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import { restoreBackup, validateBackup } from '../../services/databaseBackup';
+import {useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
+import {restoreBackup, validateBackup} from '@/services/databaseBackup.ts';
 import * as localProvider from '../../services/backupProviders/localBackupProvider';
 import * as googleDriveProvider from '../../services/backupProviders/googleDriveProvider';
 import * as dropboxProvider from '../../services/backupProviders/dropboxProvider';
-import { logger } from '../../utils';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { useConfirm } from '@/components/ui/confirm-provider';
-import { ManualBackupSection } from './ManualBackupSection';
-import { BackupHistoryTable } from './BackupHistoryTable';
-import type { BackupProvider } from '../../types/backupTypes';
+import {logger} from '@/utils';
+import {Button} from '@/components/ui/button.tsx';
+import {useToast} from '@/hooks/use-toast';
+import {useConfirm} from '@/components/ui/confirm-provider';
+import {ManualBackupSection} from './ManualBackupSection';
+import {BackupHistoryTable} from './BackupHistoryTable';
+import type {BackupProvider} from '@/types/backupTypes.ts';
 
 function BackupSettings() {
     const settings = useLiveQuery(() => db.settings.get('default'));

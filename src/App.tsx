@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import {useState} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
 import Overview from './components/Dashboard/Overview';
 import CategoryManager from './components/Categories/CategoryManager';
 import CategoryGroupManager from './components/Categories/CategoryGroupManager';
@@ -11,14 +11,14 @@ import AllApiSettings from './components/Settings/AllApiSettings';
 import LogViewer from './components/Logs/LogViewer';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/ui/LoadingSpinner';
-import { db } from './services/db';
-import { ConfirmProvider } from "@/components/ui/confirm-provider";
-import { Toaster } from "@/components/ui/toaster";
-import { Button } from "@/components/ui/button";
-import { useAppInitialization } from './hooks/useAppInitialization';
-import { usePriceRefreshScheduler } from './hooks/usePriceRefreshScheduler';
-import { useExchangeRateScheduler } from './hooks/useExchangeRateScheduler';
-import { useBackupScheduler } from './hooks/useBackupScheduler';
+import {db} from './services/db';
+import {ConfirmProvider} from "@/components/ui/confirm-provider";
+import {Toaster} from "@/components/ui/toaster";
+import {Button} from "@/components/ui/button.tsx";
+import {useAppInitialization} from './hooks/useAppInitialization';
+import {usePriceRefreshScheduler} from './hooks/usePriceRefreshScheduler';
+import {useExchangeRateScheduler} from './hooks/useExchangeRateScheduler';
+import {useBackupScheduler} from './hooks/useBackupScheduler';
 
 type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import' | 'logs';
 

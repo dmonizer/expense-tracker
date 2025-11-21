@@ -1,6 +1,6 @@
-import { db } from './db';
-import type { ImportFormatDefinition } from '../types';
-import { logger } from '../utils';
+import {db} from './db';
+import type {ImportFormatDefinition} from '@/types';
+import {logger} from '@/utils';
 
 // Import format JSON files
 import swedbankEstoniaFormat from '../formats/Swedbank_Estonia_CSV.json';

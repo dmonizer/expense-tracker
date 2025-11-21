@@ -1,15 +1,15 @@
-import { useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import { matchesPattern } from '../../services/categorizer';
-import type { CategoryRule, Transaction } from '../../types';
-import { formatCurrency, formatDate } from '../../utils';
+import {useMemo} from 'react';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
+import {matchesPattern} from '@/services/categorizer.ts';
+import type {CategoryRule, Transaction} from '@/types';
+import {formatCurrency, formatDate} from '@/utils';
 
 interface RulePreviewProps {
   rule: CategoryRule;
 }
 
-function RulePreview({ rule }: RulePreviewProps) {
+function RulePreview({rule}: Readonly<RulePreviewProps>) {
   // Fetch recent transactions (last 100)
   const recentTransactions = useLiveQuery(
     () => db.transactions.orderBy('date').reverse().limit(100).toArray(),

@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../../utils';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
 import Papa from 'papaparse';
-import type { CSVSettings } from '../../../types';
-import type { WizardState } from './FormatWizardMain';
-import { Label } from '@/components/ui/label';
+import type {CSVSettings} from '@/types';
+import type {WizardState} from './FormatWizardMain';
+import {Label} from '@/components/ui/label';
 
 interface Step1Props {
   file: File;

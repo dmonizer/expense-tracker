@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
-import { logger } from '../../utils';
-import { db } from '../../services/db';
-import type { Account } from '../../types';
-import { formatCurrency } from '../../utils/currencyUtils';
-import { useConfirm } from "@/components/ui/confirm-provider";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {useEffect, useState} from 'react';
+import {logger} from '@/utils';
+import {db} from '@/services/db.ts';
+import type {Account} from '@/types';
+import {formatCurrency} from '@/utils/currencyUtils.ts';
+import {useConfirm} from "@/components/ui/confirm-provider";
+import {useToast} from "@/hooks/use-toast";
+import {Button} from '@/components/ui/button.tsx';
+import {Input} from '@/components/ui/input';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import type {Holding} from "@/types/holdingTypes.ts";
 
 interface HoldingsManagerProps {

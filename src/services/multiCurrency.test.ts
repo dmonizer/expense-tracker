@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { calculateAccountBalance, createJournalEntryFromTransaction } from './journalEntryManager';
-import { db } from './db';
-import { v4 as uuidv4 } from 'uuid';
-import type { Account, Transaction } from '../types';
+import {beforeEach, describe, expect, it} from '@jest/globals';
+import {calculateAccountBalance, createJournalEntryFromTransaction} from './journalEntryManager';
+import {db} from './db';
+import {v4 as uuidv4} from 'uuid';
+import type {Account, Transaction} from '@/types';
 
 describe('Multi-Currency Support', () => {
     beforeEach(async () => {

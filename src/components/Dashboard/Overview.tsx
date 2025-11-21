@@ -1,15 +1,14 @@
-import { useEffect, useState, useMemo } from 'react';
-import { logger } from '../../utils';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../../services/db';
-import { formatCurrency } from '../../utils';
+import {useEffect, useMemo, useState} from 'react';
+import {formatCurrency, logger} from '@/utils';
+import {useLiveQuery} from 'dexie-react-hooks';
+import {db} from '@/services/db.ts';
 import CategoryPieChart from './Charts/CategoryPieChart';
 import MonthlyBarChart from './Charts/MonthlyBarChart';
 import BalanceLine from './Charts/BalanceLine';
 import TransactionList from '../Transactions/TransactionList';
-import { FilterProvider, useFilters } from '../../contexts/FilterContext';
+import {FilterProvider, useFilters} from '../../contexts/FilterContext';
 import NetWorthSummary from './NetWorthSummary';
-import { Label } from '@/components/ui/label';
+import {Label} from '@/components/ui/label';
 
 function OverviewContent() {
   // Fetch all transactions using Dexie live query

@@ -1,23 +1,17 @@
-import { useEffect, useState } from 'react';
-import { formatCurrency, formatDate, isValidPattern, logger } from '../../utils';
-import { useLiveQuery } from 'dexie-react-hooks';
-import type { CategoryRule, Pattern, Transaction } from '../../types';
-import { db } from '../../services/db';
-import { getCategoryColor } from '../../utils/colorUtils';
-import { recategorizeAll } from '../../services/categorizer';
-import { mergePatterns } from '../../utils/patternMerger';
+import {useEffect, useState} from 'react';
+import {formatCurrency, formatDate, isValidPattern, logger} from '@/utils';
+import {useLiveQuery} from 'dexie-react-hooks';
+import type {CategoryRule, Pattern, Transaction} from '@/types';
+import {db} from '@/services/db.ts';
+import {getCategoryColor} from '@/utils/colorUtils.ts';
+import {recategorizeAll} from '@/services/categorizer.ts';
+import {mergePatterns} from '@/utils/patternMerger.ts';
 import PatternList from './PatternList';
 import RulePreview from './RulePreview';
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from '@/components/ui/label';
+import {useToast} from "@/hooks/use-toast";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Button} from "@/components/ui/button.tsx";
+import {Label} from '@/components/ui/label';
 
 interface UnifiedRuleEditorProps {
   mode: 'quick' | 'full';
