@@ -16,6 +16,7 @@ import { initializeBuiltInFormats } from './services/formatManager';
 import { db } from './services/db';
 import { refreshAllPrices } from './services/priceFetcher';
 import { refreshCommonExchangeRates } from './services/exchangeRateManager';
+import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler';
 import { migrateAllPatterns } from './utils/patternMigration';
 import { logger } from './utils';
 import { ConfirmProvider } from "@/components/ui/confirm-provider";
@@ -147,6 +148,26 @@ function App() {
       logger.info('[Auto-Refresh-Rates] Auto-refresh is disabled or not configured');
     }
   }, [isInitialized, settings]);
+
+  // Automatic backup scheduler (runs in Web Worker)
+  useEffect(() => {
+    if (!isInitialized || !settings) return;
+
+    if (settings.backupEnabled) {
+      logger.info('[Auto-Backup] Starting automatic backup scheduler');
+      const worker = startBackupScheduler(settings);
+
+      // Clean up worker on unmount or when settings change
+      return () => {
+        if (worker) {
+          logger.info('[Auto-Backup] Stopping automatic backup scheduler');
+          stopBackupScheduler(worker);
+        }
+      };
+    } else {
+      logger.info('[Auto-Backup] Automatic backups are disabled');
+    }
+  }, [isInitialized, settings?.backupEnabled, settings?.backupInterval, settings?.backupProviders]);
 
   const renderContent = () => {
     switch (activeTab) {

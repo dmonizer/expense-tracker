@@ -1,4 +1,4 @@
-import Dexie, {type Table} from 'dexie';
+import Dexie, { type Table } from 'dexie';
 import { logger } from '../utils';
 import type {
     Transaction,
@@ -11,9 +11,10 @@ import type {
     AccountBalance,
     ImportFormatDefinition, LogDefinition,
 } from '../types';
-import type {UserSettings} from "@/types/userSettingsTypes.ts";
-import type {Holding} from "@/types/holdingTypes.ts";
-import type {JournalEntry, Split} from "@/types/journalTypes.ts";
+import type { UserSettings } from "@/types/userSettingsTypes.ts";
+import type { Holding } from "@/types/holdingTypes.ts";
+import type { JournalEntry, Split } from "@/types/journalTypes.ts";
+import type { BackupRecord } from "@/types/backupTypes.ts";
 
 /**
  * Database class extending Dexie for IndexedDB operations
@@ -41,6 +42,9 @@ class ExpenseTrackerDatabase extends Dexie {
     importFormats!: Table<ImportFormatDefinition>;
 
     log!: Table<LogDefinition>
+
+    // Backup history
+    backupHistory!: Table<BackupRecord>;
 
     constructor() {
         super('ExpenseTrackerDB');
@@ -261,6 +265,36 @@ class ExpenseTrackerDatabase extends Dexie {
             importFormats: 'id, name, isDefault, isBuiltIn, createdAt',
             log: 'id, level, message, timestamp, source, data, error, stack, meta, context'
         });
+
+        // Version 13: Add backup history table
+        this.version(13).stores({
+            transactions: 'id, date, category, archiveId',
+            categoryRules: 'id, priority, type, name, groupId',
+            categoryGroups: 'id, priority, sortOrder',
+            importHistory: 'id, importDate',
+            settings: 'id',
+            accounts: 'id, name, type, currency, isActive, categoryRuleId, accountNumber',
+            journalEntries: 'id, date, status, importId, archiveId',
+            splits: 'id, journalEntryId, accountId, category',
+            exchangeRates: 'id, [fromCurrency+toCurrency], date, apiProvider',
+            accountBalances: '[accountId+currency+date], accountId',
+            holdings: 'id, accountId, symbol, type, priceApiProvider',
+            importFormats: 'id, name, isDefault, isBuiltIn, createdAt',
+            log: 'id, level, message, timestamp, source, data, error, stack, meta, context',
+            // Backup history
+            backupHistory: 'id, timestamp, provider, success, encrypted',
+        }).upgrade(async (tx) => {
+            // Initialize backup settings if not present
+            const settings = await tx.table('settings').get('default');
+            if (settings && !settings.backupEnabled) {
+                await tx.table('settings').update('default', {
+                    backupEnabled: false,
+                    backupInterval: 1440, // 24 hours default
+                    backupProviders: ['local'],
+                    backupIncludeLogs: false,
+                });
+            }
+        });
     }
 }
 
@@ -268,4 +302,4 @@ class ExpenseTrackerDatabase extends Dexie {
 export const db = new ExpenseTrackerDatabase();
 
 // Export the database class for testing or advanced usage
-export type {ExpenseTrackerDatabase};
+export type { ExpenseTrackerDatabase };

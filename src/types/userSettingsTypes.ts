@@ -1,5 +1,6 @@
 // User Settings Types
-import type {ExchangeRateApiProvider, PriceApiProvider} from "@/types/apiSettingsTypes.ts";
+import type { ExchangeRateApiProvider, PriceApiProvider } from "@/types/apiSettingsTypes.ts";
+import type { BackupProvider, CloudProviderConfig } from "@/types/backupTypes.ts";
 
 export interface UserSettings {
     id: string;
@@ -16,6 +17,15 @@ export interface UserSettings {
     exchangeRateAutoRefresh?: boolean;
     exchangeRateRefreshInterval?: number; // in minutes
     exchangeRateLastRefresh?: Date;
+    // Backup Settings
+    backupEnabled?: boolean;
+    backupInterval?: number; // in minutes
+    backupProviders?: BackupProvider[];
+    backupEncryptionKey?: string;
+    backupIncludeLogs?: boolean;
+    backupLastRun?: Date;
+    googleDriveConfig?: CloudProviderConfig;
+    dropboxConfig?: CloudProviderConfig;
     // Legacy fields (deprecated, keep for migration)
     priceApiProvider?: 'twelvedata' | 'alphavantage' | 'yahoo' | 'none';
     priceApiKey?: string;
