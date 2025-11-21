@@ -52,25 +52,28 @@ export async function loadFormatFromJSON(jsonString: string): Promise<string> {
         throw new Error('Invalid format data: missing required fields');
     }
 
-    // Check if format with same name already exists
-    const existing = await db.importFormats.where('name').equals(data.name).first();
-    if (existing) {
-        logger.info(`[FormatLoader] Format ${data.name} already exists, returning existing ID`);
-        return existing.id;
-    }
+    // Use transaction to prevent race conditions (e.g. double invocation)
+    return await db.transaction('rw', db.importFormats, async () => {
+        // Check if format with same name already exists
+        const existing = await db.importFormats.where('name').equals(data.name).first();
+        if (existing) {
+            logger.info(`[FormatLoader] Format ${data.name} already exists, returning existing ID`);
+            return existing.id;
+        }
 
-    const now = new Date();
-    const format: ImportFormatDefinition = {
-        ...data,
-        id: crypto.randomUUID(),
-        isBuiltIn: false,
-        isDefault: false,
-        createdAt: now,
-        updatedAt: now,
-    } as ImportFormatDefinition;
+        const now = new Date();
+        const format: ImportFormatDefinition = {
+            ...data,
+            id: crypto.randomUUID(),
+            isBuiltIn: false,
+            isDefault: false,
+            createdAt: now,
+            updatedAt: now,
+        } as ImportFormatDefinition;
 
-    await db.importFormats.add(format);
-    logger.info(`[FormatLoader] Loaded user format: ${data.name}`);
+        await db.importFormats.add(format);
+        logger.info(`[FormatLoader] Loaded user format: ${data.name}`);
 
-    return format.id;
+        return format.id;
+    });
 }
