@@ -21,7 +21,7 @@ export async function saveBackup(
 
         // Create file metadata
         const fileMetadata = {
-            name: `expense-tracker-backup-${metadata.timestamp.toISOString().split('T')[0]}.json`,
+            name: `PersonalExpenseTracker/expense-tracker-backup-${metadata.timestamp.toISOString().split('T')[0]}.json`,
             mimeType: 'application/json',
         };
 
