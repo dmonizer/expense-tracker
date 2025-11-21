@@ -52,6 +52,13 @@ export async function loadFormatFromJSON(jsonString: string): Promise<string> {
         throw new Error('Invalid format data: missing required fields');
     }
 
+    // Check if format with same name already exists
+    const existing = await db.importFormats.where('name').equals(data.name).first();
+    if (existing) {
+        logger.info(`[FormatLoader] Format ${data.name} already exists, returning existing ID`);
+        return existing.id;
+    }
+
     const now = new Date();
     const format: ImportFormatDefinition = {
         ...data,
