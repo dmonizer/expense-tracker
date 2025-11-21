@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../services/db';
-import { createBackup, restoreBackup, validateBackup } from '../../services/databaseBackup';
+import { restoreBackup, validateBackup } from '../../services/databaseBackup';
 import * as localProvider from '../../services/backupProviders/localBackupProvider';
 import * as googleDriveProvider from '../../services/backupProviders/googleDriveProvider';
 import * as dropboxProvider from '../../services/backupProviders/dropboxProvider';
@@ -12,25 +12,16 @@ import { logger } from '../../utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useConfirm } from '@/components/ui/confirm-provider';
+import { ManualBackupSection } from './ManualBackupSection';
+import { BackupHistoryTable } from './BackupHistoryTable';
 import type { BackupProvider } from '../../types/backupTypes';
 
 function BackupSettings() {
     const settings = useLiveQuery(() => db.settings.get('default'));
-    const backupHistory = useLiveQuery(() =>
-        db.backupHistory.orderBy('timestamp').reverse().limit(10).toArray()
-    );
-
     const { toast } = useToast();
     const { confirm } = useConfirm();
-
-    const [isBackingUp, setIsBackingUp] = useState(false);
     const [isRestoring, setIsRestoring] = useState(false);
-    const [manualProvider, setManualProvider] = useState<BackupProvider>('local');
-    const [manualEncrypt, setManualEncrypt] = useState(false);
-    const [manualEncryptionKey, setManualEncryptionKey] = useState('');
-    const [manualIncludeLogs, setManualIncludeLogs] = useState(false);
     const [showEncryptionKey, setShowEncryptionKey] = useState(false);
-    const [showManualEncryptionKey, setShowManualEncryptionKey] = useState(false);
 
     if (!settings) {
         return <div className="p-6">Loading settings...</div>;
@@ -134,83 +125,7 @@ function BackupSettings() {
         });
     };
 
-    // Manual backup
-    const handleManualBackup = async () => {
-        try {
-            setIsBackingUp(true);
 
-            // Validate encryption key if encryption is enabled
-            if (manualEncrypt && !manualEncryptionKey) {
-                toast({
-                    title: 'Encryption key required',
-                    description: 'Please enter an encryption key to create an encrypted backup',
-                    variant: 'destructive',
-                });
-                setIsBackingUp(false);
-                return;
-            }
-
-            const backupData = await createBackup(manualProvider, {
-                encrypt: manualEncrypt,
-                encryptionKey: manualEncrypt ? manualEncryptionKey : undefined,
-                includeLogs: manualIncludeLogs,
-            });
-
-            const dataString = JSON.stringify(backupData);
-
-            // Save using selected provider
-            switch (manualProvider) {
-                case 'local':
-                    await localProvider.saveBackup(dataString, backupData.metadata);
-                    break;
-                case 'googledrive':
-                    if (!settings.googleDriveConfig?.accessToken) {
-                        throw new Error('Google Drive not connected');
-                    }
-                    await googleDriveProvider.saveBackup(
-                        dataString,
-                        backupData.metadata,
-                        settings.googleDriveConfig.accessToken
-                    );
-                    break;
-                case 'dropbox':
-                    if (!settings.dropboxConfig?.accessToken) {
-                        throw new Error('Dropbox not connected');
-                    }
-                    await dropboxProvider.saveBackup(
-                        dataString,
-                        backupData.metadata,
-                        settings.dropboxConfig.accessToken
-                    );
-                    break;
-            }
-
-            // Record in history
-            await db.backupHistory.add({
-                id: backupData.metadata.id,
-                timestamp: new Date(),
-                provider: manualProvider,
-                success: true,
-                encrypted: manualEncrypt,
-                size: backupData.metadata.size,
-                metadata: backupData.metadata,
-            });
-
-            toast({
-                title: 'Backup created',
-                description: `Backup saved successfully to ${manualProvider}`,
-            });
-        } catch (error) {
-            logger.error('[BackupSettings] Manual backup failed:', error);
-            toast({
-                title: 'Backup failed',
-                description: error instanceof Error ? error.message : 'Failed to create backup',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsBackingUp(false);
-        }
-    };
 
     // Restore backup
     const handleRestoreBackup = async () => {
@@ -473,86 +388,7 @@ function BackupSettings() {
             </section>
 
             {/* Manual Backup */}
-            <section className="space-y-4">
-                <h2 className="text-xl font-semibold">Manual Backup</h2>
-
-                <div className="space-y-3">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Provider</label>
-                        <div className="space-y-2">
-                            {(['local', 'googledrive', 'dropbox'] as BackupProvider[]).map(provider => (
-                                <div key={provider} className="flex items-center space-x-2">
-                                    <input
-                                        type="radio"
-                                        id={`manual-${provider}`}
-                                        name="manual-provider"
-                                        checked={manualProvider === provider}
-                                        onChange={() => setManualProvider(provider)}
-                                        className="h-4 w-4"
-                                    />
-                                    <label htmlFor={`manual-${provider}`} className="text-sm capitalize">
-                                        {provider === 'googledrive' ? 'Google Drive' : provider}
-                                    </label>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="manual-include-logs"
-                            checked={manualIncludeLogs}
-                            onChange={(e) => setManualIncludeLogs(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <label htmlFor="manual-include-logs" className="text-sm">
-                            Include logs in backup
-                        </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            id="manual-encrypt"
-                            checked={manualEncrypt}
-                            onChange={(e) => setManualEncrypt(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <label htmlFor="manual-encrypt" className="text-sm">
-                            Encrypt backup
-                        </label>
-                    </div>
-
-                    {manualEncrypt && (
-                        <div>
-                            <label className="block text-sm font-medium mb-2">Encryption Key</label>
-                            <div className="flex space-x-2">
-                                <input
-                                    type={showManualEncryptionKey ? 'text' : 'password'}
-                                    value={manualEncryptionKey}
-                                    onChange={(e) => setManualEncryptionKey(e.target.value)}
-                                    placeholder="Enter encryption key"
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                                />
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setShowManualEncryptionKey(!showManualEncryptionKey)}
-                                >
-                                    {showManualEncryptionKey ? '🙈' : '👁️'}
-                                </Button>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Keep this key safe! You'll need it to restore this backup.
-                            </p>
-                        </div>
-                    )}
-
-                    <Button onClick={handleManualBackup} disabled={isBackingUp}>
-                        {isBackingUp ? 'Creating Backup...' : 'Create Backup Now'}
-                    </Button>
-                </div>
-            </section>
+            <ManualBackupSection settings={settings} />
 
             {/* Restore Backup */}
             <section className="space-y-4">
@@ -591,46 +427,7 @@ function BackupSettings() {
             </section>
 
             {/* Backup History */}
-            {backupHistory && backupHistory.length > 0 && (
-                <section className="space-y-4">
-                    <h2 className="text-xl font-semibold">Recent Backups</h2>
-
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-2 text-left">Timestamp</th>
-                                    <th className="px-4 py-2 text-left">Provider</th>
-                                    <th className="px-4 py-2 text-left">Size</th>
-                                    <th className="px-4 py-2 text-left">Status</th>
-                                    <th className="px-4 py-2 text-left">Encrypted</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {backupHistory.map(backup => (
-                                    <tr key={backup.id} className="border-t border-gray-200">
-                                        <td className="px-4 py-2">{new Date(backup.timestamp).toLocaleString()}</td>
-                                        <td className="px-4 py-2 capitalize">{backup.provider}</td>
-                                        <td className="px-4 py-2">
-                                            {backup.size ? `${(backup.size / 1024).toFixed(1)} KB` : '-'}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            {backup.success ? (
-                                                <span className="text-green-600">✓ Success</span>
-                                            ) : (
-                                                <span className="text-red-600">✗ Failed</span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            {backup.encrypted ? '🔒 Yes' : 'No'}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            )}
+            <BackupHistoryTable />
         </div>
     );
 }
