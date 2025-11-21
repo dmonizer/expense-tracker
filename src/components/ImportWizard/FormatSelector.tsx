@@ -1,10 +1,13 @@
+```
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils';
 import type { ImportFormatDefinition } from '../../types';
 import { getAllFormats } from '../../services/formatManager';
 import { detectFormat } from '../../services/formatDetector';
+import { loadFormatFromJSON } from '../../services/formatLoader';
 import FormatWizardMain from './FormatWizard/FormatWizardMain';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 interface FormatSelectorProps {
   file: File;
@@ -22,6 +25,8 @@ export default function FormatSelector({
   const [selectedFormatId, setSelectedFormatId] = useState<string>('');
   const [isDetecting, setIsDetecting] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     initializeFormats();
@@ -61,6 +66,44 @@ export default function FormatSelector({
 
   const handleCreateNew = () => {
     setShowWizard(true);
+  };
+
+  const handleImportFormat = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      setIsImporting(true);
+      try {
+        const text = await file.text();
+        const formatId = await loadFormatFromJSON(text);
+        
+        // Reload formats and select the new one
+        const formats = await getAllFormats();
+        setAllFormats(formats);
+        setSelectedFormatId(formatId);
+        
+        toast({
+          title: 'Format imported',
+          description: 'The format has been successfully imported',
+        });
+      } catch (error) {
+        logger.error('Format import error:', error);
+        toast({
+          title: 'Import failed',
+          description: error instanceof Error ? error.message : 'Failed to import format',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsImporting(false);
+      }
+    };
+    
+    input.click();
   };
 
   const handleWizardComplete = (format: ImportFormatDefinition) => {
@@ -226,6 +269,14 @@ export default function FormatSelector({
 
           <div className="flex gap-2">
             <button
+              onClick={handleImportFormat}
+              disabled={isImporting}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              {isImporting ? 'Importing...' : 'Import Format'}
+            </button>
+
+            <button
               onClick={handleCreateNew}
               className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-300 rounded-md hover:bg-blue-100"
             >
@@ -247,3 +298,4 @@ export default function FormatSelector({
     </div>
   );
 }
+```
