@@ -237,8 +237,10 @@ export async function restoreBackup(
  */
 export async function validateBackup(backupData: string): Promise<boolean> {
     try {
+        logger.info('[Backup] validating backup');
         // Try to parse as JSON
         const parsed = JSON.parse(backupData);
+        logger.info(`[Backup] parsed backup data (number of keys: ${parsed?.keys?.length}) for validation: encrypted=${parsed.encrypted ? 'yes' : 'no'}, encryption parameters=${parsed.iv && parsed.salt ? 'present' : 'absent'}`);
 
         // Check if it's an encrypted backup
         if (parsed.encrypted && parsed.iv && parsed.salt && parsed.metadata) {
@@ -252,11 +254,12 @@ export async function validateBackup(backupData: string): Promise<boolean> {
         }
 
         // Regular backup - validate it has table data
-        if (typeof parsed === 'object' && parsed !== null) {
+        if (typeof parsed === 'object') {
             // Check if it looks like database export
             const hasValidStructure = Object.values(parsed).every(
                 value => Array.isArray(value)
             );
+            logger.info(`[Backup] regular backup structure validation result: ${hasValidStructure ? 'valid' : 'invalid'}`);
             return hasValidStructure;
         }
 
