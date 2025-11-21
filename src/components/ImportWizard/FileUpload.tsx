@@ -120,6 +120,7 @@ function FileUpload() {
 
         if (detectedFormat) {
           logger.info('[FileUpload] Using detected format:', detectedFormat.name);
+          setSelectedFormatId(detectedFormat.id);
           await processFileWithFormat(fileToProcess, detectedFormat);
         } else {
           // No format detected, show selector with options
@@ -433,6 +434,15 @@ function FileUpload() {
       <PreviewTable
         transactions={allTransactions}
         duplicateIds={duplicateIds}
+        availableFormats={availableFormats}
+        selectedFormatId={selectedFormatId === 'autodetect' ? (availableFormats[0]?.id || '') : selectedFormatId}
+        onFormatChange={(formatId) => {
+          setSelectedFormatId(formatId);
+          const format = availableFormats.find(f => f.id === formatId);
+          if (format && file) {
+            processFileWithFormat(file, format);
+          }
+        }}
         onConfirm={handleConfirmImport}
         onCancel={handleCancel}
       />

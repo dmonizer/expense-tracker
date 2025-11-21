@@ -1,14 +1,26 @@
-import type { Transaction } from '../../types';
+import type { Transaction, ImportFormatDefinition } from '../../types';
 import { format } from 'date-fns';
+import { Label } from '@/components/ui/label';
 
 interface PreviewTableProps {
   transactions: Transaction[];
   duplicateIds: Set<string>;
+  availableFormats: ImportFormatDefinition[];
+  selectedFormatId: string;
+  onFormatChange: (formatId: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-function PreviewTable({ transactions, duplicateIds, onConfirm, onCancel }: Readonly<PreviewTableProps>) {
+function PreviewTable({
+  transactions,
+  duplicateIds,
+  availableFormats,
+  selectedFormatId,
+  onFormatChange,
+  onConfirm,
+  onCancel
+}: Readonly<PreviewTableProps>) {
   // Show first 20 transactions for preview
   const previewTransactions = transactions.slice(0, 20);
 
@@ -23,9 +35,30 @@ function PreviewTable({ transactions, duplicateIds, onConfirm, onCancel }: Reado
     <div className="flex flex-col h-full">
       {/* Header with Summary */}
       <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Preview Import
-        </h2>
+        <div className="flex justify-between items-start mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Preview Import
+          </h2>
+
+          {/* Format Selection */}
+          <div className="flex items-center gap-3">
+            <Label htmlFor="preview-format-select" className="text-sm font-medium text-gray-700">
+              Format:
+            </Label>
+            <select
+              id="preview-format-select"
+              value={selectedFormatId}
+              onChange={(e) => onFormatChange(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+            >
+              {availableFormats.map(format => (
+                <option key={format.id} value={format.id}>
+                  {format.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="bg-blue-50 rounded-lg p-4">
@@ -100,11 +133,10 @@ function PreviewTable({ transactions, duplicateIds, onConfirm, onCancel }: Reado
                       {formatCurrency(transaction.amount, transaction.currency)}
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        transaction.type === 'credit'
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.type === 'credit'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
-                      }`}>
+                        }`}>
                         {transaction.type === 'credit' ? 'Income' : 'Expense'}
                       </span>
                     </td>
@@ -158,11 +190,10 @@ function PreviewTable({ transactions, duplicateIds, onConfirm, onCancel }: Reado
         <button
           onClick={onConfirm}
           disabled={newCount === 0}
-          className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-            newCount === 0
+          className={`px-6 py-2 rounded-lg font-medium transition-colors ${newCount === 0
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
-          }`}
+            }`}
         >
           Import {newCount} Transaction{newCount !== 1 ? 's' : ''}
         </button>
