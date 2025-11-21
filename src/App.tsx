@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import Overview from './components/Dashboard/Overview';
 import CategoryManager from './components/Categories/CategoryManager';
@@ -11,17 +11,14 @@ import AllApiSettings from './components/Settings/AllApiSettings';
 import LogViewer from './components/Logs/LogViewer';
 import ErrorBoundary from './components/ErrorBoundary';
 import LoadingSpinner from './components/ui/LoadingSpinner';
-import { initializeDefaults } from './services/seedData';
-import { initializeBuiltInFormats } from './services/formatManager';
 import { db } from './services/db';
-import { refreshAllPrices } from './services/priceFetcher';
-import { refreshCommonExchangeRates } from './services/exchangeRateManager';
-import { startBackupScheduler, stopBackupScheduler } from './services/backupScheduler';
-import { migrateAllPatterns } from './utils/patternMigration';
-import { logger } from './utils';
 import { ConfirmProvider } from "@/components/ui/confirm-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
+import { useAppInitialization } from './hooks/useAppInitialization';
+import { usePriceRefreshScheduler } from './hooks/usePriceRefreshScheduler';
+import { useExchangeRateScheduler } from './hooks/useExchangeRateScheduler';
+import { useBackupScheduler } from './hooks/useBackupScheduler';
 
 type TabType = 'dashboard' | 'categories' | 'groups' | 'accounts' | 'journal' | 'rates' | 'settings' | 'import' | 'logs';
 
@@ -45,129 +42,17 @@ const tabs: Tab[] = [
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [initError, setInitError] = useState<string | null>(null);
 
   // Watch settings for changes (live query)
   const settings = useLiveQuery(() => db.settings.get('default'));
 
-  // Initialize default groups and rules on first load
-  useEffect(() => {
-    const initialize = async () => {
-      try {
-        // Initialize default categories/groups
-        const result = await initializeDefaults();
-        if (!result.success) {
-          logger.warn('Failed to initialize defaults:', result.message);
-          setInitError(result.message);
-        }
+  // Initialize application (defaults, formats, migrations)
+  const { isInitialized, error: initError } = useAppInitialization();
 
-        // Initialize built-in import formats
-        await initializeBuiltInFormats();
-
-        // Run pattern migration to update legacy patterns to new multi-field format
-        const migrationResult = await migrateAllPatterns();
-        logger.info(`Pattern migration: ${migrationResult.migrated}/${migrationResult.total} patterns migrated`);
-        if (migrationResult.errors.length > 0) {
-          logger.warn('Pattern migration had errors:', migrationResult.errors);
-        }
-      } catch (error) {
-        logger.error('Error during initialization:', error);
-        setInitError(error instanceof Error ? error.message : 'Unknown error');
-      } finally {
-        setIsInitialized(true);
-      }
-    };
-
-    initialize();
-  }, []);
-
-  // Automatic price refresh scheduler (runs in background, reacts to settings changes)
-  useEffect(() => {
-    if (!isInitialized || !settings) return;
-
-    // Check if auto-refresh is enabled and at least one provider is enabled
-    const hasEnabledProviders = settings.priceApiProviders?.some(p => p.enabled) ||
-      (settings.priceApiProvider && settings.priceApiProvider !== 'none' && settings.priceApiKey); // Legacy support
-
-    if (settings.priceApiAutoRefresh && hasEnabledProviders) {
-      const intervalMs = (settings.priceApiRefreshInterval || 60) * 60 * 1000;
-
-      logger.info(`[Auto-Refresh] Setting up automatic price refresh every ${settings.priceApiRefreshInterval} minutes`);
-
-      // Set up interval for automatic refresh
-      const intervalId = setInterval(async () => {
-        try {
-          logger.info('[Auto-Refresh] Running automatic price refresh...');
-          const results = await refreshAllPrices();
-          logger.info(`[Auto-Refresh] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
-        } catch (error) {
-          logger.error('[Auto-Refresh] Failed:', error);
-        }
-      }, intervalMs);
-
-      // Clean up interval on unmount or when settings change
-      return () => {
-        logger.info('[Auto-Refresh] Cleaning up automatic price refresh interval');
-        clearInterval(intervalId);
-      };
-    } else {
-      logger.info('[Auto-Refresh] Auto-refresh is disabled or not configured');
-    }
-  }, [isInitialized, settings]);
-
-  // Automatic exchange rate refresh scheduler (runs in background, reacts to settings changes)
-  useEffect(() => {
-    if (!isInitialized || !settings) return;
-
-    // Check if auto-refresh is enabled and at least one provider is enabled
-    const hasEnabledProviders = settings.exchangeRateApiProviders?.some(p => p.enabled);
-
-    if (settings.exchangeRateAutoRefresh && hasEnabledProviders) {
-      const intervalMs = (settings.exchangeRateRefreshInterval || 1440) * 60 * 1000;
-
-      logger.info(`[Auto-Refresh-Rates] Setting up automatic exchange rate refresh every ${settings.exchangeRateRefreshInterval} minutes`);
-
-      // Set up interval for automatic refresh
-      const intervalId = setInterval(async () => {
-        try {
-          logger.info('[Auto-Refresh-Rates] Running automatic exchange rate refresh...');
-          const results = await refreshCommonExchangeRates();
-          logger.info(`[Auto-Refresh-Rates] Completed: ${results.success}/${results.total} updated, ${results.failed} failed`);
-        } catch (error) {
-          logger.error('[Auto-Refresh-Rates] Failed:', error);
-        }
-      }, intervalMs);
-
-      // Clean up interval on unmount or when settings change
-      return () => {
-        logger.info('[Auto-Refresh-Rates] Cleaning up automatic exchange rate refresh interval');
-        clearInterval(intervalId);
-      };
-    } else {
-      logger.info('[Auto-Refresh-Rates] Auto-refresh is disabled or not configured');
-    }
-  }, [isInitialized, settings]);
-
-  // Automatic backup scheduler (runs in Web Worker)
-  useEffect(() => {
-    if (!isInitialized || !settings) return;
-
-    if (settings.backupEnabled) {
-      logger.info('[Auto-Backup] Starting automatic backup scheduler');
-      const worker = startBackupScheduler(settings);
-
-      // Clean up worker on unmount or when settings change
-      return () => {
-        if (worker) {
-          logger.info('[Auto-Backup] Stopping automatic backup scheduler');
-          stopBackupScheduler(worker);
-        }
-      };
-    } else {
-      logger.info('[Auto-Backup] Automatic backups are disabled');
-    }
-  }, [isInitialized, settings?.backupEnabled, settings?.backupInterval, settings?.backupProviders]);
+  // Set up automatic schedulers
+  usePriceRefreshScheduler(settings, isInitialized);
+  useExchangeRateScheduler(settings, isInitialized);
+  useBackupScheduler(settings, isInitialized);
 
   const renderContent = () => {
     switch (activeTab) {
