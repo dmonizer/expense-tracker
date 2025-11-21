@@ -20,6 +20,7 @@ export const CATEGORIZATION = {
   MIN_CONFIDENCE_THRESHOLD: 50,
 } as const;
 
+export const MAX_CATEGORY_GROUPS = 10;
 // Special IDs
 export const UNCATEGORIZED_GROUP_ID = 'uncategorized';
 

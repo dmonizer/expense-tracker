@@ -5,6 +5,7 @@ import type { CategoryRule, Pattern, Transaction } from '../../types';
 import { db } from '../../services/db';
 import { getCategoryColor } from '../../utils/colorUtils';
 import { recategorizeAll } from '../../services/categorizer';
+import { mergePatterns } from '../../utils/patternMerger';
 import PatternList from './PatternList';
 import RulePreview from './RulePreview';
 import { useToast } from "@/hooks/use-toast";
@@ -31,7 +32,6 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
   const [expandedPatternIndex, setExpandedPatternIndex] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedFields, setSelectedFields] = useState<string[]>(['payee']);
 
   // Quick mode specific state
   const [selectedCategory, setSelectedCategory] = useState(transaction?.category || '');
@@ -56,28 +56,73 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
     }
   }, [transaction]);
 
+  // Load existing patterns when selected category changes in quick mode
+  useEffect(() => {
+    const loadCategoryPatterns = async () => {
+      if (mode === 'quick' && selectedCategory && allRules) {
+        const categoryRule = allRules.find(r => r.name === selectedCategory);
+        if (categoryRule) {
+          setRule(prev => ({
+            ...prev,
+            patterns: categoryRule.patterns,
+            name: categoryRule.name,
+            type: categoryRule.type,
+            patternLogic: categoryRule.patternLogic,
+            priority: categoryRule.priority,
+          }));
+        } else {
+          // Reset to empty patterns if category not found
+          setRule(prev => ({
+            ...prev,
+            patterns: [],
+            name: selectedCategory,
+          }));
+        }
+      } else if (mode === 'quick' && !selectedCategory) {
+        // Reset patterns when uncategorized is selected
+        setRule(prev => ({
+          ...prev,
+          patterns: [],
+          name: '',
+        }));
+      }
+    };
+
+    loadCategoryPatterns();
+  }, [mode, selectedCategory, allRules]);
+
   const handleAddPattern = () => {
-    const newPatterns: Pattern[] = selectedFields.map(field => ({
-      fields: [field],
+    const newPattern: Pattern = {
+      fields: ['payee'],
       matchType: 'wordlist' as const,
       words: [],
       caseSensitive: false,
       weight: 5,
-    }));
+    };
+
+    // Merge the new pattern with existing patterns
+    const mergedPatterns = mergePatterns(rule.patterns, [newPattern]);
 
     setRule({
       ...rule,
-      patterns: [...rule.patterns, ...newPatterns],
+      patterns: mergedPatterns,
     });
 
-    // Expand the first new pattern
-    setExpandedPatternIndex(rule.patterns.length);
+    // Expand the last pattern (which is either the new one or the merged one)
+    setExpandedPatternIndex(mergedPatterns.length - 1);
   };
 
   const handlePatternsChange = (patterns: Pattern[]) => {
+    // When patterns are updated, ensure they are merged if applicable
+    // This handles cases where user edits a pattern's fields to match another pattern
+    const mergedPatterns = patterns.reduce((acc, pattern, index) => {
+      if (index === 0) return [pattern];
+      return mergePatterns(acc, [pattern]);
+    }, [] as Pattern[]);
+
     setRule({
       ...rule,
-      patterns,
+      patterns: mergedPatterns,
     });
   };
 
@@ -154,9 +199,9 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
             .first();
 
           if (categoryRule) {
-            // Update existing rule with new patterns
+            // Update existing rule with new patterns (merge intelligently)
             await db.categoryRules.update(categoryRule.id, {
-              patterns: [...categoryRule.patterns, ...rule.patterns],
+              patterns: mergePatterns(categoryRule.patterns, rule.patterns),
               updatedAt: new Date(),
             });
           }
@@ -271,21 +316,7 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                   </button>
                 </div>
 
-                {!isCreatingNew ? (
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={isSaving}
-                  >
-                    <option value="">Uncategorized</option>
-                    {allRules?.map((r) => (
-                      <option key={r.id} value={r.name}>
-                        {r.name} ({r.type})
-                      </option>
-                    ))}
-                  </select>
-                ) : (
+                {isCreatingNew ? (
                   <div className="space-y-3 p-4 bg-gray-50 rounded-md border border-gray-200">
                     <div>
                       <Label className="block text-sm font-medium text-gray-700 mb-1">
@@ -365,6 +396,20 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                       Create Category
                     </button>
                   </div>
+                ) : (
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={isSaving}
+                  >
+                    <option value="">Uncategorized</option>
+                    {allRules?.map((r) => (
+                      <option key={r.id} value={r.name}>
+                        {r.name} ({r.type})
+                      </option>
+                    ))}
+                  </select>
                 )}
 
                 {/* Ignore checkbox */}
@@ -556,33 +601,6 @@ function UnifiedRuleEditor({ mode, rule: initialRule, transaction, onSave, onCan
                   >
                     + Add Pattern
                   </button>
-                </div>
-
-                {/* Field Selection Hint */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <Label className="block text-sm font-medium text-gray-700 mb-2">
-                    New patterns will match against:
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {['payee', 'description', 'accountNumber', 'transactionType', 'currency', 'archiveId'].map(field => (
-                      <Label key={field} className="flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedFields.includes(field)}
-                          onChange={() => {
-                            const newFields = selectedFields.includes(field)
-                              ? selectedFields.filter(f => f !== field)
-                              : [...selectedFields, field];
-                            if (newFields.length > 0) {
-                              setSelectedFields(newFields);
-                            }
-                          }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-900 capitalize">{field}</span>
-                      </Label>
-                    ))}
-                  </div>
                 </div>
 
                 <PatternList

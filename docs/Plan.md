@@ -619,7 +619,7 @@ src/
 │   │   └── TransactionEditor.tsx
 │   ├── Categories/
 │   │   ├── CategoryManager.tsx      // List all rules
-│   │   ├── RuleEditor.tsx           // Main editor modal
+│   │   ├── RuleEditor.2tsx           // Main editor modal
 │   │   ├── PatternEditor.tsx        // Individual pattern editor
 │   │   ├── WordListEditor.tsx       // Word list UI
 │   │   ├── RegexEditor.tsx          // Regex UI
@@ -820,7 +820,7 @@ Previously, category rules used only OR logic (match if ANY pattern matches). Th
 - `src/services/db.ts` - Schema v3 with migration from v2
 - `src/services/categorizer.ts` - Updated calculateMatchScore() with AND logic
 - `src/services/seedData.ts` - Added patternLogic: 'OR' to all 16 default rules
-- `src/components/Categories/RuleEditor.tsx` - Added logic toggle UI (+48 lines)
+- `src/components/Categories/RuleEditor.2tsx` - Added logic toggle UI (+48 lines)
 - `src/components/Categories/CategoryManager.tsx` - Added AND badge (+7 lines)
 - `src/components/Categories/RulePreview.tsx` - Updated to show logic and respect it (+30 lines)
 - `src/components/Transactions/TransactionEditor.tsx` - Added patternLogic to new rules (+2 lines)
@@ -1115,7 +1115,7 @@ Implement import in a way that it would be easy and clean to add different forma
 
 **Categories (6 components):**
 - `Categories/CategoryManager.tsx` - Rule list with sort/filter
-- `Categories/RuleEditor.tsx` - Rule creation/editing modal
+- `Categories/RuleEditor.2tsx` - Rule creation/editing modal
 - `Categories/PatternEditor.tsx` - Pattern editor component
 - `Categories/WordListEditor.tsx` - Word list UI
 - `Categories/RegexEditor.tsx` - Regex editor with validation

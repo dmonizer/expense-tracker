@@ -9,7 +9,7 @@ import LoadingSpinner from '../ui/LoadingSpinner';
 import EmptyState, { DocumentIcon } from '../ui/EmptyState';
 import { useTransactionFilters } from '../../hooks/useTransactionFilters';
 import { usePagination } from '../../hooks/usePagination';
-import { PAGINATION } from '../../constants';
+import { PAGINATION } from '../../constants/technicalConstants.ts';
 import { Button } from '@/components/ui/button';
 
 interface TransactionListProps {

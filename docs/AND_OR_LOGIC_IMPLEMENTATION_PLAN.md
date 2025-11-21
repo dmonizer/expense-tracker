@@ -213,7 +213,7 @@ export function calculateMatchScore(transaction: Transaction, rule: CategoryRule
 
 #### 3.1 Rule Editor - Add Logic Toggle
 
-**File:** `src/components/Categories/RuleEditor.tsx`
+**File:** `src/components/Categories/RuleEditor.2tsx`
 
 **Location:** Add after "Type" selector, before "Priority" slider
 
@@ -607,7 +607,7 @@ Example: payee NOT contains "Internal Transfer"
 - `src/types/index.ts` - Added patternLogic field
 - `src/services/db.ts` - Schema v3 with migration
 - `src/services/categorizer.ts` - AND logic implementation
-- `src/components/Categories/RuleEditor.tsx` - Logic toggle UI
+- `src/components/Categories/RuleEditor.2tsx` - Logic toggle UI
 - `src/components/Categories/CategoryManager.tsx` - AND badge display
 
 **Key Features:**
@@ -706,7 +706,7 @@ Example: payee NOT contains "Internal Transfer"
 4. `src/services/seedData.ts` - Default rules (+16 lines)
 
 **UI Components:**
-5. `src/components/Categories/RuleEditor.tsx` - Logic toggle (+48 lines)
+5. `src/components/Categories/RuleEditor.2tsx` - Logic toggle (+48 lines)
 6. `src/components/Categories/CategoryManager.tsx` - AND badge (+7 lines)
 7. `src/components/Categories/RulePreview.tsx` - Logic display (+30 lines)
 8. `src/components/Transactions/TransactionEditor.tsx` - Default logic (+2 lines)

@@ -7,7 +7,7 @@ import { detectFormat } from '../../services/formatDetector';
 import PreviewTable from './PreviewTable';
 import ImportSummary from './ImportSummary';
 import FormatSelector from './FormatSelector';
-import { FILE_UPLOAD } from '../../constants';
+import { FILE_UPLOAD } from '../../constants/technicalConstants.ts';
 import * as React from "react";
 import { Label } from '@/components/ui/label';
 

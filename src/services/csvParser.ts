@@ -312,7 +312,7 @@ function applyColumnMapping(
         }
     } catch (error) {
         throw new Error(
-            `Field "${mapping.targetField}": ${error instanceof Error ? error.message : 'Transform error'}`
+            `Target field "${mapping.targetField}", source column: "${mapping.sourceColumn}": ${error instanceof Error ? error.message : 'Transform error'}`
         );
     }
 }

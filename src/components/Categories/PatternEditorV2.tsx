@@ -152,21 +152,19 @@ function PatternEditorV2({
           <div className="flex gap-2">
             <button
               onClick={() => handleMatchTypeChange('wordlist')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                pattern.matchType === 'wordlist'
+              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${pattern.matchType === 'wordlist'
                   ? 'bg-blue-500 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Word List
             </button>
             <button
               onClick={() => handleMatchTypeChange('regex')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                pattern.matchType === 'regex'
+              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${pattern.matchType === 'regex'
                   ? 'bg-blue-500 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
+                }`}
             >
               Regex
             </button>
@@ -213,6 +211,77 @@ function PatternEditorV2({
             <WordListEditor pattern={pattern} onChange={onChange} />
           ) : (
             <RegexEditor pattern={pattern} onChange={onChange} />
+          )}
+        </div>
+
+        {/* Amount Condition */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="amount-condition-enabled"
+              checked={!!pattern.amountCondition}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  onChange({
+                    ...pattern,
+                    amountCondition: {
+                      operator: 'lte',
+                      value: 0,
+                    },
+                  });
+                } else {
+                  const { amountCondition, ...rest } = pattern;
+                  onChange(rest as Pattern);
+                }
+              }}
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <Label htmlFor="amount-condition-enabled" className="text-sm font-medium text-gray-700 cursor-pointer">
+              Add amount condition
+            </Label>
+          </div>
+
+          {pattern.amountCondition && (
+            <div className="flex gap-2 items-center pl-6">
+              <Label className="text-sm text-gray-700">Amount</Label>
+              <select
+                value={pattern.amountCondition.operator}
+                onChange={(e) => {
+                  onChange({
+                    ...pattern,
+                    amountCondition: {
+                      ...pattern.amountCondition!,
+                      operator: e.target.value as 'lt' | 'lte' | 'eq' | 'gte' | 'gt',
+                    },
+                  });
+                }}
+                className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="lt">&lt; (less than)</option>
+                <option value="lte">≤ (less than or equal)</option>
+                <option value="eq">= (equal to)</option>
+                <option value="gte">≥ (greater than or equal)</option>
+                <option value="gt">&gt; (greater than)</option>
+              </select>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={pattern.amountCondition.value}
+                onChange={(e) => {
+                  onChange({
+                    ...pattern,
+                    amountCondition: {
+                      ...pattern.amountCondition!,
+                      value: parseFloat(e.target.value) || 0,
+                    },
+                  });
+                }}
+                className="w-32 px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="0.00"
+              />
+            </div>
           )}
         </div>
 

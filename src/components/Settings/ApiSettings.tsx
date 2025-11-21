@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils';
 import { db } from '../../services/db';
-import type { UserSettings, PriceApiProvider, PriceApiProviderType } from '../../types';
+import type { PriceApiProvider, PriceApiProviderType } from '../../types';
 import { refreshAllPrices } from '../../services/priceFetcher';
 import { Label } from '@/components/ui/label';
+import type {UserSettings} from "@/types/userSettingsTypes.ts";
 
 const PROVIDER_INFO: Record<PriceApiProviderType, { name: string; url: string; limits: string }> = {
   twelvedata: {

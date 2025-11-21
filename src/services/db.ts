@@ -5,16 +5,15 @@ import type {
     CategoryRule,
     CategoryGroup,
     ImportRecord,
-    UserSettings,
     Pattern,
     Account,
-    JournalEntry,
-    Split,
     ExchangeRate,
     AccountBalance,
-    Holding,
     ImportFormatDefinition, LogDefinition,
 } from '../types';
+import type {UserSettings} from "@/types/userSettingsTypes.ts";
+import type {Holding} from "@/types/holdingTypes.ts";
+import type {JournalEntry, Split} from "@/types/journalTypes.ts";
 
 /**
  * Database class extending Dexie for IndexedDB operations

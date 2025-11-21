@@ -19,7 +19,7 @@ import { db } from '../../../services/db';
 import { format, parse, eachMonthOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useFilters } from '../../../contexts/FilterContext';
-import { UNCATEGORIZED_GROUP_ID } from '../../../constants';
+import { UNCATEGORIZED_GROUP_ID } from '../../../constants/technicalConstants.ts';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 

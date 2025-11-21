@@ -201,7 +201,7 @@ export function isValidPattern(pattern: Partial<Pattern>): boolean {
 
   // Validate fields array (support both new and legacy format)
   const validFieldNames = ['payee', 'description', 'accountNumber', 'transactionType', 'currency', 'archiveId'];
-  
+
   // Check for new format (fields array)
   if (pattern.fields) {
     if (!Array.isArray(pattern.fields) || pattern.fields.length === 0) {
@@ -210,13 +210,13 @@ export function isValidPattern(pattern: Partial<Pattern>): boolean {
     if (!pattern.fields.every(f => validFieldNames.includes(f as string))) {
       return false;
     }
-  } 
+  }
   // Check for legacy format (single field)
   else if (pattern.field) {
     if (!validFieldNames.includes(pattern.field as string)) {
       return false;
     }
-  } 
+  }
   // No field specification at all
   else {
     return false;
@@ -229,6 +229,17 @@ export function isValidPattern(pattern: Partial<Pattern>): boolean {
 
   if (!isValidNumber(pattern.weight) || (pattern.weight as number) <= 0) {
     return false;
+  }
+
+  // Validate amount condition if present
+  if (pattern.amountCondition) {
+    const validOperators = ['lt', 'lte', 'eq', 'gte', 'gt'];
+    if (!validOperators.includes(pattern.amountCondition.operator)) {
+      return false;
+    }
+    if (!isValidNumber(pattern.amountCondition.value) || pattern.amountCondition.value < 0) {
+      return false;
+    }
   }
 
   if (pattern.matchType === 'wordlist') {

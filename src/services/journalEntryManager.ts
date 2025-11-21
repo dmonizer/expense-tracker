@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { db } from './db';
-import type { Transaction, JournalEntry, Split, Account, CategoryRule } from '../types';
+import type { Transaction, Account, CategoryRule } from '../types';
 import { logger } from '../utils';
 import {
   ensureExpenseAccountForCategory,
@@ -8,6 +8,7 @@ import {
   getUncategorizedExpenseAccount,
   getUncategorizedIncomeAccount,
 } from './accountManager';
+import type {JournalEntry, Split} from "@/types/journalTypes.ts";
 
 /**
  * Journal Entry Manager - Handles creation of journal entries in double-entry format

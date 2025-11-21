@@ -1,0 +1,8 @@
+Kliendi konto;Reatüüp;Kuupäev;Saaja/Maksja;Selgitus;Summa;Valuuta;Deebet/Kreedit;Arhiveerimistunnus;Tehingu tüüp;Viitenumber;Dokumendi number
+EE1234567890;20;01.01.2024;Grocery Store;Weekly groceries;45,50;EUR;D;ARCH001;Makse;;
+EE1234567890;20;02.01.2024;Employer;January Salary;2500,00;EUR;K;ARCH002;Palk;;
+EE1234567890;20;05.01.2024;Amazon US;Books and supplies;89,99;USD;D;ARCH003;Makse;;
+EE1234567890;20;08.01.2024;London Hotel;Hotel stay;250,00;GBP;D;ARCH004;Makse;;
+EE1234567890;20;10.01.2024;Currency Exchange;USD to EUR;120,00;USD;K;ARCH005;Valuutavahetus;;
+EE1234567890;20;15.01.2024;Stockholm Restaurant;Dinner;450,00;SEK;D;ARCH006;Makse;;
+EE1234567890;20;20.01.2024;Freelance Client;Project payment;500,00;USD;K;ARCH007;Teenustasu;;

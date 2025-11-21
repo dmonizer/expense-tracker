@@ -1,6 +1,6 @@
 import type { Transaction, CategoryRule, Pattern } from '../types';
 import { db } from './db';
-import { CATEGORIZATION } from '../constants';
+import { CATEGORIZATION } from '../constants/technicalConstants.ts';
 import { logger } from '../utils';
 
 /**
@@ -36,7 +36,7 @@ export function matchesPattern(transaction: Transaction, pattern: Pattern): bool
   const fields = pattern.fields || (pattern.field ? [pattern.field] : ['payee']);
 
   // Check if ANY of the specified fields match (OR logic across fields)
-  return fields.some(field => {
+  const fieldMatches = fields.some(field => {
     const fieldValue = getTransactionFieldValue(transaction, field);
 
     if (pattern.matchType === 'wordlist') {
@@ -85,6 +85,35 @@ export function matchesPattern(transaction: Transaction, pattern: Pattern): bool
       }
     }
   });
+
+  // If field doesn't match, pattern doesn't match
+  if (!fieldMatches) {
+    return false;
+  }
+
+  // Check amount condition if present
+  if (pattern.amountCondition) {
+    const amount = Math.abs(transaction.amount);
+    const { operator, value } = pattern.amountCondition;
+
+    switch (operator) {
+      case 'lt':
+        return amount < value;
+      case 'lte':
+        return amount <= value;
+      case 'eq':
+        return amount === value;
+      case 'gte':
+        return amount >= value;
+      case 'gt':
+        return amount > value;
+      default:
+        return false;
+    }
+  }
+
+  // Field matches and no amount condition (or amount condition matches)
+  return true;
 }
 
 /**

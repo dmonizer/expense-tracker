@@ -37,7 +37,7 @@ src/
 │   ├── validators.ts          # Input validation
 │   └── colorUtils.ts          # Color generation
 ├── types/index.ts         # TypeScript interfaces
-├── constants.ts           # Application constants
+├── technicalConstants.ts           # Application constants
 └── App.tsx               # Main application shell
 
 ## Key Features
@@ -76,7 +76,7 @@ src/
 - Centralized group filtering (handles UNCATEGORIZED_GROUP_ID)
 - Reusable filter functions across analytics & components
 
-✅ **Created constants file** (`constants.ts`)
+✅ **Created constants file** (`technicalConstants.ts`)
 - Pagination, file upload, categorization constants
 - Eliminated magic numbers
 

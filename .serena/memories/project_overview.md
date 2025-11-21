@@ -53,7 +53,7 @@ src/
 ├── contexts/        # React contexts (FilterContext)
 ├── utils/           # Utility functions (filters, formatters, validators)
 ├── hooks/           # Custom React hooks
-├── constants.ts     # Application constants
+├── technicalConstants.ts     # Application constants
 ├── App.tsx          # Main application component
 └── main.tsx         # Application entry point
 ```

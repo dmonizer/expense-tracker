@@ -7,7 +7,7 @@ import {
     GROUP_ID_OPTIONAL,
     GROUP_ID_SAVINGS,
     GROUP_ID_INCOME
-} from "../constants.ts";
+} from "../constants/technicalConstants.ts";
 
 /**
  * Default category groups to be initialized on first app launch

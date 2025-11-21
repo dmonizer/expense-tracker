@@ -24,7 +24,7 @@ function PatternList({
   showSuggestions = false,
   showConflicts = false,
   showPreview = false,
-}: PatternListProps) {
+}: Readonly<PatternListProps>) {
   const handlePatternUpdate = (index: number, pattern: Pattern) => {
     const newPatterns = [...patterns];
     newPatterns[index] = pattern;

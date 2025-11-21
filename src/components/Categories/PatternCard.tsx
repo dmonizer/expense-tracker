@@ -68,6 +68,17 @@ function PatternCard({ pattern, index, isExpanded, onToggleExpand, onDelete }: P
                 <span className="font-medium">Pattern:</span> {patternSummary}
               </div>
             )}
+            {pattern.amountCondition && (
+              <div className="text-xs text-gray-600 mt-1">
+                <span className="font-medium">Amount:</span>{' '}
+                {pattern.amountCondition.operator === 'lt' && '<'}
+                {pattern.amountCondition.operator === 'lte' && '≤'}
+                {pattern.amountCondition.operator === 'eq' && '='}
+                {pattern.amountCondition.operator === 'gte' && '≥'}
+                {pattern.amountCondition.operator === 'gt' && '>'}
+                {' '}{pattern.amountCondition.value}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2 ml-3">
             <Button

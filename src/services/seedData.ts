@@ -11,7 +11,7 @@ import {
     GROUP_ID_OPTIONAL,
     GROUP_ID_SAVINGS,
     GROUP_ID_INCOME
-} from '../constants';
+} from '../constants/technicalConstants.ts';
 
 // Re-export for backwards compatibility
 export {

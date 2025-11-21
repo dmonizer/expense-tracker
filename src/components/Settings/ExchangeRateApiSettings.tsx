@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { logger } from '../../utils';
 import { db } from '../../services/db';
-import type { UserSettings, ExchangeRateApiProvider, ExchangeRateApiProviderType } from '../../types';
+import type { ExchangeRateApiProvider, ExchangeRateApiProviderType } from '../../types';
 import { refreshCommonExchangeRates } from '../../services/exchangeRateManager';
 import { Label } from '@/components/ui/label';
+import type {UserSettings} from "@/types/userSettingsTypes.ts";
 
 const PROVIDER_INFO: Record<ExchangeRateApiProviderType, { name: string; url: string; limits: string; requiresKey: boolean }> = {
   'exchangerate-api': {

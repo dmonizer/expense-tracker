@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { logger } from '../../utils';
 import { db } from '../../services/db';
-import type { Account, JournalEntry, Split } from '../../types';
+import type { Account } from '../../types';
 import { formatCurrency } from '../../utils/currencyUtils';
 import { getDisplayBalance } from '../../services/journalEntryManager';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import type {JournalEntry, Split} from "@/types/journalTypes.ts";
 
 interface AccountDetailViewProps {
     accountId: string;

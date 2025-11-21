@@ -3,13 +3,14 @@ import { logger } from '../../../utils';
 import {ArcElement, Chart as ChartJS, Legend, Tooltip} from 'chart.js';
 import {Pie} from 'react-chartjs-2';
 import type {Transaction, TransactionFilters} from '../../../types';
-import {UNCATEGORIZED_GROUP_ID} from '../../../types';
+
 import {getCategorySummary, getGroupSummary} from '../../../services/analytics';
 import {formatCurrency} from '../../../utils';
 import {DEFAULT_GROUP_COLORS, getCategoryColor} from '../../../utils/colorUtils';
 import {db} from '../../../services/db';
 import {memo, useEffect, useRef, useState} from 'react';
 import {useFilters} from '../../../contexts/FilterContext';
+import {UNCATEGORIZED_GROUP_ID} from "@/constants";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -167,7 +168,6 @@ function CategoryPieChart({transactions, filters}: Readonly<CategoryPieChartProp
     }, [transactions, filters, drilldownView, selectedGroupId]);
 
     const handleChartClick = (_event: unknown, elements: unknown[]) => {
-        logger.info('Chart clicked:', elements);
         if (!elements || !Array.isArray(elements) || elements.length === 0) {
             return;
         }

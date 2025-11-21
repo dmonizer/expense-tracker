@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
-import type { CSVSettings, FieldMapping, FieldTransform, TransactionField } from '../../../types';
-import type { WizardState } from './FormatWizardMain';
+import {useEffect, useState} from 'react';
+import type {CSVSettings, FieldMapping, FieldTransform, TransactionField} from '../../../types';
+import type {WizardState} from './FormatWizardMain';
+import {autoDetectMappings, isIn} from "@/utils/fieldMappingDetection.ts";
+import {INVESTMENT_FIELDS, INVESTMENT_NONVALIDATED_FIELDS, TRANSACTION_FIELDS} from "@/constants";
 
 interface Step2Props {
     csvSettings: CSVSettings;
@@ -13,58 +15,41 @@ interface Step2Props {
     onBack: () => void;
 }
 
-const TRANSACTION_FIELDS: Array<{ value: TransactionField; label: string; required: boolean }> = [
-    { value: 'date', label: 'Date', required: true },
-    { value: 'amount', label: 'Amount', required: true },
-    { value: 'payee', label: 'Payee / Recipient', required: true },
-    { value: 'description', label: 'Description', required: true },
-    { value: 'currency', label: 'Currency', required: true },
-    { value: 'type', label: 'Debit/Credit', required: true },
-    { value: 'accountNumber', label: 'Account Number', required: false },
-    { value: 'payeeAccountNumber', label: 'Payee Account Number', required: false },
-    { value: 'transactionType', label: 'Transaction Type', required: false },
-    { value: 'archiveId', label: 'Archive ID (for deduplication)', required: false },
-    { value: 'symbol', label: 'Security Symbol / ISIN', required: false },
-    { value: 'securityName', label: 'Security Name', required: false },
-    { value: 'quantity', label: 'Quantity / Shares', required: false },
-    { value: 'price', label: 'Price per Share', required: false },
-    { value: 'fee', label: 'Fee / Commission', required: false },
-    { value: 'ignore', label: '(Ignore this column)', required: false },
-];
+
 
 export default function Step2FieldMapping({
-    csvSettings,
-    parsedPreview,
-    initialMappings,
-    onComplete,
-    onBack
-}: Readonly<Step2Props>) {
+                                              csvSettings,
+                                              parsedPreview,
+                                              initialMappings,
+                                              onComplete,
+                                              onBack
+                                          }: Readonly<Step2Props>) {
     const [mappings, setMappings] = useState<FieldMapping[]>(() => {
         // Initialize with existing mappings or auto-detect
         if (initialMappings.length > 0) {
             // Filter out static fields from initialMappings
             const existingColumnMappings = initialMappings.filter(m => !m.sourceType || m.sourceType === 'column');
-            
+
             // Get all column names that are already mapped
             const mappedColumns = new Set(existingColumnMappings.map(m => m.sourceColumn));
-            
+
             // Find columns from the current CSV that aren't in the existing mappings
             const missingColumns = parsedPreview.headers.filter(header => !mappedColumns.has(header));
-            
+
             // Auto-detect mappings for the missing columns
-            const newMappings: FieldMapping[] = missingColumns.map((header, index) => {
+            const newMappings: FieldMapping[] = missingColumns.map((header) => {
                 const columnIndex = parsedPreview.headers.indexOf(header);
-                const detectedMappings = autoDetectMappings([header]);
+                const detectedMappings = autoDetectMappings([header], csvSettings);
                 return {
                     ...detectedMappings[0],
                     sourceColumn: csvSettings.hasHeader ? header : columnIndex,
                 };
             });
-            
+
             // Combine existing mappings with new ones
             return [...existingColumnMappings, ...newMappings];
         }
-        return autoDetectMappings(parsedPreview.headers);
+        return autoDetectMappings(parsedPreview.headers, csvSettings);
     });
 
     const [staticFields, setStaticFields] = useState<FieldMapping[]>(() => {
@@ -76,7 +61,6 @@ export default function Step2FieldMapping({
     });
 
 
-
     const [selectedMapping, setSelectedMapping] = useState<number | null>(null);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
@@ -84,130 +68,6 @@ export default function Step2FieldMapping({
         validateMappings();
     }, [mappings, staticFields]);
 
-    function autoDetectMappings(headers: string[]): FieldMapping[] {
-        const detected: FieldMapping[] = [];
-
-        headers.forEach((header, index) => {
-            const lowerHeader = header.toLowerCase().trim();
-            let targetField: TransactionField | null = null;
-            let transform: FieldTransform | undefined;
-
-            // Date detection
-            if (lowerHeader.includes('date') || lowerHeader.includes('kuupäev') || lowerHeader.includes('datum')) {
-                targetField = 'date';
-                transform = {
-                    type: 'date',
-                    dateFormat: 'dd.MM.yyyy', // Default Estonian format
-                };
-            }
-            // Amount detection
-            else if (lowerHeader.includes('amount') || lowerHeader.includes('summa') || lowerHeader.includes('betrag')) {
-                targetField = 'amount';
-                transform = {
-                    type: 'number',
-                    decimalSeparator: ',',
-                    thousandsSeparator: '',
-                };
-            }
-            // Payee detection
-            else if (lowerHeader.includes('payee') || lowerHeader.includes('saaja') || lowerHeader.includes('maksja') || lowerHeader.includes('recipient')) {
-                targetField = 'payee';
-            }
-            // Description detection
-            else if (lowerHeader.includes('description') || lowerHeader.includes('selgitus') || lowerHeader.includes('memo') || lowerHeader.includes('details')) {
-                targetField = 'description';
-            }
-            // Currency detection
-            else if (lowerHeader.includes('currency') || lowerHeader.includes('valuuta') || lowerHeader.includes('währung')) {
-                targetField = 'currency';
-            }
-            // Type detection
-            else if (lowerHeader.includes('deebet') || lowerHeader.includes('kreedit') || lowerHeader.includes('debit') || lowerHeader.includes('credit')) {
-                targetField = 'type';
-                transform = {
-                    type: 'debitCredit',
-                    debitValue: 'D',
-                    creditValue: 'K',
-                };
-            }
-            // Payee Account Number detection (must come before generic account detection)
-            else if ((lowerHeader.includes('saaja') || lowerHeader.includes('maksja') || lowerHeader.includes('recipient') || lowerHeader.includes('payee')) && 
-                     (lowerHeader.includes('konto') || lowerHeader.includes('account') || lowerHeader.includes('iban'))) {
-                targetField = 'payeeAccountNumber';
-            }
-            // Account Number detection (client's own account)
-            else if ((lowerHeader.includes('kliendi') && lowerHeader.includes('konto')) || 
-                     (lowerHeader.includes('account') && !lowerHeader.includes('payee') && !lowerHeader.includes('recipient')) || 
-                     lowerHeader.includes('iban')) {
-                targetField = 'accountNumber';
-            }
-            // Archive ID detection
-            else if (lowerHeader.includes('archive') || lowerHeader.includes('arhiveerimistunnus') || lowerHeader.includes('reference')) {
-                targetField = 'archiveId';
-            }
-            // Transaction Type detection
-            else if (lowerHeader.includes('transaction type') || lowerHeader.includes('tehingu tüüp') || lowerHeader.includes('type')) {
-                targetField = 'transactionType';
-            }
-            // Symbol / ISIN detection (investment accounts)
-            else if (lowerHeader.includes('symbol') || lowerHeader.includes('isin') || lowerHeader.includes('ticker')) {
-                targetField = 'symbol';
-            }
-            // Security Name detection (investment accounts)
-            else if (lowerHeader.includes('security') || lowerHeader.includes('instrument') || lowerHeader.includes('väärtpaber')) {
-                targetField = 'securityName';
-            }
-            // Quantity detection (investment accounts)
-            else if (lowerHeader.includes('quantity') || lowerHeader.includes('shares') || lowerHeader.includes('kogus') || lowerHeader.includes('nominaalväärtus')) {
-                targetField = 'quantity';
-                transform = {
-                    type: 'number',
-                    decimalSeparator: ',',
-                    thousandsSeparator: '',
-                };
-            }
-            // Price detection (investment accounts)
-            else if (lowerHeader.includes('price') || lowerHeader.includes('hind') || lowerHeader.includes('kurs')) {
-                targetField = 'price';
-                transform = {
-                    type: 'number',
-                    decimalSeparator: ',',
-                    thousandsSeparator: '',
-                };
-            }
-            // Fee/Commission detection (investment accounts)
-            else if (lowerHeader.includes('fee') || lowerHeader.includes('commission') || lowerHeader.includes('tasu') || lowerHeader.includes('teenustasu') || lowerHeader.includes('komisjon')) {
-                targetField = 'fee';
-                transform = {
-                    type: 'number',
-                    decimalSeparator: ',',
-                    thousandsSeparator: '',
-                };
-            }
-            // Value date detection (alternative to regular date, common in investment accounts)
-            else if (lowerHeader.includes('väärtuspäev') || lowerHeader.includes('value date')) {
-                targetField = 'date';
-                transform = {
-                    type: 'date',
-                    dateFormat: 'dd.MM.yyyy',
-                };
-            }
-            // Default to ignore
-            else {
-                targetField = 'ignore';
-            }
-
-            detected.push({
-                targetField,
-                sourceType: 'column',
-                sourceColumn: csvSettings.hasHeader ? header : index,
-                transform,
-                required: TRANSACTION_FIELDS.find(f => f.value === targetField)?.required || false,
-            });
-        });
-
-        return detected;
-    }
 
     function validateMappings(): boolean {
         const errors: string[] = [];
@@ -225,19 +85,18 @@ export default function Step2FieldMapping({
         });
 
         // Detect if this is an investment transaction
-        const hasInvestmentFields = mappedFields.some(f =>
-            ['quantity', 'price', 'symbol', 'securityName'].includes(f)
-        );
+        const hasInvestmentFields = isIn(mappedFields, INVESTMENT_FIELDS);
 
         // Check for required fields
-        const requiredFields = TRANSACTION_FIELDS.filter(f => f.required).map(f => f.value);
+        const requiredFields = TRANSACTION_FIELDS.filter(f => f.required)
+            .map(f => f.value);
 
         requiredFields.forEach(field => {
             if (!mappedFields.includes(field)) {
                 // For investment transactions, relax some requirements
                 if (hasInvestmentFields) {
                     // Skip validation for these fields if it's an investment transaction
-                    if (['payee', 'description', 'currency', 'type'].includes(field)) {
+                    if (INVESTMENT_NONVALIDATED_FIELDS.includes(field)) {
                         return; // These will be auto-filled with defaults
                     }
                 }
@@ -269,23 +128,30 @@ export default function Step2FieldMapping({
             required: TRANSACTION_FIELDS.find(f => f.value === targetField)?.required || false,
         };
 
+        // Clear transform first, then set appropriate one for the field type
+        newMappings[index].transform = undefined;
+
         // Set default transforms for certain field types
-        if (targetField === 'date' && !newMappings[index].transform) {
+        if (targetField === 'date') {
             newMappings[index].transform = {
                 type: 'date',
                 dateFormat: 'dd.MM.yyyy',
             };
-        } else if ((targetField === 'amount' || targetField === 'quantity' || targetField === 'price' || targetField === 'fee') && !newMappings[index].transform) {
+        } else if (targetField === 'amount' || targetField === 'quantity' || targetField === 'price' || targetField === 'fee') {
             newMappings[index].transform = {
                 type: 'number',
                 decimalSeparator: ',',
                 thousandsSeparator: '',
             };
-        } else if (targetField === 'type' && !newMappings[index].transform) {
+        } else if (targetField === 'type') {
             newMappings[index].transform = {
                 type: 'debitCredit',
                 debitValue: 'D',
                 creditValue: 'K',
+            };
+        } else if (targetField === 'currency') {
+            newMappings[index].transform = {
+                type: 'currency',
             };
         }
 
@@ -357,7 +223,7 @@ export default function Step2FieldMapping({
         // Find first unmapped column
         const mappedColumns = new Set(mappings.map(m => m.sourceColumn));
         const unmappedColumn = parsedPreview.headers.find(header => !mappedColumns.has(header));
-        
+
         if (!unmappedColumn) {
             // All columns are mapped, just add the first one again (user can change it)
             const firstColumn = csvSettings.hasHeader ? parsedPreview.headers[0] : 0;
@@ -370,7 +236,7 @@ export default function Step2FieldMapping({
             setMappings([...mappings, newMapping]);
         } else {
             // Auto-detect mapping for the unmapped column
-            const detectedMappings = autoDetectMappings([unmappedColumn]);
+            const detectedMappings = autoDetectMappings([unmappedColumn], csvSettings);
             const newMapping: FieldMapping = {
                 ...detectedMappings[0],
                 sourceColumn: unmappedColumn,
@@ -387,7 +253,7 @@ export default function Step2FieldMapping({
         if (validateMappings()) {
             // Combine column mappings and static fields
             const allMappings = [...mappings, ...staticFields];
-            onComplete({ fieldMappings: allMappings });
+            onComplete({fieldMappings: allMappings});
         }
     };
 
@@ -398,7 +264,8 @@ export default function Step2FieldMapping({
                     Step 2: Map CSV Columns to Transaction Fields
                 </h3>
                 <p className="text-sm text-gray-600">
-                    Select which CSV column to use for each transaction field. You can change the source column using the dropdown in the first column.
+                    Select which CSV column to use for each transaction field. You can change the source column using
+                    the dropdown in the first column.
                 </p>
             </div>
 
@@ -425,9 +292,9 @@ export default function Step2FieldMapping({
                         + Add Column
                     </button>
                 </div>
-            <div className="border rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                <div className="border rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
                         <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
                                 Source Column
@@ -448,8 +315,8 @@ export default function Step2FieldMapping({
                                 Actions
                             </th>
                         </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
                         {mappings.map((mapping, index) => (
                             <tr
                                 key={index}
@@ -469,8 +336,8 @@ export default function Step2FieldMapping({
                                             className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             {parsedPreview.headers.map((header, headerIndex) => (
-                                                <option 
-                                                    key={headerIndex} 
+                                                <option
+                                                    key={headerIndex}
                                                     value={csvSettings.hasHeader ? header : headerIndex}
                                                 >
                                                     {csvSettings.hasHeader ? header : `Column ${headerIndex + 1}`}
@@ -605,9 +472,9 @@ export default function Step2FieldMapping({
                                 </td>
                             </tr>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Static Fields Section */}
@@ -631,53 +498,53 @@ export default function Step2FieldMapping({
                     <div className="border rounded-lg overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
-                                        Field
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
-                                        Static Value
-                                    </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
-                                        Actions
-                                    </th>
-                                </tr>
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
+                                    Field
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">
+                                    Static Value
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Actions
+                                </th>
+                            </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {staticFields.map((field, index) => (
-                                    <tr key={index} className="hover:bg-gray-50">
-                                        <td className="px-4 py-3">
-                                            <select
-                                                value={field.targetField}
-                                                onChange={(e) => handleStaticFieldChange(index, e.target.value as TransactionField, field.staticValue || '')}
-                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            >
-                                                {TRANSACTION_FIELDS.filter(f => f.value !== 'ignore').map(tf => (
-                                                    <option key={tf.value} value={tf.value}>
-                                                        {tf.label} {tf.required ? '*' : ''}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <input
-                                                type="text"
-                                                placeholder="Enter static value..."
-                                                value={field.staticValue || ''}
-                                                onChange={(e) => handleStaticFieldChange(index, field.targetField, e.target.value)}
-                                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            />
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <button
-                                                onClick={() => handleRemoveStaticField(index)}
-                                                className="text-sm text-red-600 hover:text-red-800"
-                                            >
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                            {staticFields.map((field, index) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3">
+                                        <select
+                                            value={field.targetField}
+                                            onChange={(e) => handleStaticFieldChange(index, e.target.value as TransactionField, field.staticValue || '')}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {TRANSACTION_FIELDS.filter(f => f.value !== 'ignore').map(tf => (
+                                                <option key={tf.value} value={tf.value}>
+                                                    {tf.label} {tf.required ? '*' : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter static value..."
+                                            value={field.staticValue || ''}
+                                            onChange={(e) => handleStaticFieldChange(index, field.targetField, e.target.value)}
+                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <button
+                                            onClick={() => handleRemoveStaticField(index)}
+                                            className="text-sm text-red-600 hover:text-red-800"
+                                        >
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
                             </tbody>
                         </table>
                     </div>

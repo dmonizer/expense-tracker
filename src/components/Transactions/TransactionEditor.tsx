@@ -6,6 +6,7 @@ import { db } from '../../services/db';
 import { formatCurrency, formatDate } from '../../utils';
 import { extractPatternSuggestions, calculatePatternWeight } from '../../utils/patternExtractor';
 import { detectPatternConflicts, matchesPattern, recategorizeAll } from '../../services/categorizer';
+import { mergePatterns } from '../../utils/patternMerger';
 import type { Pattern, CategoryRule } from '../../types';
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -178,9 +179,9 @@ function TransactionEditor({ transaction, onClose, onSave }: TransactionEditorPr
           });
         });
 
-        // Update the category rule with new patterns
+        // Update the category rule with new patterns (merge intelligently)
         await db.categoryRules.update(categoryRule.id, {
-          patterns: [...categoryRule.patterns, ...newPatterns],
+          patterns: mergePatterns(categoryRule.patterns, newPatterns),
           updatedAt: new Date(),
         });
 
