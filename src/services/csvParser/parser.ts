@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import type { ImportFormatDefinition } from '../../types';
+import type { ImportFormatDefinition, Transaction } from '../../types';
 import type { ParseResult, ParseError } from './types';
 import { processRow } from './mappers';
 import { parseSwedBankCSV } from './swedbank';
@@ -18,7 +18,7 @@ export async function parseWithCustomFormat(
     return new Promise((resolve) => {
         const errors: string[] = [];
         const errorDetails: ParseError[] = [];
-        const transactions = [];
+        const transactions: Transaction[] = [];
         let totalRows = 0;
 
         Papa.parse(file, {

@@ -70,7 +70,7 @@ function transformCreditDebit(value: string, transform: FieldTransform): string 
     }
 }
 
-function transformCustom(value: string, transform: FieldTransform): unknown {
+function transformCustom(value: string, transform: FieldTransform): string | number | Date {
     // Execute custom JavaScript expression
     // Security note: This is dangerous in production, consider removing or sandboxing
     if (transform.customExpression) {
