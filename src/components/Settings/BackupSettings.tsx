@@ -359,7 +359,8 @@ function BackupSettings() {
                                         },
                                     })}
                                     placeholder="Your Google OAuth Client ID"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                                    data-value="545991458266-0sro7ka7vu3hqiv68kffl0khf88cm385.apps.googleusercontent.com"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm hidden"
                                 />
                             </div>
                             <Button onClick={handleGoogleDriveConnect} disabled={!settings.googleDriveConfig?.clientId}>
