@@ -333,31 +333,17 @@ function BackupSettings() {
                 <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                     <h3 className="font-medium">Google Drive</h3>
 
-                    {!settings.googleDriveConfig?.connected ? (
-                        <>
-                            <details className="text-sm">
-                                <summary className="cursor-pointer text-blue-600 hover:text-blue-800 mb-2">ℹ️ How to get a Client ID</summary>
-                                <div className="pl-4 mt-2 space-y-2 text-gray-700">
-                                    <p>1. Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Cloud Console</a></p>
-                                    <p>2. Create a new project or select an existing one</p>
-                                    <p>3. Click "Create Credentials" → "OAuth client ID"</p>
-                                    <p>4. Choose "Web application" as the application type</p>
-                                    <p>5. Add <code className="bg-gray-100 px-1 rounded">{window.location.origin}</code> to "Authorized JavaScript origins"</p>
-                                    <p>6. Add <code className="bg-gray-100 px-1 rounded">{window.location.origin}/oauth/callback</code> to "Authorized redirect URIs"</p>
-                                    <p>7. Copy the Client ID and paste it below</p>
-                                </div>
-                            </details>
-                            <Button onClick={handleGoogleDriveConnect} disabled={!settings.googleDriveConfig?.clientId}>
-                                Connect to Google Drive
-                            </Button>
-                        </>
-                    ) : (
+                    {settings.googleDriveConfig?.connected ? (
                         <div className="flex items-center justify-between">
                             <span className="text-sm text-green-600">✓ Connected</span>
                             <Button variant="outline" onClick={() => handleDisconnect('googledrive')}>
                                 Disconnect
                             </Button>
                         </div>
+                    ) : (
+                        <Button onClick={handleGoogleDriveConnect} disabled={!settings.googleDriveConfig?.clientId}>
+                            Connect to Google Drive
+                        </Button>
                     )}
                 </div>
 
