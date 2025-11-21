@@ -8,7 +8,7 @@ import {detectPatternConflicts, matchesPattern, recategorizeAll} from '@/service
 import {mergePatterns} from '@/utils/patternMerger.ts';
 import {useToast} from "@/hooks/use-toast";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
-import {Button} from "@/components/ui/button.tsx";
+import {Button} from "@/components/ui/button";
 import {Label} from '@/components/ui/label';
 
 interface TransactionEditorProps {
@@ -248,7 +248,7 @@ function TransactionEditor({transaction, onClose, onSave}: Readonly<TransactionE
   const isIncome = transaction.type === 'credit';
 
   return (
-    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={true} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Transaction Category</DialogTitle>

@@ -10,12 +10,12 @@ import {
     renameFormat,
     setDefaultFormat
 } from '@/services/formatManager.ts';
-import FormatWizardMain from '../../ImportWizard/FormatWizard/FormatWizardMain';
+import FormatWizardMain from '@/components/ImportWizard/FormatWizard/FormatWizardMain';
 import {useConfirm} from "@/components/ui/confirm-provider";
 import {useToast} from "@/hooks/use-toast";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
 import {Input} from "@/components/ui/input";
-import {Button} from "@/components/ui/button.tsx";
+import {Button} from "@/components/ui/button";
 
 export default function FormatManager() {
   const [formats, setFormats] = useState<ImportFormatDefinition[]>([]);
@@ -144,7 +144,7 @@ export default function FormatManager() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv';
-    input.onchange = (e) => {
+      input.onchange = (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         setEditingFormat(format);
@@ -170,7 +170,7 @@ export default function FormatManager() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = async (e) => {
+      input.onchange = async (e: Event) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
 
@@ -396,7 +396,7 @@ export default function FormatManager() {
       )}
 
       {/* Duplicate Dialog */}
-      <Dialog open={!!duplicateId} onOpenChange={(open) => !open && setDuplicateId(null)}>
+        <Dialog open={!!duplicateId} onOpenChange={(open: boolean) => !open && setDuplicateId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Duplicate Format</DialogTitle>

@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Button} from '@/components/ui/button.tsx';
+import {Button} from '@/components/ui/button';
 import {useToast} from '@/hooks/use-toast';
 import {createBackup} from '@/services/databaseBackup.ts';
 import * as localProvider from '../../services/backupProviders/localBackupProvider';

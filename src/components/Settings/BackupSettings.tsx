@@ -9,7 +9,7 @@ import * as localProvider from '../../services/backupProviders/localBackupProvid
 import * as googleDriveProvider from '../../services/backupProviders/googleDriveProvider';
 import * as dropboxProvider from '../../services/backupProviders/dropboxProvider';
 import {logger} from '@/utils';
-import {Button} from '@/components/ui/button.tsx';
+import {Button} from '@/components/ui/button';
 import {useToast} from '@/hooks/use-toast';
 import {useConfirm} from '@/components/ui/confirm-provider';
 import {ManualBackupSection} from './ManualBackupSection';

@@ -10,7 +10,7 @@ import EmptyState, {DocumentIcon} from '../ui/EmptyState';
 import {useTransactionFilters} from '@/hooks/useTransactionFilters.ts';
 import {usePagination} from '@/hooks/usePagination.ts';
 import {PAGINATION} from '@/constants';
-import {Button} from '@/components/ui/button.tsx';
+import {Button} from '@/components/ui/button';
 
 interface TransactionListProps {
   initialFilters?: TransactionFilters;
