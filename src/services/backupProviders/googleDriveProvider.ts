@@ -8,7 +8,7 @@ const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_DRIVE_UPLOAD_URL = 'https://www.googleapis.com/upload/drive/v3/files';
 const GOOGLE_DRIVE_FILES_URL = 'https://www.googleapis.com/drive/v3/files';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const REDIRECT_URI = window.location.origin + '/oauth/callback';
+const REDIRECT_URI = window.location.origin + '/oauth/callback.html';
 
 /**
  * Authenticate with Google Drive using OAuth 2.0
