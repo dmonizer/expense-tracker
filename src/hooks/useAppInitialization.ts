@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initializeDefaults } from '../services/seedData';
-import { initializeBuiltInFormats } from '../services/formatManager';
+import { initializeBuiltInFormats } from '../services/formatLoader';
 import { migrateAllPatterns } from '../utils/patternMigration';
 import { logger } from '../utils';
 

@@ -1,0 +1,97 @@
+{
+    "name": "Swedbank Estonia",
+    "description": "Built-in format for Swedbank Estonia CSV exports",
+    "fileType": "csv",
+    "csvSettings": {
+        "delimiter": ";",
+        "hasHeader": true,
+        "encoding": "utf-8",
+        "skipEmptyLines": true,
+        "skipRows": 0
+    },
+    "fieldMappings": [
+        {
+            "targetField": "accountNumber",
+            "sourceType": "column",
+            "sourceColumn": "Kliendi konto",
+            "required": true
+        },
+        {
+            "targetField": "date",
+            "sourceType": "column",
+            "sourceColumn": "Kuupäev",
+            "required": true,
+            "transform": {
+                "type": "date",
+                "dateFormat": "dd.MM.yyyy"
+            }
+        },
+        {
+            "targetField": "payee",
+            "sourceType": "column",
+            "sourceColumn": "Saaja/Maksja",
+            "required": true
+        },
+        {
+            "targetField": "description",
+            "sourceType": "column",
+            "sourceColumn": "Selgitus",
+            "required": true
+        },
+        {
+            "targetField": "amount",
+            "sourceType": "column",
+            "sourceColumn": "Summa",
+            "required": true,
+            "transform": {
+                "type": "number",
+                "decimalSeparator": ",",
+                "thousandsSeparator": ""
+            }
+        },
+        {
+            "targetField": "currency",
+            "sourceType": "column",
+            "sourceColumn": "Valuuta",
+            "required": true
+        },
+        {
+            "targetField": "type",
+            "sourceType": "column",
+            "sourceColumn": "Deebet/Kreedit",
+            "required": true,
+            "transform": {
+                "type": "debitCredit",
+                "debitValue": "D",
+                "creditValue": "K"
+            }
+        },
+        {
+            "targetField": "transactionType",
+            "sourceType": "column",
+            "sourceColumn": "Tehingu tüüp",
+            "required": false
+        },
+        {
+            "targetField": "archiveId",
+            "sourceType": "column",
+            "sourceColumn": "Arhiveerimistunnus",
+            "required": true
+        }
+    ],
+    "detectionPattern": {
+        "headerPattern": [
+            "Kliendi konto",
+            "Kuupäev",
+            "Saaja/Maksja",
+            "Selgitus",
+            "Summa",
+            "Valuuta",
+            "Deebet/Kreedit",
+            "Arhiveerimistunnus"
+        ],
+        "fileNamePattern": ".*\\.csv$"
+    },
+    "isBuiltIn": true,
+    "isDefault": true
+}

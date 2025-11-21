@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { logger } from '../../utils';
 import type { Transaction, ImportFormatDefinition } from '../../types';
-import { parseSwedBankCSV, parseWithCustomFormat, detectDuplicates, importTransactions } from '../../services/csvParser';
+import { parseWithCustomFormat, detectDuplicates, importTransactions } from '../../services/csvParser';
 import { categorizeBatch } from '../../services/categorizer';
 import { detectFormat } from '../../services/formatDetector';
+import { getAllFormats } from '../../services/formatManager';
 import PreviewTable from './PreviewTable';
 import ImportSummary from './ImportSummary';
 import FormatSelector from './FormatSelector';
@@ -18,6 +19,11 @@ function FileUpload() {
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
 
+  // Format selection
+  const [availableFormats, setAvailableFormats] = useState<ImportFormatDefinition[]>([]);
+  const [selectedFormatId, setSelectedFormatId] = useState<string>('autodetect');
+  const [hasAutodetectFormats, setHasAutodetectFormats] = useState(false);
+
   // Parse result data
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [newTransactions, setNewTransactions] = useState<Transaction[]>([]);
@@ -27,6 +33,31 @@ function FileUpload() {
   // Import result data
   const [importSuccess, setImportSuccess] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+
+  // Load available formats on mount
+  useEffect(() => {
+    loadFormats();
+  }, []);
+
+  const loadFormats = async () => {
+    try {
+      const formats = await getAllFormats();
+      setAvailableFormats(formats);
+
+      // Check if any format has autodetect configured
+      const hasAutodetect = formats.some(f => f.detectionPattern);
+      setHasAutodetectFormats(hasAutodetect);
+
+      // Set default selection
+      if (hasAutodetect) {
+        setSelectedFormatId('autodetect');
+      } else if (formats.length > 0) {
+        setSelectedFormatId(formats[0].id);
+      }
+    } catch (err) {
+      logger.error('[FileUpload] Failed to load formats:', err);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -83,21 +114,32 @@ function FileUpload() {
     setError(null);
 
     try {
-      // Try to auto-detect format
-      const detectedFormat = await detectFormat(fileToProcess);
-      
-      if (detectedFormat) {
-        logger.info('[FileUpload] Using detected format:', detectedFormat.name);
-        await processFileWithFormat(fileToProcess, detectedFormat);
+      if (selectedFormatId === 'autodetect') {
+        // Try to auto-detect format
+        const detectedFormat = await detectFormat(fileToProcess);
+
+        if (detectedFormat) {
+          logger.info('[FileUpload] Using detected format:', detectedFormat.name);
+          await processFileWithFormat(fileToProcess, detectedFormat);
+        } else {
+          // No format detected, show selector with options
+          logger.info('[FileUpload] No format detected, showing selector');
+          setLoading(false);
+          setStep('formatSelect');
+        }
       } else {
-        // No format detected, show selector
-        logger.info('[FileUpload] No format detected, showing selector');
-        setLoading(false);
-        setStep('formatSelect');
+        // Use selected format
+        const format = availableFormats.find(f => f.id === selectedFormatId);
+        if (format) {
+          await processFileWithFormat(fileToProcess, format);
+        } else {
+          setError('Selected format not found');
+          setLoading(false);
+        }
       }
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Failed to detect format';
+        err instanceof Error ? err.message : 'Failed to process file';
       setError(errorMessage);
       setLoading(false);
     }
@@ -108,16 +150,8 @@ function FileUpload() {
     setError(null);
 
     try {
-      // Step 1: Parse CSV with format
-      let parseResult;
-      
-      if (format.id === 'swedbank-estonia-builtin') {
-        // Use legacy parser for Swedbank
-        parseResult = await parseSwedBankCSV(fileToProcess);
-      } else {
-        // Use generic parser with format definition
-        parseResult = await parseWithCustomFormat(fileToProcess, format);
-      }
+      // Parse CSV with format using generic parser
+      const parseResult = await parseWithCustomFormat(fileToProcess, format);
 
       if (parseResult.errors.length > 0) {
         setParseErrors(parseResult.errors);
@@ -233,13 +267,51 @@ function FileUpload() {
             </p>
           </div>
 
+          {/* Format Selection */}
+          {availableFormats.length > 0 && (
+            <div className="mb-6">
+              <Label htmlFor="format-select" className="block text-sm font-medium text-gray-700 mb-2">
+                File Format
+              </Label>
+              <select
+                id="format-select"
+                value={selectedFormatId}
+                onChange={(e) => setSelectedFormatId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {hasAutodetectFormats && (
+                  <option value="autodetect">Autodetect</option>
+                )}
+                {!hasAutodetectFormats && availableFormats.length > 0 && (
+                  <option value="" disabled>Select file format</option>
+                )}
+                {availableFormats.map(format => (
+                  <option key={format.id} value={format.id}>
+                    {format.name}
+                    {format.isBuiltIn && ' (Built-in)'}
+                    {format.isDefault && ' (Default)'}
+                  </option>
+                ))}
+              </select>
+              {selectedFormatId && selectedFormatId !== 'autodetect' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {availableFormats.find(f => f.id === selectedFormatId)?.description || 'Selected format will be used to parse the file'}
+                </p>
+              )}
+              {selectedFormatId === 'autodetect' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  The system will automatically detect the format based on file content
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Drag and Drop Zone */}
           <div
-            className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-              dragActive
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 bg-gray-50 hover:border-gray-400'
-            }`}
+            className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragActive
+              ? 'border-blue-500 bg-blue-50'
+              : 'border-gray-300 bg-gray-50 hover:border-gray-400'
+              }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
