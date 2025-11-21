@@ -287,6 +287,7 @@ class ExpenseTrackerDatabase extends Dexie {
         }).upgrade(async (tx) => {
             // Initialize backup settings if not present
             const settings = await tx.table('settings').get('default');
+
             if (settings && !settings.backupEnabled) {
                 await tx.table('settings').update('default', {
                     backupEnabled: false,

@@ -64,6 +64,10 @@ function ApiSettings() {
           priceApiProviders: [],
           priceApiAutoRefresh: false,
           priceApiRefreshInterval: 60,
+            googleDriveConfig: {
+                connected: false,
+                clientId: "545991458266-0sro7ka7vu3hqiv68kffl0khf88cm385.apps.googleusercontent.com"
+            }
         };
         await db.settings.add(userSettings);
       }

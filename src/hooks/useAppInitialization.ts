@@ -21,6 +21,7 @@ export function useAppInitialization(): InitializationState {
         const initialize = async () => {
             try {
                 // Initialize default categories/groups
+                logger.info('Initializing database defaults...');
                 const result = await initializeDefaults();
                 if (!result.success) {
                     logger.warn('Failed to initialize defaults:', result.message);

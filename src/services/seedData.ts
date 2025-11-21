@@ -130,9 +130,11 @@ export async function initializeDefaults(): Promise<{
         await cleanupDuplicates();
 
         // Initialize groups
+        logger.info("Initializing default category groups...");
         const groupsResult = await initializeDefaultGroups();
 
         // Initialize rules
+        logger.info("Initializing default category rules...");
         const rulesResult = await initializeDefaultRules();
 
         // Initialize default accounts (Phase 1: Double-entry accounting)
@@ -142,7 +144,7 @@ export async function initializeDefaults(): Promise<{
         await initializeDefaultExchangeRates();
 
         const success = groupsResult.success && rulesResult.success;
-        const message = `${groupsResult.message} ${rulesResult.message}`;
+        const message = `${groupsResult.message} ${rulesResult.message}`.trim();
 
         return {
             success,
