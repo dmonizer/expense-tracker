@@ -1,14 +1,13 @@
 import {v4 as uuidv4} from 'uuid';
 import {db} from './db';
-import type {ImportFormatDefinition} from '../types';
-import {logger} from '../utils';
+import type {ImportFormatDefinition} from '@/types';
 
 /**
  * Format Manager Service
  * Handles CRUD operations for import format definitions
  */
 
-/**
+/*
  * Get all import format definitions
  */
 export async function getAllFormats(): Promise<ImportFormatDefinition[]> {
@@ -27,13 +26,6 @@ export async function getFormatById(id: string): Promise<ImportFormatDefinition 
  */
 export async function getDefaultFormat(): Promise<ImportFormatDefinition | undefined> {
   return await db.importFormats.where('isDefault').equals(1).first();
-}
-
-/**
- * Get all built-in formats
- */
-export async function getBuiltInFormats(): Promise<ImportFormatDefinition[]> {
-  return await db.importFormats.where('isBuiltIn').equals(1).toArray();
 }
 
 /**
@@ -134,132 +126,6 @@ async function unsetAllDefaults(exceptId?: string): Promise<void> {
     if (format.id !== exceptId) {
       await db.importFormats.update(format.id, { isDefault: false });
     }
-  }
-}
-
-/**
- * Initialize built-in formats (called on app startup)
- */
-export async function initializeBuiltInFormats(): Promise<void> {
-  // Check if Swedbank format already exists by ID
-  const swedbankFormat = await db.importFormats.get('swedbank-estonia-builtin');
-
-  if (!swedbankFormat) {
-    const now = new Date();
-    const swedbank: ImportFormatDefinition = {
-      id: 'swedbank-estonia-builtin',
-      name: 'Swedbank Estonia',
-      description: 'Built-in format for Swedbank Estonia CSV exports',
-      fileType: 'csv',
-      csvSettings: {
-        delimiter: ';',
-        hasHeader: true,
-        encoding: 'utf-8',
-        skipEmptyLines: true,
-        skipRows: 0,
-      },
-      fieldMappings: [
-        {
-          targetField: 'accountNumber',
-          sourceType: 'column',
-          sourceColumn: 'Kliendi konto',
-          required: true,
-        },
-        {
-          targetField: 'date',
-          sourceType: 'column',
-          sourceColumn: 'Kuupäev',
-          required: true,
-          transform: {
-            type: 'date',
-            dateFormat: 'dd.MM.yyyy',
-          },
-        },
-        {
-          targetField: 'payee',
-          sourceType: 'column',
-          sourceColumn: 'Saaja/Maksja',
-          required: true,
-        },
-        {
-          targetField: 'description',
-          sourceType: 'column',
-          sourceColumn: 'Selgitus',
-          required: true,
-        },
-        {
-          targetField: 'amount',
-          sourceType: 'column',
-          sourceColumn: 'Summa',
-          required: true,
-          transform: {
-            type: 'number',
-            decimalSeparator: ',',
-            thousandsSeparator: '',
-          },
-        },
-        {
-          targetField: 'currency',
-          sourceType: 'column',
-          sourceColumn: 'Valuuta',
-          required: true,
-        },
-        {
-          targetField: 'type',
-          sourceType: 'column',
-          sourceColumn: 'Deebet/Kreedit',
-          required: true,
-          transform: {
-            type: 'debitCredit',
-            debitValue: 'D',
-            creditValue: 'K',
-          },
-        },
-        {
-          targetField: 'transactionType',
-          sourceType: 'column',
-          sourceColumn: 'Tehingu tüüp',
-          required: false,
-        },
-        {
-          targetField: 'archiveId',
-          sourceType: 'column',
-          sourceColumn: 'Arhiveerimistunnus',
-          required: true,
-        },
-      ],
-      detectionPattern: {
-        headerPattern: [
-          'Kliendi konto',
-          'Kuupäev',
-          'Saaja/Maksja',
-          'Selgitus',
-          'Summa',
-          'Valuuta',
-          'Deebet/Kreedit',
-          'Arhiveerimistunnus',
-        ],
-        fileNamePattern: '.*\\.csv$',
-      },
-      isBuiltIn: true,
-      isDefault: true, // Set as default on first install
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    try {
-      await db.importFormats.add(swedbank);
-      logger.info('[FormatManager] Initialized built-in Swedbank format');
-    } catch (error) {
-      // If the format already exists (race condition), ignore the error
-      if (error instanceof Error && error.name === 'ConstraintError') {
-        logger.info('[FormatManager] Built-in Swedbank format already exists, skipping initialization');
-      } else {
-        throw error;
-      }
-    }
-  } else {
-    logger.info('[FormatManager] Built-in Swedbank format already exists');
   }
 }
 

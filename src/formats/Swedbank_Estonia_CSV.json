@@ -1,6 +1,6 @@
 {
-  "name": "Swedbank Estonia",
-  "description": "Built-in format for Swedbank Estonia CSV exports",
+  "name": "Swedbank Estonia CSV",
+  "description": "Format for Swedbank Estonia CSV exports",
   "fileType": "csv",
   "csvSettings": {
     "delimiter": ";",

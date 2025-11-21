@@ -3,10 +3,12 @@ import type { ImportFormatDefinition } from '../types';
 import { logger } from '../utils';
 
 // Import format JSON files
-import swedbankEstoniaFormat from '../formats/swedbank-estonia.json';
+import swedbankEstoniaFormat from '../formats/Swedbank_Estonia_CSV.json';
+import sebEstoniaFormat from '../formats/SEB_Estonia_CSV.json';
 
 const BUILT_IN_FORMATS = [
-    { id: 'swedbank-estonia-builtin', data: swedbankEstoniaFormat },
+    { id: 'swedbank-estonia-builtin', data: swedbankEstoniaFormat},
+    { id: 'seb-estonia-builtin', data: sebEstoniaFormat },
 ];
 
 /**
@@ -45,6 +47,7 @@ export async function initializeBuiltInFormats(): Promise<void> {
  * Load user-defined formats from JSON string
  */
 export async function loadFormatFromJSON(jsonString: string): Promise<string> {
+    logger.debug(`Loading user format from JSON: ${jsonString.substring(0, 100)}...`);
     const data = JSON.parse(jsonString);
 
     // Validate required fields
@@ -53,7 +56,7 @@ export async function loadFormatFromJSON(jsonString: string): Promise<string> {
     }
 
     // Use transaction to prevent race conditions (e.g. double invocation)
-    return await db.transaction('rw', db.importFormats, async () => {
+    return db.transaction('rw', db.importFormats, async () => {
         // Check if format with same name already exists
         const existing = await db.importFormats.where('name').equals(data.name).first();
         if (existing) {
