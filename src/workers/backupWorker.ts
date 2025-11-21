@@ -1,12 +1,13 @@
 // Backup Worker
 // Runs in background to handle automatic backup scheduling
 // This worker checks periodically if a backup is due and triggers it
-// NOTE: Only local backups are supported in the worker since cloud providers
-// require browser APIs (OAuth, window.location) that aren't available in workers
+// Uses worker-compatible versions of cloud providers (no window/DOM APIs)
 
 import { db } from '../services/db';
 import { createBackup } from '../services/databaseBackup';
 import * as localProvider from '../services/backupProviders/localBackupProvider';
+import * as googleDriveProvider from '../services/backupProviders/googleDriveProvider.worker';
+import * as dropboxProvider from '../services/backupProviders/dropboxProvider.worker';
 import type { BackupProvider } from '../types/backupTypes';
 
 const CHECK_INTERVAL = 60000; // Check every minute
@@ -43,19 +44,7 @@ async function checkAndBackup() {
             } as BackupWorkerMessage);
 
             // Perform backup for each configured provider
-            // NOTE: Only local provider is supported in workers
-            const providers = (settings.backupProviders || ['local']).filter(p => p === 'local');
-
-            if (providers.length === 0) {
-                postMessage({
-                    type: 'backup-error',
-                    data: {
-                        error: 'Automatic backups only support local provider. Cloud providers require manual backup.',
-                    },
-                } as BackupWorkerMessage);
-                return;
-            }
-
+            const providers = settings.backupProviders || ['local'];
             const includeLogs = settings.backupIncludeLogs || false;
             const encrypt = !!settings.backupEncryptionKey;
             const encryptionKey = settings.backupEncryptionKey;
@@ -69,8 +58,8 @@ async function checkAndBackup() {
                         includeLogs,
                     });
 
-                    // Save backup using local provider
-                    await saveBackupWithProvider(provider, backupData);
+                    // Save backup using appropriate provider
+                    await saveBackupWithProvider(provider, backupData, settings);
 
                     // Record successful backup
                     await db.backupHistory.add({
@@ -131,7 +120,8 @@ async function checkAndBackup() {
  */
 async function saveBackupWithProvider(
     provider: BackupProvider,
-    backupData: any
+    backupData: any,
+    settings: any
 ): Promise<void> {
     const dataString = JSON.stringify(backupData);
 
@@ -139,8 +129,28 @@ async function saveBackupWithProvider(
         case 'local':
             await localProvider.saveBackup(dataString, backupData.metadata);
             break;
-        default:
-            throw new Error(`Provider ${provider} not supported in automatic backups. Use manual backup instead.`);
+        case 'googledrive':
+            if (settings.googleDriveConfig?.accessToken) {
+                await googleDriveProvider.saveBackup(
+                    dataString,
+                    backupData.metadata,
+                    settings.googleDriveConfig.accessToken
+                );
+            } else {
+                throw new Error('Google Drive not connected');
+            }
+            break;
+        case 'dropbox':
+            if (settings.dropboxConfig?.accessToken) {
+                await dropboxProvider.saveBackup(
+                    dataString,
+                    backupData.metadata,
+                    settings.dropboxConfig.accessToken
+                );
+            } else {
+                throw new Error('Dropbox not connected');
+            }
+            break;
     }
 }
 
