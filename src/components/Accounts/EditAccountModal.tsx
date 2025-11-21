@@ -65,7 +65,16 @@ export function EditAccountModal({ isOpen, account, onClose, onSave }: Readonly<
         setSaving(true);
         setError(null);
         try {
-            const updates: Partial<typeof formData> = {};
+            const updates: {
+                name?: string;
+                description?: string;
+                color?: string;
+                institution?: string;
+                subtype?: AccountSubtype;
+                isActive?: boolean;
+                accountNumber?: string;
+                supportedCurrencies?: string[];
+            } = {};
 
             if (formData.name.trim() !== account.name) updates.name = formData.name.trim();
             if (formData.description.trim() !== (account.description || '')) updates.description = formData.description.trim();

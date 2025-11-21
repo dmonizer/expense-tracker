@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useConfirm } from '@/components/ui/confirm-provider';
 import { createBackup } from '../../services/databaseBackup';
 import * as localProvider from '../../services/backupProviders/localBackupProvider';
 import * as googleDriveProvider from '../../services/backupProviders/googleDriveProvider';

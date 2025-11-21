@@ -127,31 +127,22 @@ function BackupSettings() {
 
 
 
-    // Restore backup
+    // Restore backup (currently only supports local files)
     const handleRestoreBackup = async () => {
+        const confirmed = await confirm({
+            title: 'Restore Backup',
+            description: 'This will replace all current data with the backup. This action cannot be undone. Are you sure?',
+            confirmText: 'Restore',
+            cancelText: 'Cancel',
+        });
+
+        if (!confirmed) return;
+
         try {
-            const confirmed = await confirm({
-                title: 'Restore Backup',
-                description: 'This will replace all current data with the backup. This action cannot be undone. Are you sure?',
-                confirmText: 'Restore',
-                cancelText: 'Cancel',
-            });
-
-            if (!confirmed) return;
-
             setIsRestoring(true);
 
-            // Load backup based on provider
-            let backupData: string;
-            let metadata: any;
-
-            if (manualProvider === 'local') {
-                const result = await localProvider.loadBackup();
-                backupData = result.data;
-                metadata = result.metadata;
-            } else {
-                throw new Error('Cloud provider restore not yet implemented in this UI');
-            }
+            // Load backup from local file
+            const { data: backupData, metadata } = await localProvider.loadBackup();
 
             // Validate backup
             const isValid = await validateBackup(backupData);
@@ -167,11 +158,11 @@ function BackupSettings() {
 
             toast({
                 title: 'Backup restored',
-                description: 'Database has been restored from backup',
+                description: 'Your data has been restored successfully. The page will reload.',
             });
 
             // Reload page to reflect changes
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
             logger.error('[BackupSettings] Restore failed:', error);
             toast({
