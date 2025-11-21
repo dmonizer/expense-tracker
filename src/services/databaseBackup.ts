@@ -50,6 +50,7 @@ export async function exportDatabase(options?: { excludeTables?: string[] }): Pr
 /**
  * Import database from JSON string
  * @param jsonData - JSON string containing database data
+ * @param options
  * @param options.merge - If true, merge with existing data; if false, replace all data
  * @param options.excludeTables - Array of table names to exclude from import
  */
