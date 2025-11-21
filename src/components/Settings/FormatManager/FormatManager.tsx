@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { logger } from '../../../utils';
-import type { ImportFormatDefinition } from '../../../types';
+import { logger } from '@/utils';
+import type { ImportFormatDefinition } from '@/types';
 import {
   getAllFormats,
   deleteFormat,
@@ -9,7 +9,7 @@ import {
   setDefaultFormat,
   exportFormatAsJSON,
   importFormatFromJSON
-} from '../../../services/formatManager';
+} from '@/services/formatManager.ts';
 import FormatWizardMain from '../../ImportWizard/FormatWizard/FormatWizardMain';
 import { useConfirm } from "@/components/ui/confirm-provider";
 import { useToast } from "@/hooks/use-toast";
@@ -182,7 +182,6 @@ export default function FormatManager() {
 
       try {
         const text = await file.text();
-        await importFormatFromJSON(text);
         await importFormatFromJSON(text);
         await loadFormats();
         toast({ title: "Success", description: "Format imported successfully" });
