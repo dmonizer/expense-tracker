@@ -436,6 +436,8 @@ function FileUpload() {
         duplicateIds={duplicateIds}
         availableFormats={availableFormats}
         selectedFormatId={selectedFormatId === 'autodetect' ? (availableFormats[0]?.id || '') : selectedFormatId}
+        loading={loading}
+        error={error}
         onFormatChange={(formatId) => {
           setSelectedFormatId(formatId);
           const format = availableFormats.find(f => f.id === formatId);

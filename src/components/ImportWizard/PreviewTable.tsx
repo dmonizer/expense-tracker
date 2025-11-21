@@ -7,6 +7,8 @@ interface PreviewTableProps {
   duplicateIds: Set<string>;
   availableFormats: ImportFormatDefinition[];
   selectedFormatId: string;
+  loading?: boolean;
+  error?: string | null;
   onFormatChange: (formatId: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
@@ -17,6 +19,8 @@ function PreviewTable({
   duplicateIds,
   availableFormats,
   selectedFormatId,
+  loading,
+  error,
   onFormatChange,
   onConfirm,
   onCancel
@@ -32,7 +36,17 @@ function PreviewTable({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center backdrop-blur-sm">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+            <p className="text-sm text-blue-600 font-medium">Updating preview...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header with Summary */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex justify-between items-start mb-6">
@@ -49,7 +63,8 @@ function PreviewTable({
               id="preview-format-select"
               value={selectedFormatId}
               onChange={(e) => onFormatChange(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+              disabled={loading}
+              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[200px] disabled:opacity-50"
             >
               {availableFormats.map(format => (
                 <option key={format.id} value={format.id}>
@@ -59,6 +74,19 @@ function PreviewTable({
             </select>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+            <svg className="h-5 w-5 text-red-600 mt-0.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h3 className="text-sm font-semibold text-red-900">Error</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="bg-blue-50 rounded-lg p-4">
@@ -134,8 +162,8 @@ function PreviewTable({
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.type === 'credit'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
                         }`}>
                         {transaction.type === 'credit' ? 'Income' : 'Expense'}
                       </span>
@@ -191,8 +219,8 @@ function PreviewTable({
           onClick={onConfirm}
           disabled={newCount === 0}
           className={`px-6 py-2 rounded-lg font-medium transition-colors ${newCount === 0
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
             }`}
         >
           Import {newCount} Transaction{newCount !== 1 ? 's' : ''}
