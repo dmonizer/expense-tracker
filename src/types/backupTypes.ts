@@ -16,6 +16,8 @@ export interface BackupMetadata {
     timestamp: Date;
     size: number; // in bytes
     encrypted: boolean;
+    iv?: string; // Initialization vector for encryption
+    salt?: string; // Salt used in key derivation for encryption
     provider: BackupProvider;
     databaseVersion: number;
     includedLogs: boolean;
@@ -42,9 +44,12 @@ export interface CloudProviderConfig {
     connected: boolean;
 }
 
+export interface BackupTables {
+    [tableName: string]: unknown[];
+}
+
 export interface BackupData {
     metadata: BackupMetadata;
-    data: {
-        [tableName: string]: unknown[];
-    };
+    tables?: BackupTables,
+    encryptedTables?: string;
 }

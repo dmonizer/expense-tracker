@@ -14,7 +14,10 @@ import {useToast} from '@/hooks/use-toast';
 import {useConfirm} from '@/components/ui/confirm-provider';
 import {ManualBackupSection} from './ManualBackupSection';
 import {BackupHistoryTable} from './BackupHistoryTable';
-import type {BackupProvider} from '@/types/backupTypes.ts';
+import type {BackupData, BackupMetadata, BackupProvider} from '@/types/backupTypes.ts';
+import {DecryptionKeyDialog} from './DecryptionKeyDialog';
+
+export type BackupDataStructure = { data: [], metadata: BackupMetadata }
 
 function BackupSettings() {
     const settings = useLiveQuery(() => db.settings.get('default'));
@@ -22,6 +25,8 @@ function BackupSettings() {
     const { confirm } = useConfirm();
     const [isRestoring, setIsRestoring] = useState(false);
     const [showEncryptionKey, setShowEncryptionKey] = useState(false);
+    const [showDecryptionDialog, setShowDecryptionDialog] = useState(false);
+    const [pendingBackupData, setPendingBackupData] = useState<BackupData | null>(null);
 
     if (!settings) {
         return <div className="p-6">Loading settings...</div>;
@@ -139,10 +144,10 @@ function BackupSettings() {
         if (!confirmed) return;
 
         try {
-            setIsRestoring(true);
-
             // Load backup from local file
-            const { data: backupData, metadata } = await localProvider.loadBackup();
+            const backupData = await localProvider.loadBackup();
+
+            logger.info('[handleRestoreBackup] backup loaded: ', backupData);
 
             // Validate backup
             const isValid = await validateBackup(backupData);
@@ -150,9 +155,32 @@ function BackupSettings() {
                 throw new Error('Invalid backup file');
             }
 
-            // Restore
-            await restoreBackup(backupData, metadata, {
-                encryptionKey: metadata.encrypted ? settings.backupEncryptionKey : undefined,
+            // Check if encrypted
+            if (backupData.metadata.encrypted) {
+                setPendingBackupData(backupData);
+                setShowDecryptionDialog(true);
+                return;
+            }
+
+            // If not encrypted, proceed with restore
+            await performRestore(backupData);
+
+        } catch (error) {
+            logger.error('[handleRestoreBackup] Restore failed:', error);
+            toast({
+                title: 'Restore failed',
+                description: error instanceof Error ? error.message : 'Failed to restore backup',
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const performRestore = async (backupData: BackupData, key?: string) => {
+        try {
+            setIsRestoring(true);
+
+            await restoreBackup(backupData, {
+                encryptionKey: key,
                 merge: false,
             });
 
@@ -164,14 +192,32 @@ function BackupSettings() {
             // Reload page to reflect changes
             setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            logger.error('[BackupSettings] Restore failed:', error);
-            toast({
-                title: 'Restore failed',
-                description: error instanceof Error ? error.message : 'Failed to restore backup',
-                variant: 'destructive',
-            });
+            logger.error('[performRestore] Restore failed:', error);
+            // If it was a decryption error, re-throw to be handled by the dialog logic if needed, 
+            // or just show toast.
+            // For now, we let the caller handle it or show toast here.
+            // But since this is called from handleDecryptionConfirm, we might want to keep the dialog open on error?
+            // Let's just throw and catch in the handler.
+            throw error;
         } finally {
             setIsRestoring(false);
+        }
+    };
+
+    const handleDecryptionConfirm = async (key: string) => {
+        if (!pendingBackupData) return;
+
+        try {
+            await performRestore(pendingBackupData, key);
+            setShowDecryptionDialog(false);
+            setPendingBackupData(null);
+        } catch (error) {
+            toast({
+                title: 'Restore failed',
+                description: error instanceof Error ? error.message : 'Failed to restore backup. Check your decryption key.',
+                variant: 'destructive',
+            });
+            // Keep dialog open to try again
         }
     };
 
@@ -419,6 +465,16 @@ function BackupSettings() {
 
             {/* Backup History */}
             <BackupHistoryTable />
+
+            <DecryptionKeyDialog
+                open={showDecryptionDialog}
+                onOpenChange={(open) => {
+                    setShowDecryptionDialog(open);
+                    if (!open) setPendingBackupData(null);
+                }}
+                onConfirm={handleDecryptionConfirm}
+                isRestoring={isRestoring}
+            />
         </div>
     );
 }

@@ -2,7 +2,7 @@
 // Handles downloading and uploading backup files using browser APIs
 
 import {logger} from '@/utils';
-import type {BackupMetadata} from '@/types/backupTypes.ts';
+import type {BackupData, BackupMetadata} from '@/types/backupTypes.ts';
 
 /**
  * Save backup to local file (download)
@@ -43,7 +43,7 @@ export async function saveBackup(data: string, metadata: BackupMetadata): Promis
  * Load backup from local file (upload)
  * Returns a promise that resolves when user selects a file
  */
-export async function loadBackup(): Promise<{ data: string; metadata: BackupMetadata }> {
+export async function loadBackup(): Promise<BackupData> {
     return new Promise((resolve, reject) => {
         try {
             logger.info('[LocalBackup] Loading backup from local file');
@@ -94,7 +94,7 @@ export async function loadBackup(): Promise<{ data: string; metadata: BackupMeta
                             }
 
                             logger.info('[LocalBackup] Backup loaded successfully', { size: data.length });
-                            resolve({ data, metadata });
+                            resolve({...parsed, metadata});
                         } catch (error) {
                             logger.error('[LocalBackup] Failed to parse backup file:', error);
                             reject(new Error('Invalid backup file format'));

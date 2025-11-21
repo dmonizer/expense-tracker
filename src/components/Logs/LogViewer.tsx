@@ -8,6 +8,17 @@ import {useConfirm} from "@/components/ui/confirm-provider";
 import {useToast} from "@/hooks/use-toast";
 
 type LogLevel = 'TRACE' | 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'ALL';
+const locale = /*navigator.language ||*/ 'ee-ET';
+const timeOptions: Intl.DateTimeFormatOptions = {
+    fractionalSecondDigits: 3,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour12: false,
+};
 
 function LogViewer() {
   const [selectedLevel, setSelectedLevel] = useState<LogLevel>('ALL');
@@ -133,7 +144,8 @@ function LogViewer() {
     return <LoadingSpinner text="Loading logs..." />;
   }
 
-  return (
+
+    return (
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
@@ -250,7 +262,7 @@ function LogViewer() {
                             {log.level}
                           </span>
                           <span className="text-xs text-gray-500">
-                            {new Date(log.timestamp).toLocaleString()}
+                            {new Date(log.timestamp).toLocaleString(locale, timeOptions)}
                           </span>
                         </div>
                         <div className="text-sm text-gray-900 font-medium truncate">
@@ -320,7 +332,7 @@ function LogViewer() {
                 <div>
                   <div className="text-xs font-medium text-gray-600 mb-1">Timestamp</div>
                   <div className="text-sm text-gray-900">
-                    {new Date(selectedLog.timestamp).toLocaleString()}
+                      {new Date(selectedLog.timestamp).toLocaleString(locale, timeOptions)}
                   </div>
                 </div>
 

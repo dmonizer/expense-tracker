@@ -1,23 +1,10 @@
-import type {Transaction, TransactionFilters} from '@/types';
+import type {TransactionFilters} from '@/types';
 import {db} from './db';
 import {format} from 'date-fns';
 import {UNCATEGORIZED_GROUP_ID} from '@/constants';
 import {DEFAULT_GROUP_COLORS} from '../utils/colorUtils';
 import {filterTransactions} from '../utils/transactionFilters';
 import type {BalancePoint, CategorySummary, GroupSummary, MonthlySummary} from "@/types/chartDataTypes.ts";
-
-/**
- * Applies filters to an array of transactions.
- * Filters by date range, categories, currencies, amount range, transaction type, and search query.
- * 
- * @param transactions - Array of transactions to filter
- * @param filters - Filter criteria to apply
- * @returns Filtered array of transactions
- * @deprecated Use filterTransactions from utils/transactionFilters instead
- */
-export function applyFilters(transactions: Transaction[], filters: TransactionFilters): Transaction[] {
-  return filterTransactions(transactions, filters);
-}
 
 /**
  * Gets category summary with total amount, count, and percentage for each category.
@@ -31,7 +18,7 @@ export async function getCategorySummary(filters: TransactionFilters): Promise<C
   const allTransactions = await db.transactions.toArray();
   
   // Apply filters
-  const transactions = applyFilters(allTransactions, filters);
+    const transactions = filterTransactions(allTransactions, filters);
 
   // Handle empty data
   if (transactions.length === 0) {
@@ -94,7 +81,7 @@ export async function getGroupSummary(filters: TransactionFilters): Promise<Grou
   const categoryGroups = await db.categoryGroups.toArray();
   
   // Apply filters
-  const transactions = applyFilters(allTransactions, filters);
+    const transactions = filterTransactions(allTransactions, filters);
 
   // Handle empty data
   if (transactions.length === 0) {
@@ -207,7 +194,7 @@ export async function getMonthlySummary(filters: TransactionFilters): Promise<Mo
   const allTransactions = await db.transactions.toArray();
   
   // Apply filters
-  const transactions = applyFilters(allTransactions, filters);
+    const transactions = filterTransactions(allTransactions, filters);
 
   // Handle empty data
   if (transactions.length === 0) {
@@ -324,7 +311,7 @@ export async function getBalanceOverTime(filters: TransactionFilters): Promise<B
   const allTransactions = await db.transactions.toArray();
   
   // Apply filters
-  const transactions = applyFilters(allTransactions, filters);
+    const transactions = filterTransactions(allTransactions, filters);
 
   // Handle empty data
   if (transactions.length === 0) {
